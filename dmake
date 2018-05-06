@@ -1,0 +1,139 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+#use Template::Mustache;
+use Data::Dumper;
+use File::Find::Wanted;
+
+#"android-arm32")
+#  arch="-mtriple=armv7-none-linux-android"
+
+#<config>
+my $BUILD_DIR = "build";
+my $SRC_DIR   = "src";
+my $TARGET    = "qt_ts";
+my $LIBS      = "-lphobos2-ldc -ldruntime-ldc -ldl";
+#my $DC        = "ldc2";
+#</config>
+
+
+mkdir $BUILD_DIR;
+
+sub find_with_extension {
+    my $ext = shift;
+    my @files = find_wanted(sub{ -f && /\.$ext/i}, $SRC_DIR);
+    return join " \\\n    ", @files;
+}
+
+my $headers  = find_with_extension("h");
+my $cpp_srcs = find_with_extension("cpp");
+
+my @d_files  = find_wanted(sub{ -f && /\.d/i}, $SRC_DIR);
+
+my $d_objs = "build/".join(".o \\\n    build/", @d_files).".o";
+
+
+open PRO_CONF, ">", 'qt_ts.pro';
+print PRO_CONF <<"END";
+QT += quick
+CONFIG += c++14
+DEFINES += QT_DEPRECATED_WARNINGS
+QMAKE_CXXFLAGS += -g
+
+TARGET = ../$TARGET
+
+SOURCES += $cpp_srcs
+
+HEADERS += $headers
+
+LIBS += $LIBS
+
+OBJECTS += $d_objs
+
+RESOURCES += res/qml.qrc
+INCLUDEPATH += src
+
+
+QMAKE_EXTRA_TARGETS += d
+PRE_TARGETDEPS += d
+d.commands = make -f dlang.mk
+
+QMAKE_EXTRA_TARGETS += dclean
+CLEAN_DEPS += dclean
+dclean.commands = make -f dlang.mk clean
+
+qnx: target.path = /tmp/\$\${TARGET}/bin
+else: unix:!android: target.path = /opt/\$\${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+END
+close PRO_CONF;
+
+open DLANG_MK, ">", "$BUILD_DIR/dlang.mk";
+select DLANG_MK;
+
+
+$d_objs =~ s/$BUILD_DIR\/(.+\.d)/$1/g;
+print <<"END";
+SRC_DIR := ../src
+OBJS := $d_objs
+DC := ldc2
+#~/Git/ldc/build/bin/ldc2
+
+#ldc2 -wi -v  -cpp-args -fPIE -cpp-args -DQT_WIDGETS_LIB -cpp-args -DQT_GUI_LIB 
+#-cpp-args -DQT_CORE_LIB -cpp-args 
+#-I/pathto/Qt/5.5/gcc_64/mkspecs/linux-g++ 
+#-cpp-args -I/pathto/Qt/5.5/gcc_64/include 
+#-cpp-args -I/pathto/Qt/5.5/gcc_64/include/QtWidgets 
+#-cpp-args -I/pathto/Qt/5.5/gcc_64/include/QtGui 
+#-cpp-args -I/pathto/Qt/5.5/gcc_64/include/QtCore 
+#-L-rpath=/pathto/Qt/5.5/gcc_64 
+#-L-rpath=/pathto/Qt/5.5/gcc_64/lib 
+#-L-lQt5Widgets
+#-L-lQt5Gui -L-lQt5Core
+#-L-lGL -L-lstdc++ qt5demo.d 
+#-I=.. ../moc/package.d ../moc/moc_.d ../moc/types.d
+
+INCLUDES := \\
+-cpp-args -I/usr/include/qt \\
+-cpp-args -I/usr/include/qt/QtCore \\
+-cpp-args -I/usr/lib/qt/mkspecs/linux-g++
+#-cpp-args -I../src/qt
+#-cpp-args -I/usr/include/qt/QtQuick \\
+#-cpp-args -I/usr/include/qt/QtGui \\
+#-cpp-args -I/usr/include/qt/QtQml \\
+#-cpp-args -I/usr/include/qt/QtNetwork \\
+#-cpp-args -I. \\
+#-cpp-args -I/usr/include/libdrm \\
+
+MKDIR_P ?= mkdir -p
+
+
+END
+
+
+#print "default:";
+#my $dobj = $d_objs;
+#print "$d_objs\n";
+
+print <<'END';
+.PHONY: default
+default: $(OBJS)
+END
+for my $f (@d_files) {
+    print <<"END";
+$f.o: ../$f
+	\$(DC) -c \$< -I../src -of$f.o -relocation-model=pic -I/usr/include/qt \\
+    -cpp-args -std=c++14 \$(INCLUDES) -cpp-args -fPIE \\
+    -cpp-args -D_REENTRANT -wi -cpp-args -DQT_WIDGETS_LIB -cpp-args -DQT_GUI_LIB 
+END
+}
+print <<'END';
+.PHONY: clean
+clean:
+	@rm -vf $(OBJS)
+END
+close DLANG_MK;
+#ignore output because we get
+#'WARNING: Failure to find: build/src/misc.d.o' and others
+`qmake -o build/Makefile qt_ts.pro 2>&1`;

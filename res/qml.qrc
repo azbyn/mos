@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>MainKp.qml</file>
+        <file>Keypad.qml</file>
+        <file>TopRow.qml</file>
+        <file>fonts/DejaVuSansMono-Oblique.ttf</file>
+        <file>fonts/DejaVuSansMono-BoldOblique.ttf</file>
+        <file>fonts/DejaVuSansMono.ttf</file>
+        <file>fonts/DejaVuSansMono-Bold.ttf</file>
+        <file>EditPage.qml</file>
+        <file>NumKp.qml</file>
+    </qresource>
+</RCC>

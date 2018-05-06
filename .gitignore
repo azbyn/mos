@@ -1,0 +1,5 @@
+qt_ts
+*.o
+.qmake.stash
+qt_ts.pro*
+build*/
