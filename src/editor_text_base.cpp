@@ -9,7 +9,8 @@
 
 FontSizeData::FontSizeData(const QFont& font) {
     QFontMetricsF fm(font);
-    width = fm.maxWidth();
+    QString str = "65465415241002.35-sadsajnkl;nhjkns";
+    width = fm.width(str)/str.size(); //fm.maxWidth();
     height = fm.height();
     ascent = fm.ascent();
 }

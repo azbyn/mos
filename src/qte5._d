@@ -7132,7 +7132,7 @@ class QTextCodec  : QObject {
 // -------------------- Бахарев Олег ----------------------------
 
 __EOF__
-
+/*
 
 // Пример возврата объекта из С++ и подхвата его в объект D
 QString proverka(QString qs) {
@@ -7168,3 +7168,4 @@ auto f = cast (arr[]) [
 
 // встраивание музыки
 ubyte[] mp3data = cast(ubyte[]) import(`this_love.mp3`);
+*/

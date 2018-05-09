@@ -16,7 +16,7 @@ alias TT = Token.Type;
 
 extern(C++) void test(const ref Token t) {
     //int l;
-    import core.stdc.stdio, std.stdio, std.array;
+    import core.stdc.stdio;//, std.stdio, std.array;
     printf("WOOOO\n");
     //auto s = t.val;
     printf("val: %s\n", t.valUtf8());

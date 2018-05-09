@@ -21,7 +21,7 @@ const char* Token::valUtf8() const {
 QColor Token::color(TT nextType) const {
     switch (type) {
     case TT::eof:
-    case TT::newLine:
+    //case TT::newLine:
     case TT::terminator:
     case TT::comma:
         return colors::delimiters;
@@ -61,7 +61,7 @@ QString Token::toString() const {
     switch (type) {
     // clang-format off
     case Type::eof: return "EOF";
-    case Type::newLine: return "\n";
+    //case Type::newLine: return "\n";
     case Type::terminator: return ";";
     case Type::comma: return ", ";
     case Type::true_: return "true";

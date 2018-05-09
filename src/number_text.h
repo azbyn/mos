@@ -6,8 +6,8 @@
 class NumberText : public EditorTextBase {
     Q_OBJECT
 private:
-    int cursor = 1;
-    QString val = "12332";
+    int cursor = 0;
+    QString val = "";
 
 public:
     explicit NumberText(QQuickItem* parent = nullptr);
@@ -20,6 +20,7 @@ public slots:
     void cursorLeft() override;
     void cursorRight() override;
     void setCursor(int c);
+    bool ok();
 protected:
     QPoint origin() const override;
 
@@ -29,6 +30,9 @@ protected:
     void setCursorScreen(QPointF p) override;
 
     //void setCursorScreen(QPointF p) override;
+signals:
+    void invalidate();
+    void validate();
 };
 
 #endif // NUMBER_TEXT_H

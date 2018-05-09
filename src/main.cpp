@@ -1,6 +1,9 @@
 #include "editor_text.h"
 #include "keypad_type.h"
 #include "number_text.h"
+#include "colors.h"
+
+#include <cmath>
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -14,12 +17,18 @@ int mainCpp(int argc, char *argv[]) {
     qmlRegisterType<EditorText>("ts", 1, 0, "EditorText");
     qmlRegisterType<NumberText>("ts", 1, 0, "NumberText");
     qmlRegisterUncreatableMetaObject(
-        KeypadType::staticMetaObject, // static meta object
-        "ts",                         // import statement (can be any string)
-        1, 0,                         // major and minor version of the import
-        "KeypadType",                 // name in QML (does not have to match C++ name)
-        "Error: only enums"           // error in case someone tries to create a MyNamespace object
-        );
+        KeypadType::staticMetaObject,
+        "ts", 1, 0,
+        "KeypadType",
+        "Error: only enums");
+
+    qmlRegisterSingletonType<Colors_qml>(
+        "ts", 1, 0, "Colors",
+        [](QQmlEngine*, QJSEngine*) -> QObject* {
+            auto p = new Colors_qml();
+            return p;
+        });
+
 
     QQmlApplicationEngine engine;
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));

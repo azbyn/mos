@@ -3,7 +3,6 @@ import QtQuick.Controls 2.2
 import ts 1.0
 
 Keypad {
-    name: "main"
     //quickSize: 6
     quickData: [
         ["<-",   function(){ editorText.cursorLeft(); } ],
@@ -11,7 +10,7 @@ Keypad {
         ["undo", function(){} ],
         ["redo", function(){} ],
         ["find", function(){} ],
-        ["del",  function(){} ],
+        ["del",  function(){ editorText.del(); } ],
     ]
     quickPerc: 0.1
 
@@ -19,19 +18,34 @@ Keypad {
     sizeY: 3
     perc: 0.325
     btnData: [
-        ["123",         function(){ ep.setCurr(KeypadType.Number); } ],
-        ['"str"',       function(){ editorText.setStr("hello"); } ],
-        ["other\nobjs", function(){ color = "black"; } ],
-        ["+-=",         function(){ ep.setCurr(KeypadType.Number); } ],
+        ["123",         function(){ ep.setCurr(KeypadType.Number); }],
+        ['"str"',       function(){ }],
+        ["other\nobjs", function(){ color = Colors.getBase0B(); }],
+        ["+-=",         function(){ }],
 
-        ["\\n",     function(){} ],
         ["vars",    function(){} ],
         ["libs",    function(){} ],
         ["if\nfor", function(){} ],
+        ["\\n",     function(){
+            editorText.add_newLine();
+        }],
 
-        [";",   function(){}],
-        ["{}",  function(){}],
-        ["()",  function(){}],
-        [",",   function(){}],
+        [",", function(){
+            editorText.add_comma();
+        }],
+        ["()", function(){
+            editorText.add_lParen();
+            editorText.add_rParen();
+            editorText.cursorLeft();
+        }],
+        ["{}", function(){
+            editorText.add_lCurly();
+            editorText.add_rCurly();
+            editorText.cursorLeft();
+        }],
+        [";", function(){
+            editorText.add_terminator();
+            editorText.add_newLine();
+        }],
     ]
 }

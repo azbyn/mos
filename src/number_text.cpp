@@ -1,6 +1,8 @@
 #include "number_text.h"
+
 #include "colors.h"
 #include "config.h"
+#include "editor_text.h"
 
 #include <QPainter>
 
@@ -10,19 +12,26 @@ NumberText::NumberText(QQuickItem* parent)
 }
 
 void NumberText::addChar(const QString& s) {
-    if (val.size() >= length() - 1) return;
+    auto sz = val.size();
+    if (sz >= length() - 1) return;
+    if (sz == 0) validate();
+
     val.insert(cursor++, s);
     update();
 }
+
 void NumberText::del() {
     if (val.size() == 0 || cursor == 0) return;
     qDebug() << "sz:" << val.size();
     val.remove(--cursor, 1);
     update();
+    if (val.size() == 0) invalidate();
 }
 void NumberText::reset() {
     cursor = 0;
     val = "";
+    update();
+    invalidate();
 }
 
 constexpr float percX = 0.8f;
@@ -75,7 +84,7 @@ void NumberText::cursorLeft() {
     update();
 }
 void NumberText::cursorRight() {
-    if (cursor > length() - 1) return;
+    if (cursor > val.length() - 1) return;
     ++cursor;
     update();
 }
@@ -93,4 +102,10 @@ void NumberText::setCursorScreen(QPointF p) {
     setCursor((int)x);
 
     update();
+}
+bool NumberText::ok() {
+    if (val.size() == 0) return false;
+    EditorText::instance->add_number(val);
+    reset();
+    return true;
 }

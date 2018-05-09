@@ -5,7 +5,7 @@ Item {
     property var curr: mainKp
 
     Component.onCompleted: {
-        setCurr(KeypadType.Main);// = mainKp
+        setCurr(KeypadType.Main);
     }
 
     //onCurrChanged: function() {}
@@ -28,8 +28,6 @@ Item {
             console.log("INVALID CURR: ", x);
             return;
         }
-
-        console.log("curr=", curr.name)
         curr.visible = true
         editorText.height = height * (1.0 - topRow.perc - curr.getPerc())
     }
@@ -63,5 +61,7 @@ Item {
         height: parent.height * (1.0 - topRow.perc - numKp.getPerc())
         width: parent.width
         visible: false
+        onInvalidate: numKp.invalidate()
+        onValidate: numKp.validate()
     }
 }

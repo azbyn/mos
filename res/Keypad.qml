@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.2
 import QtQuick.Controls.Styles 1.4
+import ts 1.0
 
 Rectangle {
     width: parent.width
@@ -23,7 +24,9 @@ Rectangle {
     function getPerc() {
         return (perc+quickPerc)
     }
-    property string name: ""
+    function btnAt(i) {
+        return grid.children[i];
+    }
 
     Grid {
         id: grid
@@ -36,13 +39,16 @@ Rectangle {
         rows: root.sizeY
         spacing: root.spacing
         Repeater {
+            id: repeater
             model: grid.rows * grid.columns
-            Button {
+            ButtonTs {
                 height: (grid.height - (grid.rows-1)*grid.spacing) / grid.rows
                 width: (grid.width - (grid.columns-1)*grid.spacing) / grid.columns
                 text: btnData[index][0]
-                onPressed: btnData[index][1]()
+                /*onPressed*/onClicked: btnData[index][1]()
                 font.pointSize: 14
+                color: Colors.getBase05()
+                txtColor: Colors.getBase00()
             }
         }
     }

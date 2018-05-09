@@ -11,5 +11,6 @@
         <file>fonts/DejaVuSansMono-Bold.ttf</file>
         <file>EditPage.qml</file>
         <file>NumKp.qml</file>
+        <file>ButtonTs.qml</file>
     </qresource>
 </RCC>

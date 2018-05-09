@@ -8,7 +8,7 @@
 struct Token {
     enum class Type {
         eof,
-        newLine,
+        //newLine,
         terminator,
         comma,
         true_,
@@ -89,7 +89,7 @@ struct Token {
     int size() const;
 };
 //inline Token tok_eof(QString s = "") { return Token(Token::Type::eof, s); }
-inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
+//inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
 inline Token tok_terminator(QString s = "") { return Token(Token::Type::terminator, s); }
 inline Token tok_comma(QString s = "") { return Token(Token::Type::comma, s); }
 inline Token tok_true(QString s = "") { return Token(Token::Type::true_, s); }

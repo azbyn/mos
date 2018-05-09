@@ -1,8 +1,22 @@
 import QtQuick 2.0
+import QtQuick.Controls.Styles 1.0
 import ts 1.0
 
 Keypad {
-    name: "num"
+    function okBttn() {
+        return btnAt(11);
+    }
+    Component.onCompleted: {
+        okBttn().font.bold = true;
+        invalidate();
+    }
+    function validate() {
+        okBttn().txtColor = "green";
+    }
+    function invalidate() {
+        okBttn().txtColor = "red";
+    }
+
     quickData: [
         ["back", function(){ ep.setCurr(KeypadType.Main); } ],
         ["<-",   function(){ numText.cursorLeft(); } ],
@@ -29,7 +43,10 @@ Keypad {
 
         [".",  function(){ numText.addChar("."); }],
         ["0",  function(){ numText.addChar("0"); }],
-        ["OK", function(){ }],
+        ["OK", function(){
+            if (numText.ok())
+                ep.setCurr(KeypadType.Main);
+        }],
     ]
 }
 

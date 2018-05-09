@@ -35,8 +35,31 @@ const QColor strings         = base0B;
 const QColor keywords        = base0E;
 const QColor classes         = base0A;
 const QColor escapeSequences = base0A;
-
-Q_NAMESPACE
 // clang-format on
 } // namespace colors
+
+class Colors_qml : public QObject {
+    Q_OBJECT
+public:
+    Colors_qml() = default;
+public slots:
+    QColor getBase00() { return colors::base00; }
+    QColor getBase01() { return colors::base01; }
+    QColor getBase02() { return colors::base02; }
+    QColor getBase03() { return colors::base03; }
+    QColor getBase04() { return colors::base04; }
+    QColor getBase05() { return colors::base05; }
+    QColor getBase06() { return colors::base06; }
+    QColor getBase07() { return colors::base07; }
+    QColor getBase08() { return colors::base08; }
+    QColor getBase09() { return colors::base09; }
+    QColor getBase0A() { return colors::base0A; }
+    QColor getBase0B() { return colors::base0B; }
+    QColor getBase0C() { return colors::base0C; }
+    QColor getBase0D() { return colors::base0D; }
+    QColor getBase0E() { return colors::base0E; }
+    QColor getBase0F() { return colors::base0F; }
+};
+
+
 #endif
