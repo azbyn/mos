@@ -77,8 +77,24 @@ void EditorText::del() {
     update();
 }
 void EditorText::add_newLine() {
-    data.insert(data.begin() + cursor.y(), {});
+    if (cursor.x() == 0) {
+        data.insert(data.begin() + cursor.y(), std::vector<Token>());
+    }
+    else {
+        //auto& v = data[cursor.y()];
+        auto it = data.begin() + cursor.y();
+        if (cursor.x() == (int)it->size()) {
+            data.insert(it + 1, std::vector<Token>());
+        }
+        else {
+            data.insert(it + 1, std::vector<Token>(it->begin() + cursor.x(), it->end()));
+            auto& v = data[cursor.y()];
+            v = std::vector<Token>(v.begin(), v.begin() + cursor.x());
+        }
+        cursor.rx() = 0;
+    }
     ++cursor.ry();
+    update();
 }
 
 QPoint EditorText::origin() const {
