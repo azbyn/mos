@@ -7,7 +7,7 @@ Keypad {
     quickData: [
         ["<-",   function(){ editorText.cursorLeft(); } ],
         ['->',   function(){ editorText.cursorRight(); } ],
-        ["undo", function(){} ],
+        ["undo", function(){ } ],
         ["redo", function(){} ],
         ["find", function(){} ],
         ["del",  function(){ editorText.del(); } ],
@@ -19,11 +19,11 @@ Keypad {
     perc: 0.325
     btnData: [
         ["123",         function(){ ep.setCurr(KeypadType.Number); }],
-        ['"str"',       function(){ }],
+        ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
         ["other\nobjs", function(){ color = Colors.getBase0B(); }],
-        ["+-=",         function(){ }],
+        ["+-=",         function(){ Qt.inputMethod.show(); ep.bon(); }],
 
-        ["vars",    function(){} ],
+        ["vars",    function(){ ep.bon(); Qt.inputMethod.show(); } ],
         ["libs",    function(){} ],
         ["if\nfor", function(){} ],
         ["\\n",     function(){

@@ -6,7 +6,9 @@ namespace KeypadType {
 Q_NAMESPACE
 enum Type {
     Main,
+
     Number,
+    String,
     OtherObjs,
     Operators,
 

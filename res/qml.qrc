@@ -12,5 +12,7 @@
         <file>EditPage.qml</file>
         <file>NumKp.qml</file>
         <file>ButtonTs.qml</file>
+        <file>StrKp.qml</file>
+        <file>StrText.qml</file>
     </qresource>
 </RCC>

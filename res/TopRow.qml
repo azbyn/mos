@@ -24,7 +24,7 @@ Rectangle {
         anchors.horizontalCenter: root.horizontalCenter
         anchors.verticalCenter: root.verticalCenter
         width: root.width
-        height: root.height
+        height: root.height - grid.spacing
         Repeater {
             model: grid.columns
             Button {

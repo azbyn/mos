@@ -3,19 +3,30 @@ import QtQuick.Controls 2.2
 //import "qml"
 
 ApplicationWindow {
-    id: root
+    id: app
     visible: true
     width: 404
     height: 720
     title: qsTr("Throwaway Script")
+    property int orgHeight
 
+    onClosing: {
+        if (Qt.platform.os === "linux") return;
+        ep.close()
+        close.accepted = false;
+    }
+
+    Component.onCompleted: {
+        orgHeight = height
+        console.log(orgHeight);
+    }
 
 
     TopRow {
         id: topRow
-        width: root.width
-        height: root.height * perc
-        anchors.top: root.top
+        width: app.width
+        height: orgHeight * perc
+        anchors.top: app.top
     }
     EditPage {
         id: ep

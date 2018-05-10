@@ -58,6 +58,9 @@ my @d_files  = find_wanted(sub{ -f && /\.d/i}, $SRC_DIR);
 my $d_objs = "$BUILD_DIR/".join(".o \\\n    $BUILD_DIR/", @d_files).".o";
 
 
+my $d_objs_a = "build_android/".join(".o \\\n    build_android/", @d_files).".o";
+my $d_objs_d = "build/".join(".o \\\n    build/", @d_files).".o";
+
 open PRO_CONF, ">", 'qt_ts.pro';
 print PRO_CONF <<"END";
 QT += quick
@@ -77,8 +80,8 @@ android: LIBS += -L/home/azbyn/Android/dlang/ldc-build-runtime.tmp/lib \\
     -ldruntime-ldc
 else: unix: LIBS += -lphobos2-ldc -ldruntime-ldc -ldl
 #LIBS += \$LIBS
-
-OBJECTS += $d_objs
+android: OBJECTS += $d_objs_a
+else: OBJECTS += $d_objs_d
 
 RESOURCES += res/qml.qrc
 INCLUDEPATH += src

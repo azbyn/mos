@@ -81,7 +81,6 @@ void EditorText::add_newLine() {
         data.insert(data.begin() + cursor.y(), std::vector<Token>());
     }
     else {
-        //auto& v = data[cursor.y()];
         auto it = data.begin() + cursor.y();
         if (cursor.x() == (int)it->size()) {
             data.insert(it + 1, std::vector<Token>());
