@@ -5,7 +5,7 @@ Functions that manipulate other functions.
 
 This module provides functions for compile time function composition. These
 functions are helpful when constructing predicates for the algorithms in
-$(MREF std, algorithm) or $(MREF std, range).
+$(MREF stdd, algorithm) or $(MREF std, range).
 
 $(SCRIPT inhibitQuickIndex = 1;)
 $(BOOKTABLE ,
@@ -51,7 +51,7 @@ $(TR $(TH Function Name) $(TH Description)
 Copyright: Copyright Andrei Alexandrescu 2008 - 2009.
 License:   $(HTTP boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors:   $(HTTP erdani.org, Andrei Alexandrescu)
-Source:    $(PHOBOSSRC std/_functional.d)
+Source:    $(PHOBOSSRC stdd/_functional.d)
 */
 /*
          Copyright Andrei Alexandrescu 2008 - 2009.
@@ -59,10 +59,10 @@ Distributed under the Boost Software License, Version 1.0.
    (See accompanying file LICENSE_1_0.txt or copy at
          http://www.boost.org/LICENSE_1_0.txt)
 */
-module std.functional;
+module stdd.functional;
 
-import std.meta; // AliasSeq, Reverse
-import std.traits; // isCallable, Parameters
+import stdd.meta; // AliasSeq, Reverse
+import stdd.traits; // isCallable, Parameters
 
 
 private template needOpCallAlias(alias fun)
@@ -105,8 +105,8 @@ template unaryFun(alias fun, string parmName = "a")
     {
         static if (!fun._ctfeMatchUnary(parmName))
         {
-            import std.algorithm, std.conv, std.exception, std.math, std.range, std.string;
-            import std.meta, std.traits, std.typecons;
+            import stdd.algorithm, std.conv, std.exception, std.math, std.range, std.string;
+            import stdd.meta, std.traits, std.typecons;
         }
         auto unaryFun(ElementType)(auto ref ElementType __a)
         {
@@ -190,8 +190,8 @@ template binaryFun(alias fun, string parm1Name = "a",
     {
         static if (!fun._ctfeMatchBinary(parm1Name, parm2Name))
         {
-            import std.algorithm, std.conv, std.exception, std.math, std.range, std.string;
-            import std.meta, std.traits, std.typecons;
+            import stdd.algorithm, std.conv, std.exception, std.math, std.range, std.string;
+            import stdd.meta, std.traits, std.typecons;
         }
         auto binaryFun(ElementType1, ElementType2)
             (auto ref ElementType1 __a, auto ref ElementType2 __b)
@@ -259,7 +259,7 @@ template binaryFun(alias fun, string parm1Name = "a",
 private uint _ctfeSkipOp(ref string op)
 {
     if (!__ctfe) assert(false);
-    import std.ascii : isASCII, isAlphaNum;
+    import stdd.ascii : isASCII, isAlphaNum;
     immutable oldLength = op.length;
     while (op.length)
     {
@@ -276,7 +276,7 @@ private uint _ctfeSkipOp(ref string op)
 private uint _ctfeSkipInteger(ref string op)
 {
     if (!__ctfe) assert(false);
-    import std.ascii : isDigit;
+    import stdd.ascii : isDigit;
     immutable oldLength = op.length;
     while (op.length)
     {
@@ -420,18 +420,18 @@ private uint _ctfeMatchBinary(string fun, string name1, string name2)
 template safeOp(string S)
 if (S=="<"||S==">"||S=="<="||S==">="||S=="=="||S=="!=")
 {
-    import std.traits : isIntegral;
+    import stdd.traits : isIntegral;
     private bool unsafeOp(ElementType1, ElementType2)(ElementType1 a, ElementType2 b) pure
         if (isIntegral!ElementType1 && isIntegral!ElementType2)
     {
-        import std.traits : CommonType;
+        import stdd.traits : CommonType;
         alias T = CommonType!(ElementType1, ElementType2);
         return mixin("cast(T)a "~S~" cast(T) b");
     }
 
     bool safeOp(T0, T1)(auto ref T0 a, auto ref T1 b)
     {
-        import std.traits : mostNegative;
+        import stdd.traits : mostNegative;
         static if (isIntegral!T0 && isIntegral!T1 &&
                    (mostNegative!T0 < 0) != (mostNegative!T1 < 0))
         {
@@ -658,7 +658,7 @@ template partial(alias fun, alias arg)
 {
     static if (is(typeof(fun) == delegate) || is(typeof(fun) == function))
     {
-        import std.traits : ReturnType;
+        import stdd.traits : ReturnType;
         ReturnType!fun partial(Parameters!fun[1..$] args2)
         {
             return fun(arg, args2);
@@ -788,7 +788,7 @@ template partial(alias fun, alias arg)
 
 /**
 Takes multiple functions and adjoins them together. The result is a
-$(REF Tuple, std,typecons) with one element per passed-in function. Upon
+$(REF Tuple, stdd,typecons) with one element per passed-in function. Upon
 invocation, the returned tuple is the adjoined results of all
 functions.
 
@@ -807,7 +807,7 @@ if (F.length > 1)
 {
     auto adjoin(V...)(auto ref V a)
     {
-        import std.typecons : tuple;
+        import stdd.typecons : tuple;
         static if (F.length == 2)
         {
             return tuple(F[0](a), F[1](a));
@@ -818,8 +818,8 @@ if (F.length > 1)
         }
         else
         {
-            import std.format : format;
-            import std.range : iota;
+            import stdd.format : format;
+            import stdd.range : iota;
             return mixin (q{tuple(%(F[%s](a)%|, %))}.format(iota(0, F.length)));
         }
     }
@@ -908,13 +908,13 @@ is useful to memoize an impure function, too.
 */
 template memoize(alias fun)
 {
-    import std.traits : ReturnType;
+    import stdd.traits : ReturnType;
     // alias Args = Parameters!fun; // Bugzilla 13580
 
     ReturnType!fun memoize(Parameters!fun args)
     {
         alias Args = Parameters!fun;
-        import std.typecons : Tuple;
+        import stdd.typecons : Tuple;
 
         static ReturnType!fun[Tuple!Args] memo;
         auto t = Tuple!Args(args);
@@ -927,12 +927,12 @@ template memoize(alias fun)
 /// ditto
 template memoize(alias fun, uint maxSize)
 {
-    import std.traits : ReturnType;
+    import stdd.traits : ReturnType;
     // alias Args = Parameters!fun; // Bugzilla 13580
     ReturnType!fun memoize(Parameters!fun args)
     {
-        import std.traits : hasIndirections;
-        import std.typecons : tuple;
+        import stdd.traits : hasIndirections;
+        import stdd.typecons : tuple;
         static struct Value { Parameters!fun args; ReturnType!fun res; }
         static Value[] memo;
         static size_t[] initialized;
@@ -952,7 +952,7 @@ template memoize(alias fun, uint maxSize)
         }
 
         import core.bitop : bt, bts;
-        import std.conv : emplace;
+        import stdd.conv : emplace;
 
         size_t hash;
         foreach (ref arg; args)
@@ -1095,7 +1095,7 @@ template memoize(alias fun, uint maxSize)
 
 private struct DelegateFaker(F)
 {
-    import std.typecons : FuncInfo, MemberFunctionGenerator;
+    import stdd.typecons : FuncInfo, MemberFunctionGenerator;
 
     // for @safe
     static F castToF(THIS)(THIS x) @trusted
@@ -1117,7 +1117,7 @@ private struct DelegateFaker(F)
      *--------------------
      */
 
-    // We will use MemberFunctionGenerator in std.typecons.  This is a policy
+    // We will use MemberFunctionGenerator in stdd.typecons.  This is a policy
     // configuration for generating the doIt().
     template GeneratingPolicy()
     {
@@ -1321,7 +1321,7 @@ template forward(args...)
 {
     static if (args.length)
     {
-        import std.algorithm.mutation : move;
+        import stdd.algorithm.mutation : move;
 
         alias arg = args[0];
         // by ref || lazy || const/immutable

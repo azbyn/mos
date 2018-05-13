@@ -970,7 +970,7 @@ if (is(Unqual!Char == Char))
     */
     ubyte indexEnd;
 
-    version(StddDdoc)
+    version(StdDdoc)
     {
         /**
          The format specifier contained a `'-'` (`printf`

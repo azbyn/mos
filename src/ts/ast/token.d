@@ -1,7 +1,17 @@
 module ts.ast.token;
 
-import stdd.format;
-import qte5;
+//import stdd.format;
+//import qte5;
+import com.str;
+
+extern(C++) void th() {
+    try {
+        throw new Exception("ha");
+    }
+    catch(Exception e) {
+        
+    }
+}
 
 alias Pos = int;
 
@@ -13,7 +23,6 @@ private struct TypeData {
     string symbolicStr;
     string functionName;
 }
-private alias td = TypeData;
 
 //dfmt off
 private enum typeDatas = [
@@ -100,21 +109,23 @@ struct Token {
     mixin(_genType());
 
     Type type;
-    QString val;
+    Str val;
 
-    //this(Type type, QString str);
-    QString toString() const;
-    const(wchar)* valUtf16(ref int len) const;
-    const(char)* valUtf8() const;
-    int size() const;
 }
+/*
+static foreach (a; typeDatas)
+    mixin(format!`Token tok_%s(string s = ""){ return Token(Token.Type.%s, s); }`(
+              ((s)=>s[$-1]=='_'? s[0..$-1] : s)(a.typeName), a.typeName));
+*/
+
+/*
 string binaryFunctionName(TT type) {
     final switch (type) {
         static foreach (a; typeDatas)
             mixin(format!`case TT.%s: return "%s";`(a.typeName, a.functionName));
     }
 }
-
+*/
 string unaryFunctionName(TT type) {
     switch (type) {
         // dfmt off
@@ -128,6 +139,7 @@ string unaryFunctionName(TT type) {
         // dfmt on
     }
 }
+/*
 string symbolicStr(TT type) {
     final switch (type) {
         static foreach (a; typeDatas) {
@@ -135,7 +147,7 @@ string symbolicStr(TT type) {
         }
     }
 }
-
+*/
 /*
 string symbolicToTTName(string symbolic) {
     final switch (symbolic) {

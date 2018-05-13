@@ -2,22 +2,22 @@
 
 #include <cstring>
 
-Token::Token(Type type, const QString& val) : type(type), val(val) {}
-Token::Token(Type type, QString&& val) : type(type), val(std::move(val)) {}
-const QChar* Token::valUtf16(int& len) const {
+Token::Token(Type type, const Str& val) : type(type), val(val) {}
+Token::Token(Type type, Str&& val) : type(type), val(std::move(val)) {}
+/*const QChar* Token::valUtf16(int& len) const {
     len = val.size();
     return val.unicode();
 }
 int Token::size() const {
     return val.size();
 }
-
 const char* Token::valUtf8() const {
     auto v = val.toUtf8();
     char* cstr = (char*)malloc(val.size());
     strcpy(cstr, v.constData());
     return cstr;
 }
+*/
 QColor Token::color(TT nextType) const {
     switch (type) {
     case TT::eof:

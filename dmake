@@ -8,6 +8,7 @@ use File::Find::Wanted;
 
 my $SRC_DIR   = "src";
 my $TARGET    = "qt_ts";
+my $DLIB      = "dlib";
 #my $QMAKE     =
 
 my ($BUILD_DIR, $ARCH, $QMAKE, $QMAKE_ARGS);
@@ -77,9 +78,10 @@ HEADERS += $headers
 
 # -lphobos2-ldc
 android: LIBS += -L/home/azbyn/Android/dlang/ldc-build-runtime.tmp/lib \\
-    -ldruntime-ldc
-else: unix: LIBS += -lphobos2-ldc -ldruntime-ldc -ldl
-#LIBS += \$LIBS
+    -ldruntime-ldc -ldl -lphobos2-ldc -fuse-ld=bfd
+else: unix: LIBS += -ldruntime-ldc -ldl -lphobos2-ldc
+
+#-L\$\$PWD/build_android -l$DLIB
 android: OBJECTS += $d_objs_a
 else: OBJECTS += $d_objs_d
 
@@ -109,36 +111,50 @@ $d_objs =~ s/$BUILD_DIR\/(.+\.d)/$1/g;
 
 print <<"END";
 SRC_DIR := ../src
-OBJS := $d_objs
-DC := ldc2
+OBJS    := $d_objs
+DC      := ldc2
+NDK     := ~/Android/dlang/android-ndk-r16b
+CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
+TARGET  := lib$DLIB.so
+RTDIR   := /home/azbyn/Android/dlang/ldc-build-runtime.tmp
+
+
 #~/Git/Calypso/build/bin/ldc2
 #~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
 #~/Git/ldc/build/bin/ldc2
 
 MKDIR_P ?= mkdir -p
+END
+print <<'END';
+default: $(OBJS)
+
+#$(TARGET): $(OBJS)
+#	$(CC) -Wl,-soname,$(TARGET) -shared --sysroot=$(NDK)/platforms/android-21/arch-arm $(OBJS) $(RTDIR)/lib/libphobos2-ldc.a $(RTDIR)/lib/libdruntime-ldc.a -gcc-toolchain $(NDK)/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 -fuse-ld=bfd -target armv7-none-linux-androideabi -llog -landroid -lEGL -lGLESv2 -o $(TARGET)
 
 END
 
+#\$(CC) -Wl,-soname,\$(TARGET) -shared --sysroot=\$(NDK)/platforms/android-21/arch-arm \$(OBJS) \$(LIB_PATH)/libphobos2-ldc.a \$(LIB_PATH)/libdruntime-ldc.a -gcc-toolchain \$(NDK)/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 -fuse-ld=bfd -target armv7-none-linux-androideabi -o \$(TARGET)
+#libphobos2-ldc.a
+#Wl,-soname,libnative-activity.so
 
 #print "default:";
 #my $dobj = $d_objs;
 #print "$d_objs\n";
-
-print <<'END';
-.PHONY: default
-default: $(OBJS)
-END
 for my $f (@d_files) {
     print <<"END";
 $f.o: ../$f
-	\$(DC) $ARCH -I../$SRC_DIR -c \$<  -of$f.o
-#-wi
+	\$(DC) $ARCH -I../$SRC_DIR -c \$< -of$f.o
 END
+#-wi-cpp-args -std=c++14 \${INCLUDES} -c \$< -betterC -of$f.o
 }
-print <<'END';
+print <<"END";
 .PHONY: clean
 clean:
-	@rm -vf $(OBJS)
+	\@rm -vf \$(OBJS)
+	\@rm -vf build/lib$DLIB.so
+	\@rm -vf build/lib$DLIB.a
+	\@rm -vf build_android/lib$DLIB.so
+	\@rm -vf build_android/lib$DLIB.a
 END
 close DLANG_MK;
 #ignore output because we get

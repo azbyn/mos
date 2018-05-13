@@ -2,8 +2,7 @@
 #define TS_TOKEN_H
 
 #include "colors.h"
-
-#include <QString>
+#include "com/str.h"
 
 struct Token {
     enum class Type {
@@ -77,15 +76,13 @@ struct Token {
         orEq,
     };
     Type type;
-    QString val;
+    Str val;
 
     //Token(Type type, QString val = "");
-    Token(Type type, const QString& val = "");
-    Token(Type type, QString&& val = "");
+    Token(Type type, const Str& val = "");
+    Token(Type type, Str&& val = "");
     QString toString() const;
     QColor color(Type nextType) const;
-    const QChar* valUtf16(int& len) const;
-    const char* valUtf8() const;
     int size() const;
 };
 //inline Token tok_eof(QString s = "") { return Token(Token::Type::eof, s); }

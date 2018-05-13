@@ -5726,7 +5726,7 @@ private:
     {
         version (InlineAsm_X86_Any)
         {
-            asm nothrow @nogc
+            asm nothrow @nogc pure
             {
                 fclex;
                 fldcw newState;
@@ -5736,7 +5736,7 @@ private:
             if (haveSSE)
             {
                 uint mxcsr;
-                asm nothrow @nogc { stmxcsr mxcsr; }
+                asm nothrow @nogc pure { stmxcsr mxcsr; }
 
                 /* In the FPU control register, rounding mode is in bits 10 and
                 11. In MXCSR it's in bits 13 and 14. */
@@ -5748,7 +5748,7 @@ private:
                 mxcsr &= ~(allExceptions << 7);            // delete old masks
                 mxcsr |= (newState & allExceptions) << 7;  // write new exception masks
 
-                asm nothrow @nogc { ldmxcsr mxcsr; }
+                asm nothrow @nogc pure { ldmxcsr mxcsr; }
             }
         }
         else
