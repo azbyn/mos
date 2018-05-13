@@ -156,6 +156,8 @@ inline Token tok_rshEq(QString s = "") { return Token(Token::Type::rshEq, s); }
 inline Token tok_andEq(QString s = "") { return Token(Token::Type::andEq, s); }
 inline Token tok_xorEq(QString s = "") { return Token(Token::Type::xorEq, s); }
 inline Token tok_orEq(QString s = "") { return Token(Token::Type::orEq, s); }
+
+
 using TT = Token::Type;
 
 #endif //TS_TOKEN_H

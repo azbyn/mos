@@ -14,5 +14,7 @@
         <file>ButtonTs.qml</file>
         <file>StrKp.qml</file>
         <file>StrText.qml</file>
+        <file>LibKp.qml</file>
+        <file>OutPage.qml</file>
     </qresource>
 </RCC>

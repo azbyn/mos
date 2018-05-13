@@ -84,7 +84,7 @@ android: OBJECTS += $d_objs_a
 else: OBJECTS += $d_objs_d
 
 RESOURCES += res/qml.qrc
-INCLUDEPATH += src
+INCLUDEPATH += src include
 
 
 QMAKE_EXTRA_TARGETS += d

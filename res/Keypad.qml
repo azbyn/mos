@@ -47,8 +47,6 @@ Rectangle {
                 text: btnData[index][0]
                 /*onPressed*/onClicked: btnData[index][1]()
                 font.pointSize: 14
-                color: Colors.getBase05()
-                txtColor: Colors.getBase00()
             }
         }
     }
@@ -62,11 +60,11 @@ Rectangle {
         height: root.parent.height * quickPerc
         Repeater {
             model: quick.columns
-            Button {
+            ButtonTs {
                 height: (quick.height - 2*quick.spacing)
                 width: (quick.width - (quick.columns-1)*quick.spacing) / quick.columns
                 text: root.quickData[index][0]
-                onPressed: root.quickData[index][1]()
+                onClicked: root.quickData[index][1]()
                 font.pointSize: 14
             }
         }

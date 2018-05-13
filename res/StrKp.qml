@@ -5,17 +5,24 @@ import ts 1.0
 Rectangle {
     id: root
     color: "black"
+    property bool isStr: true
 
 
     property real perc: 0.1
     property var btnData: [
-        ["back", function(){ ep.setCurr(KeypadType.Main); }],
+        ["back", function() {
+            strText.reset();
+            ep.setCurr(KeypadType.Main);
+        }],
         ["<-",   function(){ strText.left(); }],
         ['->',   function(){ strText.right(); }],
         ["undo", function(){ strText.undo(); }],
         ["redo", function(){ strText.redo(); }],
         ["ok",   function(){
-            editorText.add_string(strText.getText());
+            if (isStr)
+                editorText.add_string(strText.getText());
+            else
+                editorText.add_identifier(strText.getText());
             strText.reset();
             ep.setCurr(KeypadType.Main);
         }],
@@ -43,8 +50,8 @@ Rectangle {
                 text: root.btnData[index][0]
                 onClicked/*Pressed*/: root.btnData[index][1]()
                 font.pointSize: 14
-                color: Colors.getBase05()
-                txtColor: Colors.getBase00()
+                color: Colors.base05
+                txtColor: Colors.base00
             }
         }
     }

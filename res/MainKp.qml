@@ -20,15 +20,13 @@ Keypad {
     btnData: [
         ["123",         function(){ ep.setCurr(KeypadType.Number); }],
         ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
-        ["other\nobjs", function(){ color = Colors.getBase0B(); }],
-        ["+-=",         function(){ Qt.inputMethod.show(); ep.bon(); }],
+        ["other\nobjs", function(){ }],
+        ["+-=",         function(){ }],
 
-        ["vars",    function(){ ep.bon(); Qt.inputMethod.show(); } ],
-        ["libs",    function(){} ],
-        ["if\nfor", function(){} ],
-        ["\\n",     function(){
-            editorText.add_newLine();
-        }],
+        ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
+        ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
+        ["if\nfor", function(){}],
+        ["\\n",     function(){ editorText.add_newLine(); }],
 
         [",", function(){
             editorText.add_comma();

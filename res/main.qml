@@ -1,6 +1,6 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
-//import "qml"
+import ts 1.0
 
 ApplicationWindow {
     id: app
@@ -8,28 +8,55 @@ ApplicationWindow {
     width: 404
     height: 720
     title: qsTr("Throwaway Script")
-    property int orgHeight
+    //property int orgHeight
+
+    property var type: PageType.Edit
 
     onClosing: {
-        if (Qt.platform.os === "linux") return;
-        ep.close()
+        var curr;
+        switch(type) {
+        case PageType.Edit: curr = ep; break;
+        case PageType.Out: curr = out; break;
+
+        }
+        if (Qt.platform.os !== "android" || curr.close())
+            return;
+
         close.accepted = false;
+    }
+    property var editor: Editor {
+        onSetOut: { out.text = str; }
+        onAppendOut: { out.text += str; }
+    }
+
+    function setType(x) {
+        type = x;
+        ep.visible = false;
+        out.visible = false;
+
+        switch(type) {
+        case PageType.Edit: ep.visible = true; break;
+        case PageType.Out:  out.visible = true; break;
+        }
+        topRow.setBtn(x);
     }
 
     Component.onCompleted: {
-        orgHeight = height
-        console.log(orgHeight);
+        setType(PageType.Edit);
+        //orgHeight = height
     }
-
 
     TopRow {
         id: topRow
         width: app.width
-        height: orgHeight * perc
+        height: app.height * perc
         anchors.top: app.top
     }
     EditPage {
         id: ep
+    }
+    OutPage {
+        id: out
     }
 
 /*

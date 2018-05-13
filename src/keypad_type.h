@@ -25,6 +25,4 @@ enum Type {
 };
 Q_ENUM_NS(Type)  // register the enum in meta object data
 }
-
-
 #endif

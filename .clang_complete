@@ -1,5 +1,6 @@
 -I/usr/lib/qt/mkspecs/linux-g++
 -Isrc
+-Iinclude
 -D_REENTRANT
 -DQT_DEPRECATED_WARNINGS
 -DQT_NO_DEBUG

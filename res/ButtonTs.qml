@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import ts 1.0
 
 Rectangle {
     id: button
@@ -18,14 +19,14 @@ Rectangle {
 
     width: buttonText.width + 20
     height: 30
-
+    color: Colors.base05
     Text {
         id: buttonText
         text: parent.description
         anchors.centerIn: parent
         //font.pixelSize: parent.height * .5
         //style: Text.Sunken
-        color: "black"
+        color: Colors.base00
         //styleColor: "black"
     }
 
@@ -35,5 +36,5 @@ Rectangle {
         onClicked: parent.clicked()
     }
 
-    Keys.onSpacePressed: clicked()
+    //Keys.onSpacePressed: clicked()
 }

@@ -3,6 +3,8 @@
 #include <QColor>
 #include <QObject>
 
+#include "misc.h"
+
 namespace colors {
 // clang-format off
 const QColor base00(0xff1D1F21);
@@ -37,28 +39,29 @@ const QColor classes         = base0A;
 const QColor escapeSequences = base0A;
 // clang-format on
 } // namespace colors
+//Q_PROPERTY(MessageBody* body READ body WRITE setBody NOTIFY bodyChanged)
 
 class Colors_qml : public QObject {
     Q_OBJECT
 public:
     Colors_qml() = default;
-public slots:
-    QColor getBase00() { return colors::base00; }
-    QColor getBase01() { return colors::base01; }
-    QColor getBase02() { return colors::base02; }
-    QColor getBase03() { return colors::base03; }
-    QColor getBase04() { return colors::base04; }
-    QColor getBase05() { return colors::base05; }
-    QColor getBase06() { return colors::base06; }
-    QColor getBase07() { return colors::base07; }
-    QColor getBase08() { return colors::base08; }
-    QColor getBase09() { return colors::base09; }
-    QColor getBase0A() { return colors::base0A; }
-    QColor getBase0B() { return colors::base0B; }
-    QColor getBase0C() { return colors::base0C; }
-    QColor getBase0D() { return colors::base0D; }
-    QColor getBase0E() { return colors::base0E; }
-    QColor getBase0F() { return colors::base0F; }
+//public:
+    Q_PROP_RO(QColor, base00, colors::base00);
+    Q_PROP_RO(QColor, base01, colors::base01);
+    Q_PROP_RO(QColor, base02, colors::base02);
+    Q_PROP_RO(QColor, base03, colors::base03);
+    Q_PROP_RO(QColor, base04, colors::base04);
+    Q_PROP_RO(QColor, base05, colors::base05);
+    Q_PROP_RO(QColor, base06, colors::base06);
+    Q_PROP_RO(QColor, base07, colors::base07);
+    Q_PROP_RO(QColor, base08, colors::base08);
+    Q_PROP_RO(QColor, base09, colors::base09);
+    Q_PROP_RO(QColor, base0A, colors::base0A);
+    Q_PROP_RO(QColor, base0B, colors::base0B);
+    Q_PROP_RO(QColor, base0C, colors::base0C);
+    Q_PROP_RO(QColor, base0D, colors::base0D);
+    Q_PROP_RO(QColor, base0E, colors::base0E);
+    Q_PROP_RO(QColor, base0F, colors::base0F);
 };
 
 

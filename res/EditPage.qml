@@ -1,21 +1,25 @@
 import QtQuick 2.0
+//import QtQuick.Window 2.2
 import ts 1.0
-import QtQuick.Window 2.2
-
 
 Item {
+    id: root
     property var curr: mainKp
     property var currType
+
+    width: parent.width
+    height: parent.height
 
     Component.onCompleted: {
         setCurr(KeypadType.Main);
     }
     function close() {
         switch (currType) {
-        case KeypadType.Main: break;
-        case KeypadType.Number: setCurr(KeypadType.Main); break;
-        case KeypadType.String: setCurr(KeypadType.Main); break;
+        case KeypadType.Main: return true;
+
         }
+        setCurr(KeypadType.Main);
+        return false;
     }
 
     //onCurrChanged: function() {}
@@ -26,6 +30,8 @@ Item {
         numText.visible = false;
         strText.visible = false;
         strKp.visible   = false;
+        libKp.visible   = false;
+        varKp.visible   = false;
 
         switch (x) {
         case KeypadType.Main:
@@ -45,6 +51,16 @@ Item {
             //Qt.inputMethod.show();
             //strText.visible = true;
             break;
+        case KeypadType.Vars:
+            //editorText.setActive(false);
+            strText.visible = true;
+            curr = varKp;
+            //Qt.inputMethod.show();
+            //strText.visible = true;
+            break;
+        case KeypadType.Libs:
+            curr = libKp;
+            break;
         default:
             console.log("INVALID CURR: ", x);
             return;
@@ -53,17 +69,13 @@ Item {
         editorText.height = height * (1.0 - topRow.perc - curr.getPerc());
     }
 
-    width: parent.width
-    height: parent.height
+
     MainKp {
         id: mainKp
-        visible: false
     }
     NumKp {
         id: numKp
-        visible: false
     }
-
 
     EditorText {
         id: editorText
@@ -79,9 +91,8 @@ Item {
         x: 0
         y: topRow.height
         //anchors.bottom: mainKp.top
-        height: parent.height * (1.0 - topRow.perc - numKp.getPerc())
-        width: parent.width
-        visible: false
+        height: root.height * (1.0 - topRow.perc - numKp.getPerc())
+        width: root.width
         onInvalidate: numKp.invalidate()
         onValidate: numKp.validate()
     }
@@ -90,15 +101,26 @@ Item {
         id: strText
         x: 5
         y: 5
-        height: orgHeight * (0.5 - strKp.perc) - 10
-        width: parent.width - 10
+        height: root.height * (0.5 - strKp.perc) - 10
+        width: root.width - 10
     }
     StrKp {
         id: strKp
-        visible: false
         width: strText.width
-        height: orgHeight * perc
+        height: root.height * perc
         x: strText.x
         y: strText.y + strText.height
+    }
+    StrKp {
+        id: varKp
+        width: strText.width
+        height: root.height * perc
+        x: strText.x
+        y: strText.y + strText.height
+        isStr: false
+    }
+
+    LibKp {
+        id: libKp
     }
 }
