@@ -78,8 +78,8 @@ HEADERS += $headers
 
 # -lphobos2-ldc
 android: LIBS += -L/home/azbyn/Android/dlang/ldc-build-runtime.tmp/lib \\
-    -ldruntime-ldc -ldl -lphobos2-ldc -fuse-ld=bfd
-else: unix: LIBS += -ldruntime-ldc -ldl -lphobos2-ldc
+    -ldruntime-ldc -fuse-ld=bfd
+else: unix: LIBS += -ldruntime-ldc -ldl
 
 #-L\$\$PWD/build_android -l$DLIB
 android: OBJECTS += $d_objs_a
@@ -112,7 +112,6 @@ $d_objs =~ s/$BUILD_DIR\/(.+\.d)/$1/g;
 print <<"END";
 SRC_DIR := ../src
 OBJS    := $d_objs
-DC      := ldc2
 NDK     := ~/Android/dlang/android-ndk-r16b
 CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
 TARGET  := lib$DLIB.so
@@ -120,7 +119,7 @@ RTDIR   := /home/azbyn/Android/dlang/ldc-build-runtime.tmp
 
 
 #~/Git/Calypso/build/bin/ldc2
-#~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
+DC := ~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
 #~/Git/ldc/build/bin/ldc2
 
 MKDIR_P ?= mkdir -p

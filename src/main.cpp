@@ -20,9 +20,7 @@
 
 //void d_init();
 //void d_end();
-void th();
 int mainCpp(int argc, char *argv[]) {
-    th();
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QGuiApplication app(argc, argv);

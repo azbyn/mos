@@ -1,0 +1,81 @@
+/++
+Convenience file that allows to import entire Phobos in one command.
++/
+module stdd.experimental.all;
+
+///
+@safe unittest
+{
+    import stdd.experimental.all;
+
+    int len;
+    const r = 6.iota
+              .filter!(a => a % 2) // 1 3 5
+              .map!(a => a * 2) // 2 6 10
+              .tee!(_ => len++)
+              .sum
+              .reverseArgs!format("Sum: %d");
+
+    assert(len == 3);
+    assert(r == "Sum: 18");
+}
+
+///
+@safe unittest
+{
+    import stdd.experimental.all;
+    assert(10.iota.map!(partial!(pow, 2)).sum == 1023);
+}
+
+public import stdd.algorithm;
+public import stdd.array;
+public import stdd.ascii;
+public import stdd.base64;
+public import stdd.bigint;
+public import stdd.bitmanip;
+public import stdd.compiler;
+public import stdd.complex;
+public import stdd.concurrency;
+public import stdd.container;
+public import stdd.conv;
+public import stdd.csv;
+public import stdd.datetime;
+public import stdd.demangle;
+public import stdd.digest;
+public import stdd.encoding;
+public import stdd.exception;
+public import stdd.file;
+public import stdd.format;
+public import stdd.functional;
+public import stdd.getopt;
+public import stdd.json;
+public import stdd.math;
+public import stdd.mathspecial;
+public import stdd.meta;
+public import stdd.mmfile;
+public import stdd.net.curl;
+public import stdd.numeric;
+public import stdd.outbuffer;
+public import stdd.parallelism;
+public import stdd.path;
+public import stdd.process;
+public import stdd.random;
+public import stdd.range;
+public import stdd.regex;
+public import stdd.signals;
+public import stdd.socket;
+public import stdd.stdint;
+public import stdd.stdio;
+public import stdd.string;
+public import stdd.system;
+public import stdd.traits;
+public import stdd.typecons;
+//public import stdd.typetuple; // this module is undocumented and about to be deprecated
+public import stdd.uni;
+public import stdd.uri;
+public import stdd.utf;
+public import stdd.uuid;
+public import stdd.variant;
+public import stdd.xml;
+public import stdd.zip;
+public import stdd.zlib;

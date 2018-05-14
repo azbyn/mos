@@ -1,22 +1,18 @@
 module ts.ast.token;
 
-//import stdd.format;
-//import qte5;
 import com.str;
-
-extern(C++) void th() {
-    try {
-        throw new Exception("ha");
-    }
-    catch(Exception e) {
-        
-    }
-}
 
 alias Pos = int;
 
 alias TT = Token.Type;
 
+void foo (){
+    import stdd.variant;
+    import stdd.format;
+
+    Variant v;
+    auto a = format!"here"();
+}
 
 private struct TypeData {
     string typeName;
@@ -98,7 +94,7 @@ private enum typeDatas = [
 ];
 //dfmt on
 
-extern(C++):
+extern(C++)
 struct Token {
     private static string _genType() {
         auto result = "enum Type {";
@@ -112,20 +108,19 @@ struct Token {
     Str val;
 
 }
-/*
-static foreach (a; typeDatas)
-    mixin(format!`Token tok_%s(string s = ""){ return Token(Token.Type.%s, s); }`(
-              ((s)=>s[$-1]=='_'? s[0..$-1] : s)(a.typeName), a.typeName));
-*/
 
 /*
+static foreach (a; typeDatas)
+    mixin(format!`Token tok_%s(string s = ""){ return Token(TT.%s, s); }`(
+              ((s)=>s[$-1]=='_'? s[0..$-1] : s)(a.typeName), a.typeName));
+*/
+/+
 string binaryFunctionName(TT type) {
     final switch (type) {
         static foreach (a; typeDatas)
             mixin(format!`case TT.%s: return "%s";`(a.typeName, a.functionName));
     }
 }
-*/
 string unaryFunctionName(TT type) {
     switch (type) {
         // dfmt off
@@ -139,16 +134,13 @@ string unaryFunctionName(TT type) {
         // dfmt on
     }
 }
-/*
 string symbolicStr(TT type) {
     final switch (type) {
         static foreach (a; typeDatas) {
-            mixin(format!`case Token.Type.%s: return "%s";`(a.typeName, a.symbolicStr));
+            mixin(format!`case TT.%s: return "%s";`(a.typeName, a.symbolicStr));
         }
     }
 }
-*/
-/*
 string symbolicToTTName(string symbolic) {
     final switch (symbolic) {
         static foreach (a; typeDatas) {
@@ -156,16 +148,16 @@ string symbolicToTTName(string symbolic) {
         }
     }
 }
-static Type symbolicToTT(string t) {
+static TT symbolicToTT(string t) {
         switch (t) {
             static foreach (a; typeDatas)
-                mixin(format!r"case `%s`: return Type.%s;"(a.symbolicStr, a.typeName));
+                mixin(format!r"case `%s`: return TT.%s;"(a.symbolicStr, a.typeName));
         default:
             assert(0, format!"invalid type '%s'"(t));
         }
     }
-* /
-
+    +/
+/*
 
 extern(C++, ts):
 struct Token {
