@@ -6,12 +6,13 @@ alias Pos = int;
 
 alias TT = Token.Type;
 
-void foo (){
+extern(C++) int foo () {
     import stdd.variant;
     import stdd.format;
 
     Variant v;
-    auto a = format!"here"();
+    auto a = format!"here %s"("ja");
+    return cast(int) a.length;
 }
 
 private struct TypeData {
