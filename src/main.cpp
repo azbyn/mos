@@ -6,7 +6,6 @@
 #include "colors.h"
 #include "editor.h"
 
-
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlEngine>
@@ -18,6 +17,7 @@
         #_name,                       \
         "Error: only enums")
 
+//extern "C" double log2(double x) { return std::log2(x); }
 //void d_init();
 //void d_end();
 int mainCpp(int argc, char *argv[]) {

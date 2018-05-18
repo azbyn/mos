@@ -4,7 +4,9 @@
 #include "config.h"
 #include "misc.h"
 
+#include <scope_guard.h>
 #include <QPainter>
+
 
 /*
 #include <QColor>
@@ -20,7 +22,8 @@ EditorText* EditorText::instance = nullptr;
 EditorText::EditorText(QQuickItem* parent)
     : EditorTextBase(parent, config::fontSize),
       data{
-          {tok_identifier("print"), tok_lParen(), tok_string("hi"), tok_rParen(), tok_terminator()},
+          {tok_identifier("print"), tok_lParen(), tok_string("hello world"), tok_rParen(), tok_terminator()},
+          {tok_identifier("foo"), tok_assign(), tok_number("42"), tok_terminator()},
           {tok_identifier("print"), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_terminator()},
       } {
     bold = font;
@@ -148,4 +151,56 @@ void EditorText::paint(QPainter* p) {
         }
         if (vLine == cursor.y() && tokNo == cursor.x()) drawCursor(p, vColumn, vLine);
     }
+}
+void EditorText::setCursorScreen(QPointF p) {
+    p -= origin();
+    SCOPE_EXIT({ update(); });
+    auto line = p.y() / fsd.height;
+    if (line >= data.size() -1) {
+        qDebug("setcurs data.size()");
+        cursor.ry() = data.size()==0 ? 0 : (data.size() - 1);
+        cursor.rx() = data[cursor.y()].size();
+        return;
+    } else if (line < 0) {
+        qDebug("setcurs 0,0");
+        cursor = QPoint(0,0);
+    }
+    auto& vec = data[line];
+    auto col = p.x() / fsd.width;
+    int prev = 0;
+    int curr = 0;
+    int i = 0;
+
+    cursor.ry() = line;
+    for (auto& t : vec) {
+        prev = curr;
+        curr += t.toString().size();
+        if (col > curr) {++i; continue;}
+        auto mid = (curr+prev) * 0.5f;
+        cursor.rx() = i + (col >= mid ? 1 : 0);
+        if (cursor.x() < 0) cursor.rx() = 0;
+        qDebug("setcurs %lf, %d %lf: (%d, %d)", line, i, col, prev, curr);
+        return;
+    }
+    cursor.rx() = vec.size();
+    qDebug("setcurs %lf, $ (%d)", line, cursor.x());
+
+    
+    /*
+      auto& v = data[cursor.y()];
+      if ((size_t)cursor.x() == v.size()) {
+      if ((size_t)cursor.y() == data.size() - 1) return;
+      ++cursor.ry();
+      cursor.rx() = 0;
+      }
+      else {
+      ++cursor.rx();
+      }
+
+     */
+    //setCursor(p.x() / fsd.width, p.y() / fsd.height);
+    //qDebug() << "cs:" << p.x() / fsd.width <<"," <<p.y() / fsd.height;// _cursor.x() << "," << _cursor.y();
+
+    //update();
+
 }

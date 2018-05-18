@@ -7,7 +7,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
     "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Map",
+    "CtrlFlow", "Dict",
     ];
 
 class AstNode {
@@ -26,11 +26,11 @@ class AstNode {
     }
 
     struct String {
-        string val;
+        tsstring val;
     }
 
-    alias Int = long;
-    alias Float = double;
+    alias Int = tsint;
+    alias Float = tsfloat;
     alias Bool = bool;
 
     struct Cmp {
@@ -39,13 +39,13 @@ class AstNode {
         AstNode b;
     }
     struct Binary {
-        string name;
+        tsstring name;
         AstNode a;
         AstNode b;
     }
 
     struct Variable {
-        string name;
+        tsstring name;
     }
 
     struct FuncCall {
@@ -54,15 +54,15 @@ class AstNode {
     }
 
     struct Lambda {
-        string[] captures;
-        string[] params;
+        tsstring[] captures;
+        tsstring[] params;
         AstNode body_;
-        this(string[] params, AstNode body_) {
+        this(tsstring[] params, AstNode body_) {
             this.params = params;
             this.captures = body_.freeVars(params);
             this.body_ = body_;
         }
-        this(string[] captures, string[] params, AstNode body_) {
+        this(tsstring[] captures, tsstring[] params, AstNode body_) {
             this.params = params;
             this.captures = captures;
             this.body_ = body_;
@@ -71,7 +71,7 @@ class AstNode {
     }
 
     struct MethodCall {
-        string name;
+        tsstring name;
         AstNode obj;
         AstNode[] args;
     }
@@ -88,7 +88,7 @@ class AstNode {
 
     struct Member {
         AstNode val;
-        string member;
+        tsstring member;
     }
 
     struct And {
@@ -111,8 +111,8 @@ class AstNode {
         AstNode body_;
     }
     struct For {
-        string index;
-        string val;
+        tsstring index;
+        tsstring val;
         AstNode collection;
         AstNode body_;
     }
@@ -131,7 +131,7 @@ class AstNode {
     struct List {
         AstNode[] val;
     }
-    struct Map {
+    struct Dict {
         AstNode[] val;
     }
 
@@ -150,17 +150,13 @@ class AstNode {
         this.pos = pos;
     }
 
-    override string toString() {
-        return toString(0);
-    }
-
-    private void freeVarsTail(ref string[] res, string[] bound) {
+    private void freeVarsTail(ref tsstring[] res, tsstring[] bound) {
         void fv(AstNode[] nodes...) {
             foreach (n; nodes) {
                 n.freeVarsTail(res, bound);
             }
         }
-        void add(string v) {
+        void add(tsstring v) {
             import ts.misc;
             if (res.contains(v) || bound.contains(v)) return;
             res ~= v;
@@ -189,31 +185,36 @@ class AstNode {
             (For v) { add(v.index); add(v.val); fv(v.collection, v.body_); },
             (Body v) { fv(v.val); },
             (List v) {fv(v.val);},
-            (Map v) { fv(v.val); },
+            (Dict v) { fv(v.val); },
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
         )();
 
     }
 
-    string[] freeVars(string[] bound = []) {
-        string[] res;
+    tsstring[] freeVars(tsstring[] bound = []) {
+        tsstring[] res;
         freeVarsTail(res, bound);
         return res;
     }
 
+    override string toString() {
+        import stdd.conv : to;
+        return toString(0).to!string;
+    }
+    //string toStr() {return toString(); }
     string toString(int level) {
         import stdd.conv : to;
         import stdd.algorithm.iteration;
 
-        auto indent = "";
+        string indent = "";
         for (int i = 0; i < level - 1; ++i) {
             indent ~= "  "; //"    ";
         }
         if (level > 0)
             indent ~= "| ";
         string strSeparated(AstNode[] args, string sep, int level = 0) {
-            auto r = "";
+            string r = "";
             foreach (a; args) {
                 r ~= a.toString(level) ~ sep;
             }
@@ -222,7 +223,7 @@ class AstNode {
 
         ++level;
         string str(AstNode[] args...) {
-            auto r = "";
+            string r = "";
             foreach (a; args) {
                 r ~= "\n" ~ (a is null ? "null" : a.toString(level));
             }
@@ -253,7 +254,7 @@ class AstNode {
             (For v) => format!"for %s, %s:%s"(v.index, v.val, str(v.collection, v.body_)),
             (Body v) => "body:" ~ str(v.val),
             (List v) => "list:" ~ str(v.val),
-            (Map v) => "map:" ~ str(v.val),
+            (Dict v) => "map:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,
         )();

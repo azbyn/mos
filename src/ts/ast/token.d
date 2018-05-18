@@ -1,24 +1,14 @@
 module ts.ast.token;
 
-import com.str;
+public import ts.types;
 
-alias Pos = int;
+import stdd.format;
 
-alias TT = Token.Type;
-
-extern(C++) int foo () {
-    import stdd.variant;
-    import stdd.format;
-
-    Variant v;
-    auto a = format!"here %s"("ja");
-    return cast(int) a.length;
-}
 
 private struct TypeData {
     string typeName;
     string symbolicStr;
-    string functionName;
+    tsstring functionName;
 }
 
 //dfmt off
@@ -95,34 +85,51 @@ private enum typeDatas = [
 ];
 //dfmt on
 
-extern(C++)
-struct Token {
-    private static string _genType() {
-        auto result = "enum Type {";
-        static foreach (a; typeDatas)
-            result ~= a.typeName ~ ", ";
-        return result ~ "}";
-    }
+private static string _genType() {
+    auto result = "enum TT {";
+    static foreach (a; typeDatas)
+        result ~= a.typeName ~ ", ";
+    return result ~ "}";
+}
+
+extern (C++) {
     mixin(_genType());
+    struct DToken {
+        TT type;
+        size_t len;
+        ushort* str;
 
-    Type type;
-    Str val;
-
-}
-
-/*
-static foreach (a; typeDatas)
-    mixin(format!`Token tok_%s(string s = ""){ return Token(TT.%s, s); }`(
-              ((s)=>s[$-1]=='_'? s[0..$-1] : s)(a.typeName), a.typeName));
-*/
-/+
-string binaryFunctionName(TT type) {
-    final switch (type) {
-        static foreach (a; typeDatas)
-            mixin(format!`case TT.%s: return "%s";`(a.typeName, a.functionName));
+        @disable this(this);
+        void del();
+        ~this() {
+            del();
+        }
+        void toString(ushort** outStr, size_t* outLen) const;
     }
 }
-string unaryFunctionName(TT type) {
+
+alias Token = DToken;
+tsstring tsstr(const ref Token t) {
+    return (cast(tschar*) t.str)[0 .. t.len].idup();
+}
+
+tsstring tsstr(const Token* t) {
+    return (cast(tschar*) t.str)[0 .. t.len].idup();
+}
+tsstring toStr(const Token* t) {
+    import core.stdc.stdlib : free;
+    ushort* ptr;
+    size_t len;
+    t.toString(&ptr, &len);
+    auto res = (cast(tschar*) t.str)[0 .. t.len].idup();
+    free(ptr);
+    return res;
+}
+tsstring toStr(const ref Token t) {
+    return toStr(&t);
+}
+
+tsstring unaryFunctionName(TT type) {
     switch (type) {
         // dfmt off
     case TT.plus: return "opPlus";
@@ -135,6 +142,13 @@ string unaryFunctionName(TT type) {
         // dfmt on
     }
 }
+tsstring binaryFunctionName(TT type) {
+    final switch (type) {
+        static foreach (a; typeDatas)
+            mixin(format!`case TT.%s: return "%s";`(a.typeName, a.functionName));
+    }
+}
+
 string symbolicStr(TT type) {
     final switch (type) {
         static foreach (a; typeDatas) {
@@ -142,6 +156,7 @@ string symbolicStr(TT type) {
         }
     }
 }
+
 string symbolicToTTName(string symbolic) {
     final switch (symbolic) {
         static foreach (a; typeDatas) {
@@ -149,97 +164,12 @@ string symbolicToTTName(string symbolic) {
         }
     }
 }
-static TT symbolicToTT(string t) {
-        switch (t) {
-            static foreach (a; typeDatas)
-                mixin(format!r"case `%s`: return TT.%s;"(a.symbolicStr, a.typeName));
-        default:
-            assert(0, format!"invalid type '%s'"(t));
-        }
-    }
-    +/
-/*
 
-extern(C++, ts):
-struct Token {
-    private static string _genType() {
-        auto result = "enum Type {";
+TT symbolicToTT(string t) {
+    switch (t) {
         static foreach (a; typeDatas)
-            result ~= a.typeName ~ ", ";
-        return result ~ "}";
+            mixin(format!r"case `%s`: return TT.%s;"(a.symbolicStr, a.typeName));
+    default:
+        assert(0, format!"invalid type '%s'"(t));
     }
-    mixin(_genType());
-
-
-    Type type;
-    const(char)* val;
-    this(Type type, const(char)* val = "") {
-        this.type = type;
-        this.val = val;
-    }
-    /*
-    private this(string t, const(char*) val = "") {
-        this.type = symbolicToType(t);
-        this.val = val;
-
-    }* /
-    const(char)* toString() {
-        switch (type) {
-            static foreach (a; typeDatas) {
-                mixin(format!`case Type.%s:`(a.typeName));
-                return a.editorRepr(val);
-            }
-            default:
-            assert(0);
-        }
-
-    }
-    //imm string val;
-    /*
-
-    this(Type type, immutable(char)[] val="") {
-        this.type = type;
-        this.val = val;
-    }
-    private this(string t, string val="") {
-        this.type = symbolicToType(t);
-        this.val = val;
-    }
-    immutable(char)[] c_str() {
-        return val;
-    }
-    string toString() {
-        switch (type) {
-            static foreach (a; typeDatas) {
-                mixin(format!`case Type.%s:`(a.typeName));
-                return a.editorRepr(val);
-            }
-            default:
-            assert(0);
-        }
-    }
-
-
-    static Type symbolicToType(string t) {
-        switch (t) {
-            static foreach (a; typeDatas)
-                mixin(format!r"case `%s`: return Type.%s;"(a.symbolicStr, a.typeName));
-        default:
-            assert(0, format!"invalid type '%s'"(t));
-        }
-    }
-* /
 }
-/*
-static foreach (a; typeDatas)
-    mixin(format!`Token tok_%s(string s = ""){ return Token(Token.Type.%s, s); }`(
-              ((s)=>s[$-1]=='_'? s[0..$-1] : s)(a.typeName), a.typeName));
-
-
-unittest {
-    assert(tok_string("hello").toString() == `"hello"`);
-    assert(tok_rsh().type.binaryFunctionName == "opRsh");
-    enum t = tok_plus();
-    assert(t.type.unaryFunctionName == "opPlus");
-    assert(t.type.binaryFunctionName == "opAdd");
-    }*/

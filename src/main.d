@@ -1,4 +1,4 @@
-//import std.stdio;
+//import stdd.stdio;
 
 //extern(C++) void main(){}
 extern(C++) int mainCpp(int argc, char** argv);

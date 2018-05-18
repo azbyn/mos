@@ -25,8 +25,14 @@ ApplicationWindow {
         close.accepted = false;
     }
     property var editor: Editor {
-        onSetOut: { out.text = str; }
-        onAppendOut: { out.text += str; }
+        onSetOut: {
+            console.log("SetOut: '", value, "'");
+            out.text = value;
+        }
+        onAppendOut: {
+            console.log("AppendOut: '", value, "'");
+            out.text += value;
+        }
     }
 
     function setType(x) {
@@ -43,6 +49,9 @@ ApplicationWindow {
 
     Component.onCompleted: {
         setType(PageType.Edit);
+        editor.run();
+        Qt.inputMethod.hide();
+
         //orgHeight = height
     }
 
@@ -58,30 +67,4 @@ ApplicationWindow {
     OutPage {
         id: out
     }
-
-/*
-    SwipeView {
-        id: swipeView
-        anchors.fill: parent
-        currentIndex: tabBar.currentIndex
-
-        Page1Form {
-        }
-
-        Page2Form {
-        }
-    }
-
-    footer: TabBar {
-        id: tabBar
-        currentIndex: swipeView.currentIndex
-
-        TabButton {
-            text: qsTr("Page 1")
-        }
-        TabButton {
-            text: qsTr("Page 2")
-        }
-    }
-   */
 }

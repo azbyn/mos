@@ -67,7 +67,7 @@ print PRO_CONF <<"END";
 QT += quick
 CONFIG += c++14
 DEFINES += QT_DEPRECATED_WARNINGS
-QMAKE_CXXFLAGS += -Wfatal-errors
+QMAKE_CXXFLAGS += -Wfatal-errors -g
 
 android: TARGET = $TARGET
 else: TARGET = ../$TARGET
@@ -78,6 +78,7 @@ HEADERS += $headers
 
 # -lphobos2-ldc
 android: LIBS += -L/home/azbyn/Android/dlang/ldc-build-runtime.tmp/lib \\
+#android: LIBS += -L/home/azbyn/Git/com.termux/lib \\
     -ldruntime-ldc -fuse-ld=bfd
 else: unix: LIBS += -ldruntime-ldc -ldl
 
@@ -117,9 +118,8 @@ CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
 TARGET  := lib$DLIB.so
 RTDIR   := /home/azbyn/Android/dlang/ldc-build-runtime.tmp
 
-
-#~/Git/Calypso/build/bin/ldc2
 DC := ~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
+#~/Git/Calypso/build/bin/ldc2
 #~/Git/ldc/build/bin/ldc2
 
 MKDIR_P ?= mkdir -p
@@ -142,7 +142,7 @@ END
 for my $f (@d_files) {
     print <<"END";
 $f.o: ../$f
-	\$(DC) $ARCH -I../$SRC_DIR -c \$< -of$f.o
+	\$(DC) $ARCH -gc -I../$SRC_DIR -c \$< -of$f.o
 END
 #-wi-cpp-args -std=c++14 \${INCLUDES} -c \$< -betterC -of$f.o
 }

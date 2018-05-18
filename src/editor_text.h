@@ -10,10 +10,10 @@ class EditorText : public EditorTextBase {
     Q_OBJECT
 private:
     QFont bold;
-    std::vector<std::vector<Token>> data;
     QPoint cursor = {0, 0};
 
 public:
+    std::vector<std::vector<Token>> data;
     static EditorText* instance;
     explicit EditorText(QQuickItem* parent = nullptr);
     ~EditorText() override = default;
@@ -96,7 +96,7 @@ public slots:
 protected:
     QPoint origin() const override;
     void paint(QPainter* painter) override;
-    void setCursorScreen(QPointF /*p*/) override {}
+    void setCursorScreen(QPointF p) override;
 };
 
 #endif // EDITOR_TEXT_H

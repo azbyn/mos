@@ -11688,10 +11688,10 @@ struct NullSink
 }
 
 /// ditto
+__gshared private NullSink _sink;
 auto ref nullSink()
 {
-    static NullSink sink;
-    return sink;
+    return _sink;
 }
 
 ///

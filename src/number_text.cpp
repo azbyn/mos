@@ -7,10 +7,8 @@
 #include <QPainter>
 
 
-int foo();
 NumberText::NumberText(QQuickItem* parent)
     : EditorTextBase(parent, config::fontSizeNumber) {
-    qDebug() << "d:" << foo();
 }
 
 void NumberText::addChar(const QString& s) {

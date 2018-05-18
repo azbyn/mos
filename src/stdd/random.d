@@ -1299,28 +1299,22 @@ random number sequences every run.
 Returns:
 A single unsigned integer seed value, different on each successive call
 */
+private __gshared bool _useed_seeded;
+private __gshared MinstdRand0 _useed_rand;
 @property uint unpredictableSeed() @trusted nothrow @nogc
 {
     import core.thread : Thread, getpid, MonoTime;
-    static bool seeded;
-    static MinstdRand0 rand;
-    if (!seeded)
+    if (!_useed_seeded)
     {
         uint threadID = cast(uint) cast(void*) Thread.getThis();
-        rand.seed((getpid() + threadID) ^ cast(uint) MonoTime.currTime.ticks);
-        seeded = true;
+        _useed_rand.seed((getpid() + threadID) ^ cast(uint) MonoTime.currTime.ticks);
+        _useed_seeded = true;
     }
-    rand.popFront();
-    return cast(uint) (MonoTime.currTime.ticks ^ rand.front);
+    _useed_rand.popFront();
+    return cast(uint) (MonoTime.currTime.ticks ^ _useed_rand.front);
 }
 
 ///
-@safe unittest
-{
-    auto rnd = Random(unpredictableSeed);
-    auto n = rnd.front;
-    static assert(is(typeof(n) == uint));
-}
 
 /**
 The "default", "favorite", "suggested" random number generator type on
@@ -1348,22 +1342,22 @@ and initialized to an unpredictable value for each thread.
 Returns:
 A singleton instance of the default random number generator
  */
-@property ref Random rndGen() @safe
+private __gshared bool _rndgen_initialized;
+private __gshared Random _rndgen_result;
+@property ref Random rndGen() //@safe
 {
     import stdd.algorithm.iteration : map;
     import stdd.range : repeat;
 
-    static Random result;
-    static bool initialized;
-    if (!initialized)
+    if (!_rndgen_initialized)
     {
         static if (isSeedable!(Random, ReturnType!unpredictableSeed))
-            result.seed(unpredictableSeed); // Avoid unnecessary copy.
+            _rndgen_result.seed(unpredictableSeed); // Avoid unnecessary copy.
         else
-            result = Random(unpredictableSeed);
-        initialized = true;
+            _rndgen_result = Random(unpredictableSeed);
+        _rndgen_initialized = true;
     }
-    return result;
+    return _rndgen_result;
 }
 
 /**

@@ -14,15 +14,17 @@ public:
     static Editor* instance;
     Editor();
     void addToken(TT type, const QString& msg = {});
-
+    void puts(const QString& value);
 public slots:
     void run();
 
 public:
 signals:
-    void setOut(const QString& str);
-    void appendOut(const QString& str);
+    void setOut(const QString& value);
+    void appendOut(const QString& value);
 
 };
+
+void tsputs(const ushort* sh, size_t len);
 
 #endif

@@ -1,9 +1,8 @@
 #include "token.h"
 
 #include <cstring>
+#include <exception>
 
-Token::Token(Type type, const Str& val) : type(type), val(val) {}
-Token::Token(Type type, Str&& val) : type(type), val(std::move(val)) {}
 /*const QChar* Token::valUtf16(int& len) const {
     len = val.size();
     return val.unicode();
@@ -61,7 +60,7 @@ QString Token::toString() const {
     switch (type) {
     // clang-format off
     case Type::eof: return "EOF";
-    //case Type::newLine: return "\n";
+    case Type::newLine: return "\n";
     case Type::terminator: return ";";
     case Type::comma: return ", ";
     case Type::true_: return "true";
@@ -130,5 +129,103 @@ QString Token::toString() const {
     case Type::orEq: return " |= ";
         // clang-format on
     }
-    throw "INVALID";
+    throw std::logic_error("INVALID");
+}
+
+static void qStringToTsString(const QString& in, ushort** out, size_t* outLen) {
+    *outLen = in.size();
+    *out = (ushort*)malloc(*outLen * sizeof(ushort));
+    memcpy(*out, in.unicode(), *outLen * sizeof(ushort));
+
+}
+
+DToken::DToken(const Token& t) :type(t.type) {
+    qStringToTsString(t.val, &str, &len);
+}
+void DToken::del() {
+    delete[] str;
+    str = nullptr;
+}
+void DToken::toString(ushort** outStr, size_t* outLen) const {
+    auto t = Token(type, QString::fromUtf16(str, len));
+    qStringToTsString(t.toString(), outStr, outLen);
+    /*
+    auto returnStr = [outStr=outStr, outLen=outLen](auto s) {
+        qStringToTsString(s, outStr, outLen);
+    };
+    switch (type) {
+    // clang-format off
+    case TT::eof:        returnStr("EOF"); break;
+    case TT::newLine:    returnStr("\n"); break;
+    case TT::terminator: returnStr(";"); break;
+    case TT::comma:      returnStr(", "); break;
+    case TT::true_:      returnStr("true"); break;
+    case TT::false_:     returnStr("false"); break;
+    case TT::nil:        returnStr("nil"); break;
+    case TT::fun:        returnStr("fun "); break;
+    case TT::if_:        returnStr("if "); break;
+    case TT::else_:      returnStr("else "); break;
+    case TT::break_:     returnStr("break "); break;
+    case TT::continue_:  returnStr("continue "); break;
+    case TT::while_:     returnStr("while "); break;
+    case TT::for_:       returnStr("for "); break;
+    case TT::in_:        returnStr(" in "); break;
+    case TT::return_:    returnStr("return "); break;
+    case TT::identifier: *outStr = str; *outLen = len; break;
+    case TT::number:     *outStr = str; *outLen = len; break;
+    case TT::string:     returnStr(QString("\"%1\"").arg(QString::fromUtf16(str, len))); break;
+    case TT::lambda:     returnStr("λ"); break;
+    case TT::arrow:      returnStr("->"); break;
+    case TT::lParen:     returnStr("("); break;
+    case TT::rParen:     returnStr(")"); break;
+    case TT::lSquare:    returnStr("["); break;
+    case TT::rSquare:    returnStr("]"); break;
+    case TT::lCurly:     returnStr("{"); break;
+    case TT::rCurly:     returnStr("}"); break;
+    case TT::dot:        returnStr("."); break;
+    case TT::inc:        returnStr("++"); break;
+    case TT::dec:        returnStr("--"); break;
+    case TT::plus:       returnStr(" + "); break;
+    case TT::minus:      returnStr(" - "); break;
+    case TT::mply:       returnStr(" * "); break;
+    case TT::div:        returnStr(" / "); break;
+    case TT::intDiv:     returnStr(" // "); break;
+    case TT::mod:        returnStr(" % "); break;
+    case TT::pow:        returnStr(" ** "); break;
+    case TT::eq:         returnStr(" == "); break;
+    case TT::ne:         returnStr(" != "); break;
+    case TT::lt:         returnStr(" < "); break;
+    case TT::gt:         returnStr(" > "); break;
+    case TT::le:         returnStr(" <= "); break;
+    case TT::ge:         returnStr(" >= "); break;
+    case TT::and_:       returnStr(" && "); break;
+    case TT::or_:        returnStr(" || "); break;
+    case TT::not_:       returnStr("!"); break;
+    case TT::xor_:       returnStr(" ^ "); break;
+    case TT::bAnd:       returnStr(" & "); break;
+    case TT::bOr:        returnStr(" | "); break;
+    case TT::lsh:        returnStr(" << "); break;
+    case TT::rsh:        returnStr(" >> "); break;
+    case TT::tilde:      returnStr(" ~ "); break;
+    case TT::assign:     returnStr(" = "); break;
+    case TT::question:   returnStr("?"); break;
+    case TT::colon:      returnStr(":"); break;
+    case TT::catEq:      returnStr(" ~= "); break;
+    case TT::plusEq:     returnStr(" += "); break;
+    case TT::minusEq:    returnStr(" -= "); break;
+    case TT::mplyEq:     returnStr(" *= "); break;
+    case TT::divEq:      returnStr(" /= "); break;
+    case TT::intDivEq:   returnStr(" //= "); break;
+    case TT::modEq:      returnStr(" %= "); break;
+    case TT::powEq:      returnStr(" **= "); break;
+    case TT::lshEq:      returnStr(" <<= "); break;
+    case TT::rshEq:      returnStr(" >>= "); break;
+    case TT::andEq:      returnStr(" &= "); break;
+    case TT::xorEq:      returnStr(" ^= "); break;
+    case TT::orEq:       returnStr(" |= "); break;
+    default:
+        throw std::logic_error("INVALID");
+        break;
+        // clang-format on
+        }*/
 }

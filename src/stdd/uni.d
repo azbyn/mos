@@ -5407,28 +5407,21 @@ template SetSearcher(alias table, string kind)
 // Characters that need escaping in string posed as regular expressions
 package alias Escapables = AliasSeq!('[', ']', '\\', '^', '$', '.', '|', '?', ',', '-',
     ';', ':', '#', '&', '%', '/', '<', '>', '`',  '*', '+', '(', ')', '{', '}',  '~');
-
+/*
 package @trusted auto memoizeExpr(string expr)()
 {
     if (__ctfe)
         return mixin(expr);
     alias T = typeof(mixin(expr));
-    static T slot;
-    static bool initialized;
+    shared static T slot;
+    shared static bool initialized;
     if (!initialized)
     {
         slot =  mixin(expr);
         initialized = true;
     }
     return slot;
-}
-
-//property for \w character class
-package @property @safe CodepointSet wordCharacter()
-{
-    return memoizeExpr!("unicode.Alphabetic | unicode.Mn | unicode.Mc
-        | unicode.Me | unicode.Nd | unicode.Pc")();
-}
+}*/
 
 //basic stack, just in case it gets used anywhere else then Parser
 package struct Stack(T)

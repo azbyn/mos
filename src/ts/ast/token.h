@@ -2,91 +2,106 @@
 #define TS_TOKEN_H
 
 #include "colors.h"
-#include "com/str.h"
+enum class TT {
+    eof,
+    newLine,
+    terminator,
+    comma,
+    true_,
+    false_,
+    nil,
+    fun,
+    if_,
+    else_,
+    break_,
+    continue_,
+    while_,
+    for_,
+    in_,
+    return_,
+    identifier,
+    number,
+    string,
+    lambda,
+    arrow,
+    lParen,
+    rParen,
+    lSquare,
+    rSquare,
+    lCurly,
+    rCurly,
+    dot,
+    inc,
+    dec,
+    plus,
+    minus,
+    mply,
+    div,
+    intDiv,
+    mod,
+    pow,
+    eq,
+    ne,
+    lt,
+    gt,
+    le,
+    ge,
+    and_,
+    or_,
+    not_,
+    xor_,
+    bAnd,
+    bOr,
+    lsh,
+    rsh,
+    tilde,
+    assign,
+    question,
+    colon,
+    catEq,
+    plusEq,
+    minusEq,
+    mplyEq,
+    divEq,
+    intDivEq,
+    modEq,
+    powEq,
+    lshEq,
+    rshEq,
+    andEq,
+    xorEq,
+    orEq,
+};
 
 struct Token {
-    enum class Type {
-        eof,
-        //newLine,
-        terminator,
-        comma,
-        true_,
-        false_,
-        nil,
-        fun,
-        if_,
-        else_,
-        break_,
-        continue_,
-        while_,
-        for_,
-        in_,
-        return_,
-        identifier,
-        number,
-        string,
-        lambda,
-        arrow,
-        lParen,
-        rParen,
-        lSquare,
-        rSquare,
-        lCurly,
-        rCurly,
-        dot,
-        inc,
-        dec,
-        plus,
-        minus,
-        mply,
-        div,
-        intDiv,
-        mod,
-        pow,
-        eq,
-        ne,
-        lt,
-        gt,
-        le,
-        ge,
-        and_,
-        or_,
-        not_,
-        xor_,
-        bAnd,
-        bOr,
-        lsh,
-        rsh,
-        tilde,
-        assign,
-        question,
-        colon,
-        catEq,
-        plusEq,
-        minusEq,
-        mplyEq,
-        divEq,
-        intDivEq,
-        modEq,
-        powEq,
-        lshEq,
-        rshEq,
-        andEq,
-        xorEq,
-        orEq,
-    };
+    using Type = TT;
     Type type;
-    Str val;
+    QString val;
 
-    //Token(Type type, QString val = "");
-    Token(Type type, const Str& val = "");
-    Token(Type type, Str&& val = "");
+    Token(Type type, const QString& val = "")
+        : type(type), val(val) {}
+    Token(Type type, QString&& val = "")
+        : type(type), val(std::move(val)) {}
+
     QString toString() const;
     QColor color(Type nextType) const;
-    int size() const;
+};
+struct DToken {
+    TT type;
+    size_t len;
+    ushort* str;
+    explicit DToken(TT tt) : type(tt), len(0), str(nullptr) {}
+    explicit DToken(const Token& t);
+
+    //DToken(const DToken&) = delete;
+    //DToken(DToken&&) = delete;
+    //DToken& operator=(const DToken&) = delete;
+    //DToken& operator=(DToken&&) = delete;
+    void toString(ushort** str, size_t* len) const;
+    void del();
 };
 //inline Token tok_eof(QString s = "") { return Token(Token::Type::eof, s); }
-//inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
+inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
 inline Token tok_terminator(QString s = "") { return Token(Token::Type::terminator, s); }
 inline Token tok_comma(QString s = "") { return Token(Token::Type::comma, s); }
 inline Token tok_true(QString s = "") { return Token(Token::Type::true_, s); }
@@ -153,7 +168,6 @@ inline Token tok_rshEq(QString s = "") { return Token(Token::Type::rshEq, s); }
 inline Token tok_andEq(QString s = "") { return Token(Token::Type::andEq, s); }
 inline Token tok_xorEq(QString s = "") { return Token(Token::Type::xorEq, s); }
 inline Token tok_orEq(QString s = "") { return Token(Token::Type::orEq, s); }
-
 
 using TT = Token::Type;
 

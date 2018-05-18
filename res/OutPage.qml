@@ -11,11 +11,11 @@ Rectangle {
     width: parent.width
     height: parent.height - y
 
-    property alias text: txt
+    property alias text: txt.text
 
     Text {
         id: txt
-        text: "ja"
+        text: ""
 
         width: parent.width
         height: parent.height

@@ -3775,6 +3775,7 @@ void enforceValidFormatSpec(T, Char)(const ref FormatSpec!Char f)
 /*
    Aggregates
  */
+private enum hasDisabled = __traits(compiles, "__traits(isDisabled, String.toString)");
 private void formatValueImpl(Writer, T, Char)(auto ref Writer w, T val, const ref FormatSpec!Char f)
 if (is(T == class) && !is(T == enum))
 {
@@ -3782,11 +3783,13 @@ if (is(T == class) && !is(T == enum))
     // TODO: Change this once toString() works for shared objects.
     static assert(!is(T == shared), "unable to format shared objects");
 
-    // TODO: remove this check once `@disable override` deprecation cycle is finished
-    static if (__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
-        static assert(!__traits(isDisabled, T.toString), T.stringof ~
-            " cannot be formatted because its `toString` is marked with `@disable`");
 
+    version(hasDisabled) {
+    // TODO: remove this check once `@disable override` deprecation cycle is finished
+        static if (hasDisabled && __traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
+            static assert(!__traits(isDisabled, T.toString), T.stringof ~
+                " cannot be formatted because its `toString` is marked with `@disable`");
+    }
     if (val is null)
         put(w, "null");
     else
@@ -3892,10 +3895,12 @@ if (is(T == interface) && (hasToString!(T, Char) || !is(BuiltinTypeOf!T)) && !is
         put(w, "null");
     else
     {
-        static if (__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
-            static assert(!__traits(isDisabled, T.toString), T.stringof ~
-                " cannot be formatted because its `toString` is marked with `@disable`");
 
+        version(hasDisabled) {
+            static if (hasDisabled &&__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
+                static assert(!__traits(isDisabled, T.toString), T.stringof ~
+                    " cannot be formatted because its `toString` is marked with `@disable`");
+        }
         static if (hasToString!(T, Char))
         {
             formatObject(w, val, f);
@@ -3972,10 +3977,11 @@ private void formatValueImpl(Writer, T, Char)(auto ref Writer w, auto ref T val,
 if ((is(T == struct) || is(T == union)) && (hasToString!(T, Char) || !is(BuiltinTypeOf!T)) && !is(T == enum))
 {
 
-    static if (__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
-        static assert(!__traits(isDisabled, T.toString), T.stringof ~
-            " cannot be formatted because its `toString` is marked with `@disable`");
-
+    version(hasDisabled) {
+        static if (__traits(hasMember, T, "toString") && isSomeFunction!(val.toString))
+            static assert(!__traits(isDisabled, T.toString), T.stringof ~
+                " cannot be formatted because its `toString` is marked with `@disable`");
+    }
     enforceValidFormatSpec!(T, Char)(f);
     static if (hasToString!(T, Char))
     {

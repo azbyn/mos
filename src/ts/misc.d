@@ -1,5 +1,20 @@
 module ts.misc;
 
+import ts.ast.token : tsstring;
+import ts.types;
+
+
+tsstring tsformat(tsstring fmt, A...)(A args) {
+    import stdd.format;
+    /*static foreach(i,a;args) {
+        static if (__traits(compiles, "a.toStr")){
+            args[i] = a.toStr;
+        }
+        }*/
+    //if compiles a.toStr then a to str
+    return stdd.format.format!fmt(args);
+}
+
 T throwRtrn(T, Ex, A...)(A args) {
     throw new Ex(args, __FILE__, __LINE__);
 }
@@ -15,8 +30,8 @@ class TSException : Exception {
         super(msg, file, line);
     }
 }
-auto parseHex(F)(string str, F onFail) {
-    long r = 0;
+tsint parseHex(F)(tsstring str, F onFail) {
+    tsint r = 0;
     foreach (c; str) {
          if (c >= '0' && c <= '9')
              r = r << 4 | (c - '0');
@@ -29,8 +44,8 @@ auto parseHex(F)(string str, F onFail) {
     }
     return r;
 }
-auto parseOctal(F)(string str, F onFail) {
-    long r = 0;
+tsint parseOctal(F)(tsstring str, F onFail) {
+    tsint r = 0;
     foreach (c; str) {
          if (c >= '0' && c <= '7')
              r = r << 3 | (c - '0');
@@ -39,8 +54,8 @@ auto parseOctal(F)(string str, F onFail) {
     }
     return r;
 }
-auto parseBinary(F)(string str, F onFail) {
-    long r = 0;
+tsint parseBinary(F)(tsstring str, F onFail) {
+    tsint r = 0;
     foreach (c; str) {
          if (c == '0' || c == '1')
              r = r << 1 | (c - '0');
@@ -48,4 +63,20 @@ auto parseBinary(F)(string str, F onFail) {
              return onFail();
     }
     return r;
+}
+
+extern (C++) void tsputs(const ushort* sh, size_t len);
+void tsputs(tsstring s) {
+    tsputs(cast(ushort*) s.ptr, s.length);
+}
+void tsputs(A...)(A a) {
+    static foreach (k; a) {
+        static if (is(k == tsstring))
+            tsputs(k);
+        else
+            tsputs(k.toStr);
+    }
+}
+void tsputsln(tsstring s) {
+    tsputs(s~'\n');
 }

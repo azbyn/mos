@@ -30,7 +30,7 @@ Rectangle {
     property int spacing: 1
 
     function getPerc() {
-        return perc;
+        return 0;
     }
 
     Grid {
