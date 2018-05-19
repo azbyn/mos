@@ -22,10 +22,13 @@ public:
 public slots:
     void cursorLeft() override;
     void cursorRight() override;
+    QPoint getCursor() { return cursor; }
+    void setCursorUnsafe(QPoint p) { cursor = p; }
     void del();
 
     void add_newLine();
     // clang-format off
+
     void add_terminator()                 { addToken(TT::terminator); }
     void add_comma()                      { addToken(TT::comma); }
     void add_true()                       { addToken(TT::true_); }
@@ -38,6 +41,7 @@ public slots:
     void add_while()                      { addToken(TT::while_); }
     void add_for()                        { addToken(TT::for_); }
     void add_in()                         { addToken(TT::in_); }
+    void add_fun()                        { addToken(TT::fun); }
     void add_return()                     { addToken(TT::return_); }
     void add_identifier(const QString& s) { addToken(TT::identifier, s); }
     void add_number(const QString& s)     { addToken(TT::number, s); }

@@ -16,5 +16,6 @@
         <file>StrText.qml</file>
         <file>LibKp.qml</file>
         <file>OutPage.qml</file>
+        <file>StmtKp.qml</file>
     </qresource>
 </RCC>

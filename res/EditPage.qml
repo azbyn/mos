@@ -32,6 +32,7 @@ Item {
         strKp.visible   = false;
         libKp.visible   = false;
         varKp.visible   = false;
+        stmtKp.visible  = false;
 
         switch (x) {
         case KeypadType.Main:
@@ -61,6 +62,9 @@ Item {
         case KeypadType.Libs:
             curr = libKp;
             break;
+        case KeypadType.Statements:
+            curr = stmtKp;
+            break;
         default:
             console.log("INVALID CURR: ", x);
             return;
@@ -85,6 +89,41 @@ Item {
         y: topRow.height
         //anchors.top: topRow.bottom
         //anchors.bottom: curr.top
+        function addParenPair() {
+            add_lParen();
+            var c = getCursor();
+            add_rParen();
+            setCursorUnsafe(c);
+        }
+        function addCurlyPair() {
+            add_lCurly();
+            var c = getCursor();
+            add_rCurly();
+            setCursorUnsafe(c);
+
+        }
+        function addSquarePair() {
+            add_lSquare();
+            var c = getCursor();
+            add_rSquare();
+            setCursorUnsafe(c);
+        }
+        function addBody() {
+            var c = getCursor();
+            add_lCurly();
+            add_newLine();
+            add_rCurly();
+            setCursorUnsafe(c);
+        }
+        function addParenBody() {
+            add_lParen();
+            var c = getCursor();
+            add_rParen();
+            add_lCurly();
+            add_newLine();
+            add_rCurly();
+            setCursorUnsafe(c);
+        }
    }
    NumberText {
         id: numText
@@ -122,5 +161,8 @@ Item {
 
     LibKp {
         id: libKp
+    }
+    StmtKp {
+        id: stmtKp
     }
 }

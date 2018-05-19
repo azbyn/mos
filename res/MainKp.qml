@@ -16,7 +16,7 @@ Keypad {
 
     sizeX: 4
     sizeY: 3
-    perc: 0.325
+    perc: 0.108 * sizeY
     btnData: [
         ["123",         function(){ ep.setCurr(KeypadType.Number); }],
         ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
@@ -25,21 +25,17 @@ Keypad {
 
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
-        ["if\nfor", function(){}],
+        ["if\nfor", function(){ ep.setCurr(KeypadType.Statements) }],
         ["\\n",     function(){ editorText.add_newLine(); }],
 
         [",", function(){
             editorText.add_comma();
         }],
         ["()", function(){
-            editorText.add_lParen();
-            editorText.add_rParen();
-            editorText.cursorLeft();
+            editorText.addParenPair();
         }],
         ["{}", function(){
-            editorText.add_lCurly();
-            editorText.add_rCurly();
-            editorText.cursorLeft();
+            editorText.addCurlyPair();
         }],
         [";", function(){
             editorText.add_terminator();

@@ -156,7 +156,7 @@ void EditorText::setCursorScreen(QPointF p) {
     p -= origin();
     SCOPE_EXIT({ update(); });
     auto line = p.y() / fsd.height;
-    if (line >= data.size() -1) {
+    if (line >= data.size()) {
         qDebug("setcurs data.size()");
         cursor.ry() = data.size()==0 ? 0 : (data.size() - 1);
         cursor.rx() = data[cursor.y()].size();

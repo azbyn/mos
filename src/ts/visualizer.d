@@ -11,14 +11,14 @@ tsstring visualizeError(const(Token)[] toks, size_t pos, string msg) {
 tsstring visualizeArrow(const(Token)[] toks, size_t pos) {
     if (pos < 0 || pos >= toks.length)
         return tsformat!"index %s"(pos);
-    long a, b;
+    ptrdiff_t a, b;
     for (a = pos - 1; a > 0; --a) {
         if (toks[a].type == TT.newLine) {
             ++a;
             break;
         }
     }
-    ulong len = toks.length;
+    size_t len = toks.length;
     for (b = pos + 1; b < len; ++b) {
         if (toks[b].type == TT.newLine)
             break;

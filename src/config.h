@@ -2,7 +2,7 @@
 #define CONFIG_H
 namespace config {
 constexpr char fontPath[] = ":/fonts/DejaVuSansMono.ttf";
-constexpr int fontSize = 14;
+constexpr int fontSize = (sizeof(void*) == 8) ? 14 : 16;//for testing
 constexpr int fontSizeNumber = 20;
 constexpr float cursorPerc = 0.2f;
 constexpr bool hasLineNumbers = true;
