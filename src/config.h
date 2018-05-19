@@ -6,5 +6,6 @@ constexpr int fontSize = (sizeof(void*) == 8) ? 14 : 16;//for testing
 constexpr int fontSizeNumber = 20;
 constexpr float cursorPerc = 0.2f;
 constexpr bool hasLineNumbers = true;
+constexpr int indentSize = 4;
 }
 #endif

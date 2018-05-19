@@ -9,6 +9,8 @@
 class EditorText : public EditorTextBase {
     Q_OBJECT
 private:
+    friend struct PaintHelper;
+
     QFont bold;
     QPoint cursor = {0, 0};
 
@@ -22,7 +24,7 @@ public:
 public slots:
     void cursorLeft() override;
     void cursorRight() override;
-    QPoint getCursor() { return cursor; }
+    QPoint getCursor() const { return cursor; }
     void setCursorUnsafe(QPoint p) { cursor = p; }
     void del();
 

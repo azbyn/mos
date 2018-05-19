@@ -20,7 +20,7 @@ const char* Token::valUtf8() const {
 QColor Token::color(TT nextType) const {
     switch (type) {
     case TT::eof:
-    //case TT::newLine:
+    case TT::newLine:
     case TT::terminator:
     case TT::comma:
         return colors::delimiters;

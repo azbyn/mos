@@ -122,6 +122,7 @@ Item {
             add_lCurly();
             add_newLine();
             add_rCurly();
+            add_newLine();
             setCursorUnsafe(c);
         }
    }
