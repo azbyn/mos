@@ -1,5 +1,4 @@
 //import stdd.stdio;
-
 //extern(C++) void main(){}
 extern(C++) int mainCpp(int argc, char** argv);
 
@@ -15,7 +14,6 @@ import core.runtime;
 /*__gshared */int main() {
     auto a = Runtime.cArgs;
     return mainCpp(a.argc, a.argv);
-
 }
 //extern(C): void main(){}
 /*extern(C):

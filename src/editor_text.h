@@ -42,7 +42,7 @@ public slots:
     void add_continue()                   { addToken(TT::continue_); }
     void add_while()                      { addToken(TT::while_); }
     void add_for()                        { addToken(TT::for_); }
-    void add_in()                         { addToken(TT::in_); }
+    void add_in()                         { addToken(TT::in); }
     void add_fun()                        { addToken(TT::fun); }
     void add_return()                     { addToken(TT::return_); }
     void add_identifier(const QString& s) { addToken(TT::identifier, s); }

@@ -3,6 +3,7 @@
 #include "colors.h"
 #include "config.h"
 #include "misc.h"
+#include "lexer.h"
 
 #include <scope_guard.h>
 #include <QPainter>
@@ -31,6 +32,9 @@ EditorText::EditorText(QQuickItem* parent)
     bold.setBold(true);
     if (instance != nullptr) throw "EXPECTED ONE INSTANCE OF EditorText";
     instance = this;
+#ifndef ANDROID
+    lex(&data, config::file);
+#endif
 }
 
 void EditorText::addToken(TT type, const QString& msg) {

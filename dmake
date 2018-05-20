@@ -67,6 +67,8 @@ print PRO_CONF <<"END";
 QT += quick
 CONFIG += c++14
 DEFINES += QT_DEPRECATED_WARNINGS
+
+android: defines += ANDROID
 QMAKE_CXXFLAGS += -Wfatal-errors -g
 
 android: TARGET = $TARGET

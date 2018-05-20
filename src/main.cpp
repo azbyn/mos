@@ -5,6 +5,7 @@
 #include "number_text.h"
 #include "colors.h"
 #include "editor.h"
+#include "config.h"
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -17,9 +18,7 @@
         #_name,                       \
         "Error: only enums")
 
-//extern "C" double log2(double x) { return std::log2(x); }
-//void d_init();
-//void d_end();
+const char* config::file = nullptr;
 int mainCpp(int argc, char *argv[]) {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
@@ -31,7 +30,13 @@ int mainCpp(int argc, char *argv[]) {
     REGISTER_ENUM(KeypadType);
     REGISTER_ENUM(LibType);
     REGISTER_ENUM(PageType);
-
+    if (argc > 1){
+        config::file = argv[1];
+        qDebug("file : %s", config::file);
+    }
+    else {
+        config::file = "test.ts";
+    }
 
     qmlRegisterSingletonType<Colors_qml>(
         "ts", 1, 0, "Colors",

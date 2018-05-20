@@ -49,7 +49,7 @@ ApplicationWindow {
 
     Component.onCompleted: {
         setType(PageType.Edit);
-        editor.run();
+        //editor.run();
         Qt.inputMethod.hide();
 
         //orgHeight = height

@@ -34,7 +34,7 @@ QColor Token::color(TT nextType) const {
     case TT::continue_:
     case TT::while_:
     case TT::for_:
-    case TT::in_:
+    case TT::in:
     case TT::return_:
         return colors::keywords;
     case TT::identifier:
@@ -73,7 +73,7 @@ QString Token::toString() const {
     case Type::continue_: return "continue ";
     case Type::while_: return "while ";
     case Type::for_: return "for ";
-    case Type::in_: return " in ";
+    case Type::in: return " in ";
     case Type::return_: return "return ";
     case Type::identifier: return val;
     case Type::number: return val;

@@ -17,7 +17,7 @@ enum class TT {
     continue_,
     while_,
     for_,
-    in_,
+    in,
     return_,
     identifier,
     number,
@@ -77,10 +77,10 @@ struct Token {
     using Type = TT;
     Type type;
     QString val;
-
-    Token(Type type, const QString& val = "")
+    explicit Token(TT type) :type(type), val("") {}
+    Token(Type type, const QString& val)
         : type(type), val(val) {}
-    Token(Type type, QString&& val = "")
+    Token(Type type, QString&& val)
         : type(type), val(std::move(val)) {}
 
     QString toString() const;
@@ -114,7 +114,7 @@ inline Token tok_break(QString s = "") { return Token(Token::Type::break_, s); }
 inline Token tok_continue(QString s = "") { return Token(Token::Type::continue_, s); }
 inline Token tok_while(QString s = "") { return Token(Token::Type::while_, s); }
 inline Token tok_for(QString s = "") { return Token(Token::Type::for_, s); }
-inline Token tok_in(QString s = "") { return Token(Token::Type::in_, s); }
+inline Token tok_in(QString s = "") { return Token(Token::Type::in, s); }
 inline Token tok_return(QString s = "") { return Token(Token::Type::return_, s); }
 inline Token tok_identifier(QString s = "") { return Token(Token::Type::identifier, s); }
 inline Token tok_number(QString s = "") { return Token(Token::Type::number, s); }
