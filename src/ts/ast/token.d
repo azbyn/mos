@@ -104,10 +104,8 @@ extern (C++) {
         ~this() {
             del();
         }
-        void toString(ushort** outStr, size_t* outLen) const;
     }
 }
-
 alias Token = DToken;
 tsstring tsstr(const ref Token t) {
     return (cast(tschar*) t.str)[0 .. t.len].idup();
@@ -117,13 +115,86 @@ tsstring tsstr(const Token* t) {
     return (cast(tschar*) t.str)[0 .. t.len].idup();
 }
 tsstring toStr(const Token* t) {
+    import ts.misc;
+    final switch (t.type) {
+    case TT.eof: return "EOF";
+    case TT.newLine: return "\n";
+    case TT.terminator: return ";";
+    case TT.comma: return ", ";
+    case TT.true_: return "true";
+    case TT.false_: return "false";
+    case TT.nil: return "nil";
+    case TT.fun: return "fun ";
+    case TT.if_: return "if ";
+    case TT.else_: return "else ";
+    case TT.break_: return "break ";
+    case TT.continue_: return "continue ";
+    case TT.while_: return "while ";
+    case TT.for_: return "for ";
+    case TT.in_: return " in ";
+    case TT.return_: return "return ";
+    case TT.identifier: return t.tsstr;
+    case TT.number: return t.tsstr;
+    case TT.string: return tsformat!`"%s"`(t.tsstr);
+    case TT.lambda: return "λ";
+    case TT.arrow: return "->";
+    case TT.lParen: return "(";
+    case TT.rParen: return ")";
+    case TT.lSquare: return "[";
+    case TT.rSquare: return "]";
+    case TT.lCurly: return "{";
+    case TT.rCurly: return "}";
+    case TT.dot: return ".";
+    case TT.inc: return "++";
+    case TT.dec: return "--";
+    case TT.plus: return " + ";
+    case TT.minus: return " - ";
+    case TT.mply: return " * ";
+    case TT.div: return " / ";
+    case TT.intDiv: return " // ";
+    case TT.mod: return " % ";
+    case TT.pow: return " ** ";
+    case TT.eq: return " == ";
+    case TT.ne: return " != ";
+    case TT.lt: return " < ";
+    case TT.gt: return " > ";
+    case TT.le: return " <= ";
+    case TT.ge: return " >= ";
+    case TT.and: return " && ";
+    case TT.or: return " || ";
+    case TT.not: return "!";
+    case TT.xor: return " ^ ";
+    case TT.bAnd: return " & ";
+    case TT.bOr: return " | ";
+    case TT.lsh: return " << ";
+    case TT.rsh: return " >> ";
+    case TT.tilde: return " ~ ";
+    case TT.assign: return " = ";
+    case TT.question: return "?";
+    case TT.colon: return ":";
+    case TT.catEq: return " ~= ";
+    case TT.plusEq: return " += ";
+    case TT.minusEq: return " -= ";
+    case TT.mplyEq: return " *= ";
+    case TT.divEq: return " /= ";
+    case TT.intDivEq: return " //= ";
+    case TT.modEq: return " %= ";
+    case TT.powEq: return " **= ";
+    case TT.lshEq: return " <<= ";
+    case TT.rshEq: return " >>= ";
+    case TT.andEq: return " &= ";
+    case TT.xorEq: return " ^= ";
+    case TT.orEq: return " |= ";
+
+    }
+    /*
     import core.stdc.stdlib : free;
     ushort* ptr;
     size_t len;
     t.toString(&ptr, &len);
     auto res = (cast(tschar*) t.str)[0 .. t.len].idup();
     free(ptr);
-    return res;
+    return res;*/
 }
 tsstring toStr(const ref Token t) {
     return toStr(&t);

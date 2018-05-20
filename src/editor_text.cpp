@@ -255,6 +255,15 @@ struct PaintHelper {
         }
         return TT::eof;
     }
+    TT prevTT() {
+        if (iter == beginTok){
+            // we could do recursion but it's overkill
+            // as prevTT is only used for `fun foo` and
+            // that's not usualy on different lines
+            return TT::eof;
+        }
+        return (iter-1)->type;
+    }
     void drawCursor() {
         p->fillRect(fsd().width * vCursor.x() + origin.x(),
                     fsd().height * vCursor.y() + origin.y(),
@@ -266,7 +275,9 @@ struct PaintHelper {
         if (isEol()) return;
         if (lineNumber() == cursor().y() && tokNum() == cursor().x())
             drawCursor();
-        p->setPen(iter->color(nextTT()));
+        p->setPen(iter->color(
+                      [this] { return prevTT(); },
+                      [this] { return nextTT(); }));
         auto str = iter->toString();
         p->drawText(vCursor.x() * fsd().width + origin.x(),
                     fsd().ascent + fsd().height * vCursor.y(),

@@ -84,7 +84,8 @@ struct Token {
         : type(type), val(std::move(val)) {}
 
     QString toString() const;
-    QColor color(Type nextType) const;
+    template<typename F1, typename F2>
+    QColor color(F1 prevType, F2 nextType) const;
 };
 struct DToken {
     TT type;
@@ -97,9 +98,51 @@ struct DToken {
     //DToken(DToken&&) = delete;
     //DToken& operator=(const DToken&) = delete;
     //DToken& operator=(DToken&&) = delete;
-    void toString(ushort** str, size_t* len) const;
     void del();
 };
+
+template<typename F1, typename F2>
+QColor Token::color(F1 prevType, F2 nextType) const {
+    switch (type) {
+    case TT::eof:
+    case TT::newLine:
+    case TT::terminator:
+    case TT::comma:
+        return colors::delimiters;
+    case TT::true_:
+    case TT::false_:
+    case TT::nil:
+    case TT::fun:
+    case TT::if_:
+    case TT::else_:
+    case TT::break_:
+    case TT::continue_:
+    case TT::while_:
+    case TT::for_:
+    case TT::in:
+    case TT::return_:
+        return colors::keywords;
+    case TT::identifier:
+        return nextType() == TT::lParen || prevType() == TT::fun ?
+            colors::functions : colors::variables;
+    case TT::number: return colors::numbers;
+    case TT::string: return colors::strings;
+    case TT::lambda:
+    case TT::arrow:
+        return colors::operators;
+    case TT::lParen:
+    case TT::rParen:
+    case TT::lSquare:
+    case TT::rSquare:
+    case TT::lCurly:
+    case TT::rCurly:
+        return colors::brackets;
+    default:
+        return colors::operators;
+    }
+}
+
+
 //inline Token tok_eof(QString s = "") { return Token(Token::Type::eof, s); }
 inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
 inline Token tok_terminator(QString s = "") { return Token(Token::Type::terminator, s); }

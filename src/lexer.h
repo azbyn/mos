@@ -28,16 +28,10 @@ struct Lexer {
         line = &out->back();
         while (!in.atEnd()) {
             str = in.readLine();
-            //qDebug() << "<<" << str;
             if (regexIgnore("^\\s*#")) continue;
             while (str.size()) {
-                //qDebug() << "sz= " << str.size() << str;
                 if (regexIgnore("^\\s+")) continue;
-
-                if (str[0] == '#') {
-                    break;
-                }
-                //if (regexIgnore("#.*$")) continue;
+                if (str[0] == '#') break;
                 if (pat(";", TT::terminator)) continue;
                 if (pat(",", TT::comma)) continue;
                 if (pat(".", TT::dot)) continue;

@@ -5,6 +5,7 @@
 
 #include <QObject>
 #include <QPoint>
+#include "config.h"
 
 class Editor : public QObject {
     Q_OBJECT
@@ -17,6 +18,7 @@ public:
     void puts(const QString& value);
 public slots:
     void run();
+    QString getFontName() const;
 
 public:
 signals:

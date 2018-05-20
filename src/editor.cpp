@@ -32,6 +32,9 @@ void Editor::run() {
 
     tsrun(toks.data(), toks.size());
 }
+QString Editor::getFontName() const { return EditorText::instance->getFontName(); }
+
+
 void tsputs(const ushort* sh, size_t len) {
     Editor::instance->puts(QString::fromUtf16(sh, len));
 }

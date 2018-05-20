@@ -16,10 +16,10 @@ Rectangle {
     Text {
         id: txt
         text: ""
-
         width: parent.width
         height: parent.height
         color: Colors.base05
+        font.family: editor.getFontName()
         font.pointSize: 14
     }
 }

@@ -22,6 +22,8 @@ public:
     void addToken(TT type, const QString& msg = {});
 
 public slots:
+    QString getFontName() const { return font.family(); }
+
     void cursorLeft() override;
     void cursorRight() override;
     QPoint getCursor() const { return cursor; }

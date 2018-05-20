@@ -21,7 +21,7 @@ struct Closure {
     }
     static tsstring toString(Closure v) {
         tsstring res = "<closure>\n";
-        foreach (k,o; v.captures)
+        foreach (k, o; v.captures)
             res ~= tsformat!"@%s:%s\n"(k, o);
         res ~= "Code:\n"~ v.val.toStr();
         return res ~ "\n</closure>";

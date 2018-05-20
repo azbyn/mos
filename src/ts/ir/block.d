@@ -218,7 +218,12 @@ class Block {
         man.jumpTable[jmp] = ops.length;
     }
 
-    override string toString() { assert(0, "please use toStr"); }
+    override string toString() {
+        import com.log;
+        import stdd.conv;
+        tslog("!!!!!please use toStr");
+        return toStr().to!string;
+    }
     tsstring toStr() {
         tsstring r = "";
         r ~= tsformat!"\noffset = %d"(st.offset);
