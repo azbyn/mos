@@ -194,8 +194,12 @@ struct IndentationHelper {
   if (iter == beginTok) vCursor.rx() += config::indentSize;
 
   }
- */
+    */
     void decLvl() {
+        if (_lvl != 0)
+            --_lvl;
+    }
+    void decLvlParen() {
         if (tok == beginTok) {
             if (line == beginLine)
                 return;
@@ -251,67 +255,104 @@ struct IndentationHelper {
         }
         return false;
     }
+    template <typename... Args>
+    bool consume(TT* out, TT type, Args... args) {
+        if (is(type, args...)) {
+            *out = tok->type;
+            next();
+            return true;
+        }
+        return false;
+    }
+
 
     void update() {
         while (!isEof()) {
+            //unmatched parens
+            if (consume(TT::rParen, TT::rSquare, TT::rCurly))
+                continue;
             statement();
         }
     }
     void statement() {
         if (isEol()) nextLine();
         if (isEof()) return;
-        if (is(TT::if_, TT::else_, TT::while_, TT::for_, TT::fun)) {
-            bool wasFun = is(TT::fun);
-            next();
+        TT tt;
+        if (consume(&tt, TT::if_, TT::else_, TT::while_, TT::for_, TT::fun)) {
+            //qDebug("if ++");
+            incLvl();
+            if (tt == TT::fun && consume(TT::identifier)) {
+                parenthesis();
+                parenthesis();
+            }
+            else if (tt != TT::else_) {
+                parenthesis();
+            }
+            while (isEol()) {
+                nextLine();
+            }
+            statement();
+            //qDebug("block --");
+            decLvl();
+        }
+        else if (consume(TT::lCurly)) {
+            //qDebug("{ ++ ");
 
             incLvl();
-            if (wasFun && consume(TT::identifier)) {
-                parenthesis();
-                parenthesis();
-            }
-            else {
-                parenthesis();
-            }
-            if (consume(TT::lCurly)) {
-                while (!isEof()) {
-                    if (isEol()) {
-                        nextLine();
-                        continue;
-                    }
-                    if (is(TT::rCurly)) {
-                        decLvl();
-                        next();
-                        break;
-                    }
-                    statement();
+            while (!isEof()) {
+                if (is(TT::rCurly)) {
+                    //qDebug("} --");
+                    decLvlParen();
+                    next();
+                    break;
                 }
-            }
-            else {
-                while (isEol())
-                    nextLine();
                 statement();
-                decLvl();
             }
         }
+        else if (is(TT::rCurly)) return;
         else {
-            if (is(TT::lParen, TT::lSquare, TT::lCurly))
-                incLvl();
-            else if (is(TT::rParen, TT::rSquare, TT::rCurly))
-                decLvl();
-            next();
+            //qDebug("t++");
+            if (!parenthesis()) next();
+            if (is(TT::lCurly, TT::rCurly)) return;
+
+            incLvl();
+            while (!isEof()) {
+                if (isEol()) {nextLine(); continue;}
+                //qDebug() << "t:" << (isEol()? "EOL": tok->toString());
+                if (consume(TT::terminator)||is(TT::lCurly, TT::rCurly)) break;
+                if (!parenthesis()) next();
+                /*
+                else if (is(TT::lParen, TT::lSquare, TT::lCurly)) {
+                    incLvl();
+                }
+                else if (is(TT::rParen, TT::rSquare, TT::rCurly))
+                    decLvlParen();
+                next();
+                */
+            }
+            decLvlParen();
+            //qDebug("t--");
         }
     }
-    void parenthesis() {
+    bool parenthesis() {
         int lvl = 0;
+        if (!consume(TT::lParen, TT::lSquare)) return false;
         while (!isEof()) {
-            if (is(TT::lCurly)) break;
-            if (is(TT::lParen, TT::lSquare /*,TT::lCurly*/))
+            if (is(TT::lCurly, TT::rCurly)) return false;
+            if (is(TT::lParen, TT::lSquare /*,TT::lCurly*/)) {
                 ++lvl;
-            else if (is(TT::rParen, TT::rSquare /*, TT::rCurly*/))
+                //qDebug("Paren++");
+                incLvl();
+            }
+            else if (is(TT::rParen, TT::rSquare /*, TT::rCurly*/)) {
                 --lvl;
+                if (lvl <= 0) break;
+                //qDebug("Paren--");
+                decLvlParen();
+            }
             next();
-            if (lvl <= 0) break;
         }
+        return true;
     }
 };
 void EditorText::updateLevels() {
@@ -334,7 +375,7 @@ void EditorText::paint(QPainter* const p) {
     };
     auto drawLineNumber = [this, lineCount, p, &lineNum] {
         if (!config::hasLineNumbers) return;
-        auto num = lineNum; // levels[lineNum]; //lineNum;
+        auto num = lineNum;
         if (num == cursor.y()) {
             p->setPen(colors::base05);
             p->setFont(bold);
