@@ -2,8 +2,8 @@
 
 #include "colors.h"
 #include "config.h"
-#include "misc.h"
 #include "lexer.h"
+#include "misc.h"
 
 #include <scope_guard.h>
 #include <QPainter>
@@ -24,7 +24,7 @@ EditorText::EditorText(QQuickItem* parent)
       data{
           {tok_identifier("print"), tok_lParen(), tok_string("hello world"), tok_rParen(), tok_terminator()},
           {tok_identifier("foo"), tok_assign(), tok_number("42"), tok_terminator()},
-          {tok_if(), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_lCurly() },
+          {tok_if(), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_lCurly()},
           {tok_identifier("print"), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_terminator()},
           {tok_rCurly()},
       } {
@@ -35,13 +35,15 @@ EditorText::EditorText(QQuickItem* parent)
 #ifndef ANDROID
     lex(&data, config::file);
 #endif
+    updateLevels();
 }
-
 void EditorText::addToken(TT type, const QString& msg) {
     auto& v = data[cursor.y()];
+    qDebug("AddToken(%d)", (int)type);
     v.emplace(v.begin() + cursor.x(), Token(type, msg));
     ++cursor.rx();
     update();
+    updateLevels();
 }
 
 void EditorText::cursorLeft() {
@@ -102,28 +104,36 @@ void EditorText::add_newLine() {
     }
     ++cursor.ry();
     update();
+    updateLevels();
 }
 void EditorText::setCursorScreen(QPointF p) {
     p -= origin();
     SCOPE_EXIT({ update(); });
-    auto line = p.y() / fsd.height;
-    if (line >= data.size()) {
-        qDebug("setcurs data.size()");
+    size_t line = p.y() / fsd.height;
+    if (p.y() < 0) {
+        //qDebug("setcurs 0,0");
+        cursor = QPoint(0, 0);
+    }
+    else if (line >= data.size()) {
+        //qDebug("setcurs data.size()");
         cursor.ry() = data.size() == 0 ? 0 : (data.size() - 1);
         cursor.rx() = data[cursor.y()].size();
         return;
     }
-    else if (line < 0) {
-        qDebug("setcurs 0,0");
-        cursor = QPoint(0, 0);
-    }
+
     auto& vec = data[line];
-    auto col = p.x() / fsd.width;
+    auto col = (p.x() / fsd.width) - (levels[line] * config::indentSize);
+    cursor.ry() = line;
+    if (col <= 0) {
+        //qDebug("setcurs %ld, 0", line);
+        cursor.rx() = 0;
+        return;
+    }
+
     int prev = 0;
     int curr = 0;
     int i = 0;
 
-    cursor.ry() = line;
     for (auto& t : vec) {
         prev = curr;
         curr += t.toString().size();
@@ -134,11 +144,11 @@ void EditorText::setCursorScreen(QPointF p) {
         auto mid = (curr + prev) * 0.5f;
         cursor.rx() = i + (col >= mid ? 1 : 0);
         if (cursor.x() < 0) cursor.rx() = 0;
-        qDebug("setcurs %lf, %d %lf: (%d, %d)", line, i, col, prev, curr);
+        //qDebug("setcurs %ld, %d %lf: (%d, %d)", line, i, col, prev, curr);
         return;
     }
     cursor.rx() = vec.size();
-    qDebug("setcurs %lf, $ (%d)", line, cursor.x());
+    //qDebug("setcurs %ld, $ (%d)", line, cursor.x());
 }
 
 QPoint EditorText::origin() const {
@@ -147,82 +157,83 @@ QPoint EditorText::origin() const {
     return QPoint(2, 0);
 }
 
-//drawing stuff
-struct PaintHelper {
-    QPainter* p;
+typedef std::vector<int> Levels;
+typedef std::vector<std::vector<Token>> Data;
+typedef std::vector<Token>::const_iterator TokIter;
+//indentaion levels:
+struct IndentationHelper {
+    Levels& levels;
     const EditorText* et;
-    const QPoint origin;
-    const int lineCount;
-    const qreal width, height;
-    typedef std::vector<std::vector<Token>> Data;
-    typedef std::vector<Token>::const_iterator TokIter;
+
+    Levels::iterator lvlit;
     Data::const_iterator beginLine;
     Data::const_iterator line;
     const Data::const_iterator eof; //end of file
-    int _level = 0;
+    int _lvl = 0;
     TokIter beginTok;
-    TokIter iter;
+    TokIter tok;
     TokIter eol; //end of line
 
-    QPoint vCursor = QPoint(0, 0); //visual cursor
-    constexpr const Data& data() { return et->data; }
-    constexpr const FontSizeData& fsd() { return et->fsd; }
-    constexpr const QPoint& cursor() { return et->cursor; }
-    constexpr const QFont& bold() { return et->bold; }
-    constexpr const QFont& font() { return et->font; }
-
-    PaintHelper(QPainter* p, const EditorText* et)
-        : p(p), et(et),
-          origin(et->origin()),
-          lineCount(et->data.size()),
-          width(et->width()),
-          height(et->height()),
+    IndentationHelper(Levels& levels, const EditorText* et)
+        : levels(levels), et(et),
           beginLine(data().begin()),
           line(data().begin()),
           eof(data().end()),
           beginTok(line->begin()),
-          iter(line->begin()),
+          tok(line->begin()),
           eol(line->end()) {
+        levels.resize(data().size());
+        lvlit = levels.begin();
+    }
+    /*
+  void decLevel() {
+  --_level;
+  }
+  void incLevel() {
+  ++_level;
+  if (iter == beginTok) vCursor.rx() += config::indentSize;
+
+  }
+ */
+    void decLvl() {
+        if (tok == beginTok) {
+            if (line == beginLine)
+                return;
+            auto prev = lvlit - 1;
+            if (*prev != 0)
+                --(*prev);
+        }
+        if (_lvl != 0)
+            --_lvl;
+    }
+    void incLvl() {
+        ++_lvl;
     }
 
-    void decLevel() {
-        --_level;
-        if (iter == beginTok) vCursor.rx() -= config::indentSize;
-    }
-    void incLevel() {
-        ++_level;
-        if (iter == beginTok) vCursor.rx() += config::indentSize;
-
-    }
-
-
-    int lineNumber() { return line - beginLine; }
-    int tokNum() { return iter - beginTok; }
+    const Data& data() { return et->data; }
     bool isEof() { return line == eof; }
-    bool isEol() { return iter == eol; }
+    bool isEol() { return tok == eol; }
+
     void nextLine() {
         if (isEof()) return;
-        if (lineNumber() == cursor().y() && tokNum() == cursor().x())
-            drawCursor();
+        *lvlit = _lvl;
+        //qDebug(">> %d", _lvl);
         ++line;
+        ++lvlit;
         if (isEof()) return;
 
-        beginTok = iter = line->begin();
+        beginTok = tok = line->begin();
         eol = line->end();
-
-        vCursor.rx() = _level * config::indentSize;
-        ++vCursor.ry();
-        drawLineNumber();
     }
     TT type() {
         if (isEof() || isEol()) return TT::eof;
-        return iter->type;
+        return tok->type;
     }
     void next() {
         if (isEol())
             nextLine();
         else
-            ++iter;
+            ++tok;
     }
     bool is(TT tt) {
         if (type() == tt) return true;
@@ -240,78 +251,8 @@ struct PaintHelper {
         }
         return false;
     }
-    TT nextTT() {
-        auto next = iter + 1;
-        if (next == eol) {
-            auto nextLine = line + 1;
-            if (nextLine != eof) {
-                if (nextLine->size() != 0)
-                    return nextLine->front().type;
-            }
-        }
-        else {
-            if (next < eol)
-                return next->type;
-        }
-        return TT::eof;
-    }
-    TT prevTT() {
-        if (iter == beginTok){
-            // we could do recursion but it's overkill
-            // as prevTT is only used for `fun foo` and
-            // that's not usualy on different lines
-            return TT::eof;
-        }
-        return (iter-1)->type;
-    }
-    void drawCursor() {
-        p->fillRect(fsd().width * vCursor.x() + origin.x(),
-                    fsd().height * vCursor.y() + origin.y(),
-                    fsd().width * config::cursorPerc,
-                    fsd().height,
-                    colors::cursor);
-    }
-    void drawTok() {
-        if (isEol()) return;
-        if (lineNumber() == cursor().y() && tokNum() == cursor().x())
-            drawCursor();
-        p->setPen(iter->color(
-                      [this] { return prevTT(); },
-                      [this] { return nextTT(); }));
-        auto str = iter->toString();
-        p->drawText(vCursor.x() * fsd().width + origin.x(),
-                    fsd().ascent + fsd().height * vCursor.y(),
-                    str);
-        vCursor.rx() += str.size();
-    }
-    void drawLineNumber() {
-        if (!config::hasLineNumbers) return;
-        auto num = lineNumber();
-        if (num == cursor().y()) {
-            p->setPen(colors::base05);
-            p->setFont(bold());
-        }
-        else {
-            p->setPen(colors::base03);
-            p->setFont(font());
-        }
-        //auto isCurr = num == cursor().y();
-        //p->setPen(isCurr ? colors::base05 : colors::base03);
-        //p->setFont(isCurr ? bold() : font());
-        auto txt = QString::number(num + 1);
-        auto padding = 2 + (digits(lineCount) - txt.size()) * fsd().width;
-        p->drawText(padding, fsd().ascent + fsd().height * num, txt);
-        p->setFont(font());
-    }
 
-    void draw() {
-        //draw zone where line numbers are
-        p->fillRect(0, 0, width, height, colors::background);
-        if (config::hasLineNumbers) {
-            p->fillRect(0, 0, origin.x() - 2, height, colors::base01);
-        }
-        drawLineNumber();
-
+    void update() {
         while (!isEof()) {
             statement();
         }
@@ -319,25 +260,26 @@ struct PaintHelper {
     void statement() {
         if (isEol()) nextLine();
         if (isEof()) return;
-        drawTok();
         if (is(TT::if_, TT::else_, TT::while_, TT::for_, TT::fun)) {
             bool wasFun = is(TT::fun);
             next();
-            incLevel();
-            parenthesis();
-            if (wasFun) parenthesis();
-            if (is(TT::lCurly)) {
-                ++vCursor.rx();
-                drawTok();
-                next();
+
+            incLvl();
+            if (wasFun && consume(TT::identifier)) {
+                parenthesis();
+                parenthesis();
+            }
+            else {
+                parenthesis();
+            }
+            if (consume(TT::lCurly)) {
                 while (!isEof()) {
                     if (isEol()) {
                         nextLine();
                         continue;
                     }
                     if (is(TT::rCurly)) {
-                        decLevel();
-                        drawTok();
+                        decLvl();
                         next();
                         break;
                     }
@@ -348,29 +290,107 @@ struct PaintHelper {
                 while (isEol())
                     nextLine();
                 statement();
-                decLevel();
+                decLvl();
             }
         }
         else {
-            if (consume(TT::lParen, TT::lSquare, TT::lCurly)) incLevel();
-            else if (consume(TT::rParen, TT::rSquare, TT::rCurly)) decLevel();
-            else next();
+            if (is(TT::lParen, TT::lSquare, TT::lCurly))
+                incLvl();
+            else if (is(TT::rParen, TT::rSquare, TT::rCurly))
+                decLvl();
+            next();
         }
     }
     void parenthesis() {
         int lvl = 0;
         while (!isEof()) {
             if (is(TT::lCurly)) break;
-            drawTok();
-            if (consume(TT::lParen, TT::lSquare/*,TT::lCurly*/)) ++lvl;
-            else if (consume(TT::rParen, TT::rSquare/*, TT::rCurly*/)) --lvl;
-            else next();
+            if (is(TT::lParen, TT::lSquare /*,TT::lCurly*/))
+                ++lvl;
+            else if (is(TT::rParen, TT::rSquare /*, TT::rCurly*/))
+                --lvl;
+            next();
             if (lvl <= 0) break;
         }
     }
 };
+void EditorText::updateLevels() {
+    IndentationHelper ih(levels, this);
+    ih.update();
+}
 
-void EditorText::paint(QPainter* p) {
-    PaintHelper helper(p, this);
-    helper.draw();
+void EditorText::paint(QPainter* const p) {
+    QPoint vCursor(0, 0);
+    int lineNum = 0;
+    int tokNum = 0;
+    const auto lineCount = data.size();
+    const auto origin = this->origin();
+    const auto width = this->width();
+    const auto height = this->height();
+
+    auto checkCursor = [this, p, &vCursor, &lineNum, &tokNum] {
+        if (lineNum != cursor.y() || tokNum != cursor.x()) return;
+        drawCursor(p, vCursor.x(), vCursor.y());
+    };
+    auto drawLineNumber = [this, lineCount, p, &lineNum] {
+        if (!config::hasLineNumbers) return;
+        auto num = lineNum; // levels[lineNum]; //lineNum;
+        if (num == cursor.y()) {
+            p->setPen(colors::base05);
+            p->setFont(bold);
+        }
+        else {
+            p->setPen(colors::base03);
+            p->setFont(font);
+        }
+        auto txt = QString::number(num + 1);
+        auto padding = 2 + (digits(lineCount) - txt.size()) * fsd.width;
+        p->drawText(padding, fsd.ascent + fsd.height * num, txt);
+        p->setFont(font);
+    };
+    //draw zone where line numbers are
+    p->fillRect(0, 0, width, height, colors::background);
+    if (config::hasLineNumbers) {
+        p->fillRect(0, 0, origin.x() - 2, height, colors::base01);
+    }
+    for (auto line = data.begin(), eof = data.end(); line != eof; ++line, ++lineNum) {
+        drawLineNumber();
+        tokNum = 0;
+        for (auto tok = line->begin(), eol = line->end(); tok != eol; ++tok, ++tokNum) {
+            auto prevTT = [tokNum, &tok] {
+                if (tokNum == 0) {
+                    // we could do recursion but it's overkill
+                    // as prevTT is only used for `fun foo` and
+                    // that's not usualy on different lines
+                    return TT::eof;
+                }
+                return (tok - 1)->type;
+            };
+            auto nextTT = [&tok, &eol, &line, &eof] {
+                auto next = tok + 1;
+                if (next == eol) {
+                    auto nextLine = line + 1;
+                    if (nextLine != eof) {
+                        if (nextLine->size() != 0)
+                            return nextLine->front().type;
+                    }
+                }
+                else {
+                    if (next < eol)
+                        return next->type;
+                }
+                return TT::eof;
+            };
+            checkCursor();
+            p->setPen(tok->color(prevTT, nextTT));
+            auto str = tok->toString();
+            p->drawText(vCursor.x() * fsd.width + origin.x(),
+                        fsd.ascent + fsd.height * vCursor.y(),
+                        str);
+            vCursor.rx() += str.size();
+        }
+        checkCursor();
+        vCursor.rx() = levels[lineNum] * config::indentSize;
+        ++vCursor.ry();
+    }
 }

@@ -91,7 +91,7 @@ QString Token::toString() const {
     case Type::orEq: return " |= ";
         // clang-format on
     }
-    throw std::logic_error("INVALID");
+    throw std::logic_error(std::string("INVALID ") + std::to_string((int)type));
 }
 
 DToken::DToken(const Token& t) : type(t.type), len(t.val.size()) {

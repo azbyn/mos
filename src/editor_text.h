@@ -9,10 +9,13 @@
 class EditorText : public EditorTextBase {
     Q_OBJECT
 private:
-    friend struct PaintHelper;
+    friend struct IndentationHelper;
 
     QFont bold;
     QPoint cursor = {0, 0};
+    std::vector<int> levels;
+
+    void updateLevels();
 
 public:
     std::vector<std::vector<Token>> data;
