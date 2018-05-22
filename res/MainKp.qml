@@ -5,12 +5,12 @@ import ts 1.0
 Keypad {
     //quickSize: 6
     quickData: [
-        ["<-",   function(){ editorText.cursorLeft(); } ],
-        ['->',   function(){ editorText.cursorRight(); } ],
+        ["<-",   function(){ editor.cursorLeft(); } ],
+        ['->',   function(){ editor.cursorRight(); } ],
         ["undo", function(){ } ],
         ["redo", function(){} ],
         ["find", function(){} ],
-        ["del",  function(){ editorText.del(); } ],
+        ["del",  function(){ editor.del(); } ],
     ]
     quickPerc: 0.1
 
@@ -26,20 +26,20 @@ Keypad {
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
         ["if\nfor", function(){ ep.setCurr(KeypadType.Statements) }],
-        ["\\n",     function(){ editorText.add_newLine(); }],
+        ["\\n",     function(){ editor.add_newLine(); }],
 
         [",", function(){
-            editorText.add_comma();
+            editor.add_comma();
         }],
         ["()", function(){
-            editorText.addParenPair();
+            editor.addParenPair();
         }],
         ["{}", function(){
-            editorText.addCurlyPair();
+            editor.addCurlyPair();
         }],
         [";", function(){
-            editorText.add_terminator();
-            editorText.add_newLine();
+            editor.add_terminator();
+            editor.add_newLine();
         }],
     ]
 }

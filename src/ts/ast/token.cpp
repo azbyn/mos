@@ -1,23 +1,20 @@
 #include "token.h"
 
 #include <cstring>
+#include <string>
 #include <exception>
 
-/*const QChar* Token::valUtf16(int& len) const {
-    len = val.size();
-    return val.unicode();
-}
-int Token::size() const {
-    return val.size();
-}
-const char* Token::valUtf8() const {
-    auto v = val.toUtf8();
-    char* cstr = (char*)malloc(val.size());
-    strcpy(cstr, v.constData());
-    return cstr;
-}
-*/
 
+//std::to_string doesn't work on android
+static std::string to_string(int x) {
+    int length = snprintf(NULL, 0, "%d", x);
+    Q_ASSERT(length >= 0);
+    char* buf = new char[length + 1];
+    snprintf(buf, length + 1, "%d", x);
+    std::string str(buf);
+    delete[] buf;
+    return str;
+}
 QString Token::toString() const {
     switch (type) {
     // clang-format off
@@ -91,7 +88,7 @@ QString Token::toString() const {
     case Type::orEq: return " |= ";
         // clang-format on
     }
-    throw std::logic_error(std::string("INVALID ") + std::to_string((int)type));
+    throw std::logic_error(std::string("INVALID ") + to_string((int)type));
 }
 
 DToken::DToken(const Token& t) : type(t.type), len(t.val.size()) {

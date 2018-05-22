@@ -5,26 +5,25 @@ import ts 1.0
 Rectangle {
     id: root
     color: Colors.base00
-    x: 0
-    y: topRow.height
 
-    width: parent.width
-    height: parent.height - y
+    function setActive(val) {
+        sv.et.setActive(val);
+    }
 
-    property alias text: txt.text
     ScrollView {
         id: sv
         anchors.fill: parent
         //anchors.margins: 4
         flickableItem.flickableDirection: Flickable.AutoFlickIfNeeded
-        Text {
-            id: txt
-            text: ""
+        property alias et: editorText
+
+        EditorText {
+            minWidth: root.width
+            minHeight: root.height
+
+            id: editorText
             width: root.width
             height: root.height
-            color: Colors.base05
-            font.family: editor.getFontName()
-            font.pointSize: 14
         }
-    }
+   }
 }

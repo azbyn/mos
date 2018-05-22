@@ -20,9 +20,9 @@ Rectangle {
         ["redo", function(){ strText.redo(); }],
         ["ok",   function(){
             if (isStr)
-                editorText.add_string(strText.getText());
+                editor.add_string(strText.getText());
             else
-                editorText.add_identifier(strText.getText());
+                editor.add_identifier(strText.getText());
             strText.reset();
             ep.setCurr(KeypadType.Main);
         }],

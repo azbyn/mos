@@ -12,15 +12,14 @@ struct Lexer {
     std::vector<std::vector<Token>>* out;
     std::vector<Token>* line;
     QFile file;
+    QString str;
     Lexer(std::vector<std::vector<Token>>* out, const QString& path) : out(out), file(path) {
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qWarning() << "invalid path :" << path;
             return;
         }
+
         qDebug() << "reading " << path;
-    }
-    QString str;
-    void lex() {
         QTextStream in(&file);
 
         out->clear();
@@ -158,6 +157,5 @@ private:
 
 inline void lex(std::vector<std::vector<Token>>* out, const QString& path) {
     Lexer l(out, path);
-    l.lex();
 }
 #endif

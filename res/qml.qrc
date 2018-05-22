@@ -17,5 +17,6 @@
         <file>LibKp.qml</file>
         <file>OutPage.qml</file>
         <file>StmtKp.qml</file>
+        <file>EditorTextQml.qml</file>
     </qresource>
 </RCC>

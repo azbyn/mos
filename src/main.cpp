@@ -1,5 +1,6 @@
 #include "editor_text.h"
 #include "keypad_type.h"
+#include "operators_kp.h"
 #include "lib_type.h"
 #include "page_type.h"
 #include "number_text.h"
@@ -17,6 +18,9 @@
         "ts", 1, 0,                   \
         #_name,                       \
         "Error: only enums")
+#define REGISTER_TYPE(_name) \
+    qmlRegisterType<_name>("ts", 1, 0, #_name)
+
 
 const char* config::file = nullptr;
 int mainCpp(int argc, char *argv[]) {
@@ -24,9 +28,15 @@ int mainCpp(int argc, char *argv[]) {
 
     QGuiApplication app(argc, argv);
 
-    qmlRegisterType<EditorText>("ts", 1, 0, "EditorText");
-    qmlRegisterType<NumberText>("ts", 1, 0, "NumberText");
-    qmlRegisterType<Editor>("ts", 1, 0, "Editor");
+    REGISTER_TYPE(EditorText);
+    REGISTER_TYPE(NumberText);
+    REGISTER_TYPE(OperatorsKp);
+    REGISTER_TYPE(Editor);
+
+    //qmlRegisterType<EditorText>("ts", 1, 0, "EditorText");
+    //qmlRegisterType<NumberText>("ts", 1, 0, "NumberText");
+    //qmlRegisterType<OperatorsKp>("ts", 1, 0,"OperatorsKp");
+    //qmlRegisterType<Editor>("ts", 1, 0, "Editor");
     REGISTER_ENUM(KeypadType);
     REGISTER_ENUM(LibType);
     REGISTER_ENUM(PageType);

@@ -24,11 +24,11 @@ Keypad {
 
     quickData: [
         ["back", function(){ back(); } ],
-        ["<-",   function(){ editorText.cursorLeft(); } ],
-        ["->",   function(){ editorText.cursorRight() ;} ],
+        ["<-",   function(){ editor.cursorLeft(); } ],
+        ["->",   function(){ editor.cursorRight() ;} ],
         ["undo", function(){}],
         ["redo", function(){}],
-        ["del",  function(){ editorText.del(); } ],
+        ["del",  function(){ editor.del(); } ],
     ]
     quickPerc: 0.1
 
@@ -37,41 +37,40 @@ Keypad {
     perc: 0.108 * sizeY
     btnData: [
         ["if", function(){
-            editorText.add_if();
-            editorText.addParenBody();
+            editor.add_if();
+            editor.addParenBody();
             back();
         }],
         ["else", function(){
-            editorText.add_else();
-            editorText.addBody();
+            editor.add_else();
+            editor.addBody();
             back();
         }],
         ["fun", function(){
             /* fun [](|) {
                }
             */
-            editorText.add_fun();
-            editorText.addSquarePair();
-            editorText.cursorRight();
-            editorText.addParenBody();
+            editor.add_fun();
+            editor.addSquarePair();
+            editor.cursorRight();
+            editor.addParenBody();
             back();
         }],
 
         ["while", function(){
-            editorText.add_while();
-            editorText.addParenBody();
+            editor.add_while();
+            editor.addParenBody();
             back();
         }],
         ["for", function(){
-            editorText.add_for();
-            editorText.addParenBody();
+            editor.add_for();
+            editor.addParenBody();
             back();
         }],
-        ["in",       function(){ editorText.add_in(); back(); }],
-
-        ["return",   function(){ editorText.add_return(); back(); }],
-        ["break",    function(){ editorText.add_break(); back(); }],
-        ["continue", function(){ editorText.add_continue(); back(); }],
+        ["in",       function(){ editor.add_in(); back(); }],
+        ["return",   function(){ editor.add_return(); back(); }],
+        ["break",    function(){ editor.add_break(); back(); }],
+        ["continue", function(){ editor.add_continue(); back(); }],
 
     ]
 }

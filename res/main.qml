@@ -25,6 +25,41 @@ ApplicationWindow {
         close.accepted = false;
     }
     property var editor: Editor {
+        function addParenPair() {
+            add_lParen();
+            var c = getCursor();
+            add_rParen();
+            setCursorUnsafe(c);
+        }
+        function addCurlyPair() {
+            add_lCurly();
+            var c = getCursor();
+            add_rCurly();
+            setCursorUnsafe(c);
+        }
+        function addSquarePair() {
+            add_lSquare();
+            var c = getCursor();
+            add_rSquare();
+            setCursorUnsafe(c);
+        }
+        function addBody() {
+            var c = getCursor();
+            add_lCurly();
+            add_newLine();
+            add_rCurly();
+            setCursorUnsafe(c);
+        }
+        function addParenBody() {
+            add_lParen();
+            var c = getCursor();
+            add_rParen();
+            add_lCurly();
+            add_newLine();
+            add_rCurly();
+            add_newLine();
+            setCursorUnsafe(c);
+        }
         onSetOut: {
             console.log("SetOut: '", value, "'");
             out.text = value;

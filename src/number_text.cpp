@@ -2,7 +2,7 @@
 
 #include "colors.h"
 #include "config.h"
-#include "editor_text.h"
+#include "editor.h"
 
 #include <QPainter>
 
@@ -105,7 +105,7 @@ void NumberText::setCursorScreen(QPointF p) {
 }
 bool NumberText::ok() {
     if (val.size() == 0) return false;
-    EditorText::instance->add_number(val);
+    Editor::Instance->add_number(val);
     reset();
     return true;
 }

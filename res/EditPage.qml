@@ -1,4 +1,5 @@
 import QtQuick 2.0
+import QtQuick.Controls 1.4
 //import QtQuick.Window 2.2
 import ts 1.0
 
@@ -81,52 +82,14 @@ Item {
         id: numKp
     }
 
-    EditorText {
+    EditorTextQml {
         id: editorText
         width: parent.width
-        //height: root.height* (1 - (topRow.perc + getCurrent().getPerc()))
         x: 0
         y: topRow.height
-        //anchors.top: topRow.bottom
-        //anchors.bottom: curr.top
-        function addParenPair() {
-            add_lParen();
-            var c = getCursor();
-            add_rParen();
-            setCursorUnsafe(c);
-        }
-        function addCurlyPair() {
-            add_lCurly();
-            var c = getCursor();
-            add_rCurly();
-            setCursorUnsafe(c);
+    }
 
-        }
-        function addSquarePair() {
-            add_lSquare();
-            var c = getCursor();
-            add_rSquare();
-            setCursorUnsafe(c);
-        }
-        function addBody() {
-            var c = getCursor();
-            add_lCurly();
-            add_newLine();
-            add_rCurly();
-            setCursorUnsafe(c);
-        }
-        function addParenBody() {
-            add_lParen();
-            var c = getCursor();
-            add_rParen();
-            add_lCurly();
-            add_newLine();
-            add_rCurly();
-            add_newLine();
-            setCursorUnsafe(c);
-        }
-   }
-   NumberText {
+    NumberText {
         id: numText
         x: 0
         y: topRow.height

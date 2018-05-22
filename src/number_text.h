@@ -17,8 +17,8 @@ public slots:
     void addChar(const QString& s);
     void del();
     void reset();
-    void cursorLeft() override;
-    void cursorRight() override;
+    void cursorLeft();
+    void cursorRight();
     void setCursor(int c);
     bool ok();
 protected:

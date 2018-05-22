@@ -18,17 +18,17 @@ protected:
     bool isActive = true;
 
 protected:
+    explicit EditorTextBase(QQuickItem* parent = nullptr, int fontSize = 14);
     virtual QPoint origin() const = 0;
 
     void drawCursor(QPainter* p, int xCurr, int yCurr) const;
-    explicit EditorTextBase(QQuickItem* parent = nullptr, int fontSize = 14);
 
     virtual void setCursorScreen(QPointF p) = 0;
 public:
     virtual ~EditorTextBase() = default;
 public slots:
-    virtual void cursorLeft() = 0;
-    virtual void cursorRight() = 0;
+    //virtual void cursorLeft() = 0;
+    //virtual void cursorRight() = 0;
     void setActive(bool a);
 
 protected:
