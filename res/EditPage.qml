@@ -12,7 +12,7 @@ Item {
     height: parent.height
 
     Component.onCompleted: {
-        setCurr(KeypadType.Main);
+        setCurr(KeypadType.Operators/*Main*/);
     }
     function close() {
         switch (currType) {
@@ -34,6 +34,7 @@ Item {
         libKp.visible   = false;
         varKp.visible   = false;
         stmtKp.visible  = false;
+        opKp.visible    = false;
 
         switch (x) {
         case KeypadType.Main:
@@ -66,6 +67,9 @@ Item {
         case KeypadType.Statements:
             curr = stmtKp;
             break;
+        case KeypadType.Operators:
+            curr = opKp;
+            break;
         default:
             console.log("INVALID CURR: ", x);
             return;
@@ -74,7 +78,9 @@ Item {
         editorText.height = height * (1.0 - topRow.perc - curr.getPerc());
     }
 
-
+    OperatorsKpQml {
+        id: opKp
+    }
     MainKp {
         id: mainKp
     }

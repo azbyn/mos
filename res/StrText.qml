@@ -37,5 +37,9 @@ Rectangle {
             Qt.inputMethod.hide();
         }
     }
+    Component.onCompleted: {
+        Qt.inputMethod.hide();
+    }
+
     color: Colors.base01;
 }

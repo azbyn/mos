@@ -21,7 +21,7 @@ Keypad {
         ["123",         function(){ ep.setCurr(KeypadType.Number); }],
         ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
         ["other\nobjs", function(){ }],
-        ["+-=",         function(){ }],
+        ["+-=",         function(){ ep.setCurr(KeypadType.Operators); }],
 
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],

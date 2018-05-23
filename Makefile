@@ -5,7 +5,7 @@ android:
 	@./dmake android
 	@make -C build_android
 
-clean: desktop_clean android_clean
+clean: desktop_clean
 desktop_clean:
 	@make -C build clean
 android_clean:

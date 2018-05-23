@@ -2,8 +2,8 @@
 
 #include "colors.h"
 #include "config.h"
-#include "misc.h"
 #include "editor.h"
+#include "misc.h"
 
 #include <scope_guard.h>
 #include <QPainter>
@@ -38,7 +38,6 @@ void EditorText::setMinWidth(float value) { minWidth = value; }
 float EditorText::getMinHeight() const { return minHeight; }
 void EditorText::setMinHeight(float value) { minHeight = value; }
 
-
 void EditorText::paint(QPainter* const p) {
     typedef Editor Ed;
     QPoint vCursor(0, 0);
@@ -47,7 +46,7 @@ void EditorText::paint(QPainter* const p) {
     const auto lineCount = Ed::lines().size();
     const auto origin = this->origin();
     //const auto width = this->width();
-    const auto height = fsd.height * lineCount;// this->height();
+    const auto height = fsd.height * lineCount; // this->height();
     //qDebug("PAINT");
     //qDebug("MINS: %f, %f", minHeight, minWidth);
 
@@ -118,11 +117,6 @@ void EditorText::paint(QPainter* const p) {
         if (width < vCursor.x()) width = vCursor.x();
         vCursor.rx() = Ed::getIndentation(lineNum) * config::indentSize;
         ++vCursor.ry();
-    }
-    auto sz = 8;
-    auto step =  360*16/ sz;
-    for (int i = 0; i < sz; ++i) {
-        p->drawPie(5,5 , minWidth - 10, minWidth - 10, step * i, step*(i+1));
     }
     setHeight(std::max(height + 2, minHeight));
     setWidth(std::max((width + 3) * fsd.width + origin.x(), minWidth));

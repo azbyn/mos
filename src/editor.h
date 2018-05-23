@@ -2,10 +2,10 @@
 #define EDITOR_H
 
 #include "ts/ast/token.h"
+#include "config.h"
 
 #include <QObject>
 #include <QPoint>
-#include "config.h"
 
 class Editor : public QObject {
     Q_OBJECT

@@ -1,14 +1,9 @@
 #ifndef EDITOR_TEXT_BASE_H
 #define EDITOR_TEXT_BASE_H
 
+#include "font_size_data.h"
+
 #include <QQuickPaintedItem>
-
-struct FontSizeData {
-    float width, height, ascent;
-
-    FontSizeData() = default;
-    FontSizeData(const QFont& font);
-};
 
 class EditorTextBase : public QQuickPaintedItem {
     Q_OBJECT

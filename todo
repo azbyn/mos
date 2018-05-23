@@ -3,3 +3,6 @@ scrollable
 linewrap
 string escape sequence highlighting
 
+misc:
+use dejavu sans for default 
+try qvector instead of std::vector

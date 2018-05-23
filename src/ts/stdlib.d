@@ -122,8 +122,6 @@ tsstring sprintf(Pos pos, Env env, tsstring fmt, Obj[] args) {
     return res;
 }
 
-
-
 void print(Obj[] args) {
     foreach (a; args)
         tsputs(a);

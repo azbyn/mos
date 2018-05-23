@@ -66,6 +66,8 @@ Keypad {
             editor.add_for();
             editor.addParenBody();
             back();
+            editor.add_in();
+            back();
         }],
         ["in",       function(){ editor.add_in(); back(); }],
         ["return",   function(){ editor.add_return(); back(); }],

@@ -1,23 +1,23 @@
 #include "editor.h"
 
-#include "lexer.h"
-#include "indentation_helper.h"
 #include "editor_text.h"
+#include "indentation_helper.h"
+#include "lexer.h"
 
 void tsrun(const DToken* ptr, int len);
 
 static void update() {
-     EditorText::Instance->update();
+    EditorText::Instance->update();
 }
 
 Editor* Editor::Instance = nullptr;
 Editor::Editor() : data{
-    {tok_identifier("print"), tok_lParen(), tok_string("hello world"), tok_rParen(), tok_terminator()},
-    {tok_identifier("foo"), tok_assign(), tok_number("42"), tok_terminator()},
-    {tok_if(), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_lCurly()},
-    {tok_identifier("print"), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_terminator()},
-    {tok_rCurly()},
-        }  {
+                       {tok_identifier("print"), tok_lParen(), tok_string("hello world"), tok_rParen(), tok_terminator()},
+                       {tok_identifier("foo"), tok_assign(), tok_number("42"), tok_terminator()},
+                       {tok_if(), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_lCurly()},
+                       {tok_identifier("print"), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_terminator()},
+                       {tok_rCurly()},
+                   } {
     if (Instance != nullptr) throw "EXPECTED ONE INSTANCE OF Editor";
     Instance = this;
 #ifndef ANDROID
@@ -104,7 +104,7 @@ void Editor::run() {
     std::vector<DToken> dtoks;
     for (auto& line : data) {
         //toks.reserve(toks.size() + line.size());
-        for (auto& t : line) 
+        for (auto& t : line)
             //toks.push_back(DToken(t));
             dtoks.emplace_back(t);
         dtoks.emplace_back(TT::newLine);
@@ -119,9 +119,9 @@ QString Editor::getFontName() const { return EditorText::Instance->getFontName()
 void Editor::_setCursorCell(int x, int y) {
     if (y < 0) {
         //qDebug("setcurs 0,0");
-        cursor= QPoint(0, 0);
+        cursor = QPoint(0, 0);
     }
-    else if (y >= (int) data.size()) {
+    else if (y >= (int)data.size()) {
         //qDebug("setcurs data.size()");
         cursor.ry() = data.size() == 0 ? 0 : (data.size() - 1);
         cursor.rx() = data[cursor.y()].size();
@@ -165,4 +165,3 @@ void Editor::updateLevels() {
 void tsputs(const ushort* sh, size_t len) {
     Editor::Instance->puts(QString::fromUtf16(sh, len));
 }
-

@@ -7,13 +7,6 @@
 #include <QFontMetricsF>
 #include <QPainter>
 
-FontSizeData::FontSizeData(const QFont& font) {
-    QFontMetricsF fm(font);
-    QString str = "65465415241002.35-sadsajnkl;nhjkns";
-    width = fm.width(str)/str.size(); //fm.maxWidth();
-    height = fm.height();
-    ascent = fm.ascent();
-}
 
 EditorTextBase::EditorTextBase(QQuickItem* parent, int fontSize)
     : QQuickPaintedItem(parent) {
