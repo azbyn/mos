@@ -19,9 +19,9 @@ ApplicationWindow {
         case PageType.Out: curr = out; break;
 
         }
-        if (Qt.platform.os !== "android" || curr.close())
+        if (Qt.platform.os !== "android")// || curr.close())
             return;
-
+        curr.close();
         close.accepted = false;
     }
     property var editor: Editor {
@@ -84,7 +84,10 @@ ApplicationWindow {
 
     Component.onCompleted: {
         setType(PageType.Edit);
-        //editor.run();
+
+        editor.run();
+        setType(PageType.Out);
+
         //Qt.inputMethod.hide();
 
         //orgHeight = height

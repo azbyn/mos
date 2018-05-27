@@ -15,8 +15,8 @@ private:
     std::vector<int> levels;
     QPoint cursor = {0, 0};
 
-    void updateLevels();
     void _setCursorCell(int x, int y);
+    int currLevel() const { return levels[cursor.y()]; }
 public:
     static Editor* Instance;
 
@@ -28,11 +28,18 @@ public:
     static auto lineCount() { return Instance->data.size(); }
     static int cursorX() { return Instance->cursor.x(); }
     static int cursorY() { return Instance->cursor.y(); }
-    static int getIndentation(size_t line) { return Instance->levels[line]; }
     static void setCursorCell(int x, int y) { Instance->_setCursorCell(x, y); }
+    static int getIndentation(size_t lvl) { return Instance->levels[lvl]; }
 
 
 public slots:
+    void incrementLevel() {
+        ++levels[cursor.y()];
+    }
+    void decrementLevel() {
+        if (levels[cursor.y()] >0)
+            --levels[cursor.y()];
+    }
     void run();
     QString getFontName() const;
 
@@ -45,7 +52,8 @@ public slots:
     void add_newLine();
 
     // clang-format off
-    void add_terminator()                 { addToken(TT::terminator); }
+    //void add_separator()                  { addToken(TT::separator); }
+    //void add_indent()                     { addToken(TT::indent); }
     void add_comma()                      { addToken(TT::comma); }
     void add_true()                       { addToken(TT::true_); }
     void add_false()                      { addToken(TT::false_); }

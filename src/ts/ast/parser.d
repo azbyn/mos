@@ -4,10 +4,12 @@ import stdd.format;
 import ts.ast.ast_node;
 import ts.ast.token;
 import ts.misc;
+import com.log;
 
 class ParserException : TSException {
     this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
         super(pos, msg, file, line);
+        tslog!"ln %s @%d: %s"(line, pos, msg);
     }
 }
 
@@ -15,13 +17,13 @@ struct Parser {
 
 private:
 
-    ParserException expected(TT tt) {
-        return expected(tt.symbolicStr);
+    ParserException expected(TT tt, string file = __FILE__, size_t line = __LINE__) {
+        return expected(tt.symbolicStr, file, line);
     }
 
-    ParserException expected(string tt) {
+    ParserException expected(string tt, string file = __FILE__, size_t line = __LINE__) {
         return new ParserException(pos, format!"Expected %s, found %s"(tt,
-                type().symbolicStr), __FILE__, __LINE__);
+                                   type().symbolicStr), file, line);
     }
 
     const(Token)* ptr;
@@ -34,6 +36,24 @@ private:
             return format!"@%d: %s"(pos, msg);
         }
     }
+    bool[] _contStack;
+    void contStackPush(bool b) {
+        _contStack ~= b;
+        tslog!"{ %s"(b);
+    }
+    bool contStackPop() {
+        import stdd.range.primitives;
+        assert(!contStackIsEmpty);
+        auto res = _contStack.back();
+        tslog!"} %s"(res);
+        _contStack.popBack();
+        return res;
+    }
+    bool contStackPeek() {
+        import stdd.range.primitives;
+        return _contStack.back();
+    }
+    bool contStackIsEmpty() { return _contStack.length == 0; }
 
     public Error[] errors;
     public AstNode[] nodes;
@@ -55,6 +75,7 @@ private:
         end = begin + tokens.length;
         errors = [];
         nodes = [];
+        _contStack = [];
         main();
         return errors.length == 0;
     }
@@ -64,9 +85,9 @@ private:
     }
 
     TT type() {
-        for (; ptr < end; ++ptr) {
-            if (ptr.type != TT.newLine)
-                return ptr.type;
+        if (ptr < end) {
+            //if (ptr.type != TT.newLine)
+            return ptr.type;
         }
         return TT.eof;
     }
@@ -104,14 +125,14 @@ private:
         return false;
     }
 
-    void require(TT tt) {
+    void require(TT tt, string file = __FILE__, size_t line = __LINE__) {
         if (!consume(tt))
-            throw expected(tt);
+            throw expected(tt, file, line);
     }
 
-    void require(out const(Token)* t, TT tt) {
+    void require(out const(Token)* t, TT tt, string file = __FILE__, size_t line = __LINE__) {
         if (!consume(t, tt))
-            throw expected(tt);
+            throw expected(tt, file, line);
     }
 
     AstNode binary(const(Token)* t, AstNode a, AstNode b) {
@@ -144,6 +165,7 @@ private:
         const(Token)* t;
         for (;;) {
             if (consume(t, args)) {
+                cont();
                 a = binary(t, a, next(&this));
             }
             else {
@@ -155,14 +177,17 @@ private:
     auto expressionSeq(F)(TT terminator, F fun) {
         return expressionSeq(terminator, TT.comma, fun);
     }
-
+    //
     auto expressionSeq(F)(TT terminator, TT separator, F fun) {
         AstNode[] args = [];
         while (!is_(TT.eof, terminator)) {
             args ~= expressionNoComma();
             if (!consume(separator))
                 break;
+            cont();
         }
+
+        cont();
         require(terminator);
         return fun(args);
     }
@@ -176,11 +201,10 @@ private:
         res ~= "); }";
         return res;
     }
-
-    // main: { statement | ";" }
+    // main: { "\n" | stmt }
     void main() {
         while (!isEof()) {
-            if (!consume(TT.terminator)) {
+            if (!consume(TT.newLine)) {
                 tryStatement(nodes);
             }
         }
@@ -188,7 +212,13 @@ private:
 
     void tryStatement(ref AstNode[] nodes) {
         try {
-            nodes ~= statement();
+            nodes ~= stmt();
+            while(!contStackIsEmpty) {
+                if (consume(TT.newLine)) continue;
+                if (contStackPeek())
+                    require(TT.dedent);
+                contStackPop();
+            }
         }
         catch (ParserException e) {
             errors ~= Error(e.pos, e.msg);
@@ -196,67 +226,119 @@ private:
         }
     }
 
-    // statement: funDef | return | if | while | for | ctrlFlow
-    //          | expression ";"
-    //          | "{" { statement } "}"
-    AstNode statement() {
-        const(Token)* t;
-        if (!consume(t, TT.lCurly)) {
-            AstNode n;
-            //dfmt off
-            if (funcDef(n)) return n;
-            if (return_(n)) return n;
-            if (if_(n)) return n;
-            if (while_(n)) return n;
-            if (for_(n)) return n;
-            if (ctrlFlow(n)) return n;
-            //dfmt on
-            n = expression();
-            require(TT.terminator);
-            return n;
+
+    //["\n" Indent] {"\n"}
+    bool cont() {
+        if (!consume(TT.newLine)) return false;
+        if (consume(TT.indent)) {
+            contStackPush(true);
         }
+        else {
+            /*if (levelStackIsEmpty) {
+                //throw error
+                require(TT.indent);
+                tslog("this shoud have failed");
+            }
+            else {*/
+            contStackPush(false);
+            //}
+        }
+        while(!isEof()) {
+            if (!consume(TT.newLine)) break;
+        }
+        return true;
+    }
+    /+
+    void contend(bool continued) {
+        /*if (!continued) return;
+        if (contStackPop()) {
+            require(TT.newLine);
+            require(TT.dedent);
+        }else {
+            //require(TT.newLine);
+            }*/
+        /*
+        while(!isEof()) {
+            if (!consume(TT.newLine)) break;
+            }*/
+    }
+    static string cont(string file = __FILE__, size_t line = __LINE__) {
+        return format!`
+        bool continued%d = contstart();
+        scope(exit) {
+            contend(continued%d);
+        }`(line, line);
+    } +/
+    // body_: statement | NewLine Indent { stmt } Dedent
+    AstNode body_() {
+        const(Token)* t;
+        if (!consume(t, TT.newLine))
+            return stmt();
+        require(TT.indent);
         AstNode[] nodes;
-        while (!is_(TT.rCurly, TT.eof)) {
+        while (!consume(TT.dedent)) {
+            if (consume(TT.newLine)) continue;
             tryStatement(nodes);
         }
-        require(TT.rCurly);
         return astBody(getPos(t), nodes);
     }
-    // return: "return" expression ";"
+
+    // statement: funDef | return | if | while | for | ctrlFlow
+    //          | expression '\n'
+    AstNode stmt() {
+        AstNode n;
+        //dfmt off
+        if (funcDef(n)) return n;
+        if (return_(n)) return n;
+        if (if_(n)) return n;
+        if (while_(n)) return n;
+        if (for_(n)) return n;
+        if (ctrlFlow(n)) return n;
+        //dfmt on
+        n = expression();
+        require(TT.newLine);
+        /*
+        if (consume(TT.dedent)) {
+            popLevelStack();
+            }*/
+        return n;
+    }
+
+    // return: "return" expression
     bool return_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.return_))
             return false;
         res = astReturn(getPos(t), expression());
-        require(TT.terminator);
         return true;
     }
-    // ctrlFlow: ("break" | "continue") ";"
+    // ctrlFlow: "break" | "continue"
     bool ctrlFlow(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.break_, TT.continue_))
             return false;
         res = astCtrlFlow(getPos(t), t.type);
-        require(TT.terminator);
         return true;
     }
 
-    // funcDef: "fun" Identifier [ "[" funcParams "]" ] "(" funcParams ")" statement
-    // funcParams: Identifier ["," [funParams]]
+    // funcDef: "fun" Identifier [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
+    // funcParams: Identifier ["," cont [funParams]]
     bool funcDef(out AstNode res) {
         return fun!true(res);
     }
-    // fun: "fun" [ "[" funcParams "]" ] "(" funcParams ")" statement
-    // funcParams: Identifier ["," [funParams]]
+    // fun: "fun" [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
+    // funcParams: Identifier ["," cont [funParams]]
     bool fun(bool isDef = false)(out AstNode res) {
         void funcParams(TT terminator, ref tsstring[] args) {
             const(Token)* p;
             while (!is_(TT.eof, terminator)) {
+                cont();
                 require(p, TT.identifier);
                 args ~= p.tsstr;
                 if (!consume(TT.comma))
                     break;
             }
+            cont();
             require(terminator);
         }
 
@@ -271,58 +353,63 @@ private:
         if (consume(TT.lSquare)) {
             funcParams(TT.rSquare, captures);
         }
+
+        cont();
         require(TT.lParen);
         tsstring[] params;
         funcParams(TT.rParen, params);
-        res = astLambda(getPos(f), captures, params, statement());
+        require(TT.colon);
+        res = astLambda(getPos(f), captures, params, body_());
 
         static if (isDef)
             res = astAssign(getPos(t), astVariable(getPos(t), t.tsstr), res);
         return true;
     }
-    // if_: "if" "(" expression ")" statement [ "else" statement ]
+    // if_: "if" expression ":" body_ [ "else" ":" body_ ]
     bool if_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.if_))
             return false;
-        require(TT.lParen);
         auto cond = expression();
-        require(TT.rParen);
-        auto body_ = statement();
+        require(TT.colon);
+        auto b = body_();
         AstNode else_ = null;
-        if (consume(TT.else_))
-            else_ = statement();
-        res = astIf(getPos(t), cond, body_, else_);
+        if (consume(TT.else_)) {
+            require(TT.colon);
+            else_ = body_();
+        }
+        res = astIf(getPos(t), cond, b, else_);
         return true;
     }
-    // while_: "while" "(" expression ")" statement
+    // while_: "while" expression ":" body_
     bool while_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.while_))
             return false;
-        require(TT.lParen);
         auto cond = expression();
-        require(TT.rParen);
-        auto body_ = statement();
-        res = astWhile(getPos(t), cond, body_);
+        require(TT.colon);
+        auto b = body_();
+        res = astWhile(getPos(t), cond, b);
         return true;
     }
-    // for_: "for" "(" identifier ["," identifier] "in" expression ")" statement
+    // for_: "for" identifier ["," cont identifier] "in" cont expression ":" body_
     bool for_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.for_))
             return false;
-        require(TT.lParen);
         const(Token)* a;
         const(Token)* b = null;
         require(a, TT.identifier);
         if (consume(TT.comma)) {
+            cont();
             require(b, TT.identifier);
         }
         require(TT.in_);
+
+        cont();
         auto col = expression();
-        require(TT.rParen);
-        auto body_ = statement();
+        require(TT.colon);
+        auto body_ = stmt();
         tsstring index, val;
         if (b is null) {
             index = "_";
@@ -340,59 +427,77 @@ private:
     AstNode expression() {
         return comma();
     }
-    // comma: [comma ","] assign
+    // comma: [comma "," cont] assign
     AstNode comma() {
         auto a = assign();
         const(Token)* t;
+        if (consume(t, TT.comma)) {
+            cont();
+            a = astComma(getPos(t), a, assign());
+        }
+        return a;
+
+        /*
         for (;;) {
             if (consume(t, TT.comma)) {
+                cont();
                 a = astComma(getPos(t), a, assign());
             }
             else
                 return a;
-        }
+                }*/
     }
 
     AstNode expressionNoComma() {
         return assign();
     }
 
-    // assign:  ternary | identifier assignOp assign
+    // assign:  ternary | identifier assignOp cont assign
     // assignOp: "=" | "+=" | "-=" | "/=" | "//=" | "*=" | "%=" |
     //           "**=" | "<<=" | ">>=" | "&=" | "^=" | "|=" | "~="
     AstNode assign() {
         auto a = ternary();
         const(Token)* sgn;
         if (consume(sgn, TT.assign)) {
-            return astAssign(getPos(sgn), a, assign());
+            cont();
+            a = astAssign(getPos(sgn), a, assign());
         }
         else if (consume(sgn, TT.plusEq, TT.minusEq, TT.divEq, TT.intDivEq,
                 TT.mplyEq, TT.modEq, TT.powEq, TT.lshEq, TT.rshEq, TT.andEq,
                 TT.orEq, TT.xorEq, TT.catEq)) {
-            return astAssign(getPos(sgn), a, binary(sgn, a, assign()));
+            cont();
+            a = astAssign(getPos(sgn), a, binary(sgn, a, assign()));
         }
         return a;
     }
-    // ternary: boolOp [ "?" expression ":" ternary ]
+    // ternary: boolOp [ "?" cont expression ":" cont ternary ]
     AstNode ternary() {
         auto cond = boolOp();
         const(Token)* t;
         if (!consume(t, TT.question))
             return cond;
-        auto a = expression();
+        AstNode a;
+        {
+            cont();
+            a = expression();
+        }
         require(TT.colon);
+
+        cont();
         return astIf(getPos(t), cond, a, ternary());
     }
 
-    // boolOp: [boolOp ("&&" | "||")] equals
+    // boolOp: [boolOp ("&&" | "||") cont] equals
     AstNode boolOp() {
         auto a = equals(&this,);
         const(Token)* t;
         for (;;) {
             if (consume(t, TT.and)) {
+                cont();
                 a = astAnd(getPos(t), a, equals(&this,));
             }
             else if (consume(t, TT.or)) {
+                cont();
                 a = astOr(getPos(t), a, equals(&this,));
             }
             else {
@@ -401,34 +506,40 @@ private:
         }
     }
 
-    // equals: [equals ("==" | "!=")] compare
+    // equals: [equals ("==" | "!=") cont] compare
     mixin(genLeftRecursive("equals", "compare", "==", "!="));
 
-    // compare: bOr [("<"|">"|"<="|">=") bOr]
+    // compare: [bOr ("<"|">"|"<="|">=") cont] bOr
     mixin(genLeftRecursive("compare", "bOr", "<", ">", "<=", ">="));
 
-    // bOr: [bOr ("|" | "^")] bAnd
+    // bOr: [bOr ("|" | "^") cont] bAnd
     mixin(genLeftRecursive("bOr", "bAnd", "|", "^"));
 
-    // bAnd: [bAnd "&"] bShift
+    // bAnd: [bAnd "&" cont] bShift
     mixin(genLeftRecursive("bAnd", "bShift", "&"));
 
-    // bShift: [bShift ("<<" | ">>")] add
+    // bShift: [bShift ("<<" | ">>") cont] add
     mixin(genLeftRecursive("bShift", "add", "<<", ">>"));
 
-    // add: [add ("+" | "-" | "~")] multi
+    // add: [add ("+" | "-" | "~") cont] multi
     mixin(genLeftRecursive("add", "multi", "+", "-", "~"));
 
-    // multi: [multi ("*" | "/" | "//" | "%")] power
+    // multi: [multi ("*" | "/" | "//" | "%") cont] power
     mixin(genLeftRecursive("multi", "power", "*", "/", "//", "%"));
 
-    // power: prefix ["**" power]
+    // power: prefix ["**" cont power]
     static AstNode power(Parser* p) {
         auto a = p.prefix();
         const(Token)* t;
         if (!p.consume(t, TT.pow))
             return a;
-        return p.binary(t, a, power(p));
+
+        p.cont();
+        //auto c = p.contstart();
+
+        auto res = p.binary(t, a, power(p));
+        //p.contend(c);
+        return res;
     }
 
     // prefix: ["++" | "--" | "+" | "-" | "~" | "!"] postfix
@@ -444,10 +555,10 @@ private:
         return postfix();
     }
     // postfix: lambda {("++" | "--") | member | subscript | funcCall}
-    // member: "." Identifier
-    // method: "." Identifier funcCall
-    // subscript: "[" expression "]"
-    // funcCall: "(" (")" | expression {"," expression} ")")
+    // member: "." cont Identifier
+    // method: "." cont Identifier funcCall
+    // subscript: "[" cont expression "]"
+    // funcCall: "(" cont (")" | expression {"," cont expression} cont ")")
     AstNode postfix() {
         auto a = lambda();
         for (;;) {
@@ -457,6 +568,7 @@ private:
                 a = astReverseComma(getPos(t), a, astAssign(pos, a, unary(t, a)));
             }
             else if (consume(t, TT.dot)) {
+                cont();
                 const(Token)* id;
                 require(id, TT.identifier);
                 if (consume(TT.lParen)) {
@@ -468,10 +580,12 @@ private:
                 }
             }
             else if (consume(t, TT.lSquare)) {
+                cont();
                 a = astSubscript(a.pos, a, expressionNoComma());
                 require(TT.rSquare);
             }
             else if (consume(TT.lParen)) {
+                cont();
                 expressionSeq(TT.rParen, (AstNode[] args) => a = astFuncCall(a.pos, a, args));
             }
             else {
@@ -480,7 +594,7 @@ private:
         }
         return a;
     }
-    // lambda: "λ" { Identifier } | Identifier "->" expression
+    // lambda: "λ" { Identifier cont } | Identifier "->" cont expression
     //       | term | fun
     AstNode lambda() {
         const(Token)* t;
@@ -494,35 +608,47 @@ private:
         const(Token)* id;
         while (!is_(TT.arrow, TT.eof)) {
             require(id, TT.identifier);
+            cont();
             params ~= id.tsstr;
         }
         require(TT.arrow);
+        cont();
+
         return astLambda(getPos(t), params, expression());
     }
-    // pair: expression ":" expression
-    // term: "(" expression ")"
-    //     | "[" ("]" | expression {"," expression} "]"
-    //     | "{" ("}" | pair {"," pair} "}"
+    // pair: expression ":" cont expressionNoComma
+    // term: "(" cont expression cont ")"
+    //     | "[" cont ("]" | expression {"," cont expressionNoComma} cont "]"
+    //     | "{" cont ("}" | pair {"," cont pair} cont  "}"
     //     | Number | Tsstring | Identifier | "nil" | "true" | "false"
     AstNode term() {
         const(Token)* t;
         if (consume(t, TT.lParen)) {
-            auto e = expression();
+            AstNode e;
+            {
+                cont();
+                e = expression();
+            }
+
+            cont();
             require(TT.rParen);
             return e;
         }
         if (consume(t, TT.lSquare)) {
+            cont();
             return expressionSeq(TT.rSquare, (AstNode[] args) => astList(getPos(t), args));
         }
         if (consume(t, TT.lCurly)) {
+            cont();
             enum terminator = TT.rCurly;
             AstNode[] args;
             while (!is_(TT.eof, terminator)) {
                 args ~= expressionNoComma();
                 require(TT.colon);
-                args ~= expressionNoComma();
                 if (!consume(TT.comma))
                     break;
+                cont();
+                args ~= expressionNoComma();
             }
             require(terminator);
             return astDict(getPos(t), args);

@@ -1,8 +1,8 @@
 #include "editor.h"
 
 #include "editor_text.h"
-#include "indentation_helper.h"
-#include "lexer.h"
+//#include "indentation_helper.h"
+#include "ts/ast/lexer.h"
 
 void tsrun(const DToken* ptr, int len);
 
@@ -11,29 +11,22 @@ static void update() {
 }
 
 Editor* Editor::Instance = nullptr;
-Editor::Editor() : data{
-                       {tok_identifier("print"), tok_lParen(), tok_string("hello world"), tok_rParen(), tok_terminator()},
-                       {tok_identifier("foo"), tok_assign(), tok_number("42"), tok_terminator()},
-                       {tok_if(), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_lCurly()},
-                       {tok_identifier("print"), tok_lParen(), tok_identifier("foo"), tok_rParen(), tok_terminator()},
-                       {tok_rCurly()},
-                   } {
+Editor::Editor() : data{{},} {
     if (Instance != nullptr) throw "EXPECTED ONE INSTANCE OF Editor";
     Instance = this;
 #ifndef ANDROID
-    lex(&data, config::file);
+    Lexer(&data, &levels, config::file);
 #endif
     if (EditorText::Instance)
         update();
-    updateLevels();
+    levels.resize(data.size());
 }
 void Editor::addToken(TT type, const QString& val) {
     auto& v = data[cursor.y()];
-    qDebug("AddToken(%d)", (int)type);
+    qDebug()<< "AddToken:" << (int)type << "," << val;
     v.emplace(v.begin() + cursor.x(), Token(type, val));
     ++cursor.rx();
     update();
-    updateLevels();
 }
 
 void Editor::cursorLeft() {
@@ -67,6 +60,7 @@ void Editor::del() {
         cursor.rx() = now.size();
         now.insert(now.end(), old->begin(), old->end());
         data.erase(old);
+        levels.erase(levels.begin() +cursor.y());
     }
     else {
         auto& v = data[cursor.y()];
@@ -76,16 +70,20 @@ void Editor::del() {
     update();
 }
 void Editor::add_newLine() {
+    auto l = currLevel();
     if (cursor.x() == 0) {
+        levels.insert(levels.begin() + cursor.y(), l);
         data.insert(data.begin() + cursor.y(), std::vector<Token>());
     }
     else {
         auto it = data.begin() + cursor.y();
         if (cursor.x() == (int)it->size()) {
             data.insert(it + 1, std::vector<Token>());
+            levels.insert(levels.begin() + cursor.y() + 1, l);
         }
         else {
             data.insert(it + 1, std::vector<Token>(it->begin() + cursor.x(), it->end()));
+            levels.insert(levels.begin() + cursor.y() + 1, l);
             auto& v = data[cursor.y()];
             v = std::vector<Token>(v.begin(), v.begin() + cursor.x());
         }
@@ -93,7 +91,6 @@ void Editor::add_newLine() {
     }
     ++cursor.ry();
     update();
-    updateLevels();
 }
 void Editor::puts(const QString& value) {
     appendOut(value);
@@ -102,14 +99,51 @@ void Editor::run() {
     setOut("");
     //QVector<DToken> toks;
     std::vector<DToken> dtoks;
+    int prevLevel = 0;
+    size_t i = 0;
+    for (auto l : levels) {
+        qDebug("lvl: %d", l);
+    }
     for (auto& line : data) {
+        int level = levels[i];
+        //qDebug("[%ld] = %d", i, level);
+        //qDebug("prev: %d, lvl: %d ", prevLevel, level);
         //toks.reserve(toks.size() + line.size());
-        for (auto& t : line)
-            //toks.push_back(DToken(t));
+        if (prevLevel != level) {
+            //qDebug("diff @%ld", dtoks.size());
+            while (prevLevel > level) {
+                dtoks.emplace_back(TT::dedent);
+                
+                dtoks.emplace_back(TT::newLine);
+                --prevLevel;
+                qDebug("--%d", level);
+            }
+            while (prevLevel < level) {
+                dtoks.emplace_back(TT::indent);
+                ++prevLevel;
+                qDebug("++%d", level);
+            }
+        }
+
+        for (auto& t : line) {
             dtoks.emplace_back(t);
+        }
         dtoks.emplace_back(TT::newLine);
+        ++i;
+        prevLevel = level;
+        qDebug("newline");
         //toks.insert(toks.end(), line.begin(), line.end());
     }
+    auto level = levels.back();
+    qDebug("last == %d", level);
+    while (level > 0) {
+        dtoks.emplace_back(TT::dedent);
+        --level;
+
+        qDebug("--prev %d", level);
+    }
+    qDebug("ja");
+
     //test(DToken(Token(TT::eof, "hello"));
 
     tsrun(dtoks.data(), dtoks.size());
@@ -129,7 +163,7 @@ void Editor::_setCursorCell(int x, int y) {
     }
 
     auto& vec = data[y];
-    auto col = x - (levels[y] * config::indentSize);
+    auto col = x;// - (levels[y] * config::indentSize);
     cursor.ry() = y;
     if (col <= 0) {
         //qDebug("setcurs %ld, 0", line);
@@ -156,10 +190,6 @@ void Editor::_setCursorCell(int x, int y) {
     }
     cursor.rx() = vec.size();
     //qDebug("setcurs %ld, $ (%d)", line, cursor.x());
-}
-
-void Editor::updateLevels() {
-    IndentationHelper ih(levels);
 }
 
 void tsputs(const ushort* sh, size_t len) {

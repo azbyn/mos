@@ -22,13 +22,17 @@ import stdd.conv : to;
 
 extern (C++) int tsrun(const DToken* ptr, int len) {
     auto toks = ptr[0 .. len];
+    tslog("\nToks");
+    foreach (ref t; toks) {
+        tslog(t.toStr());
+    }
     Parser p;
     auto r = p.parse(toks);
     tslog("\nNodes:");
     foreach (n; p.nodes) {
         tslog(n.toString() /*.to!tsstring*/ );
     }
-    if (!r) {
+     if(!r){
         foreach (e; p.errors) {
             tsputsln(visualizeError(toks, e.pos, "Syntax Error: " ~ e.msg));
         }

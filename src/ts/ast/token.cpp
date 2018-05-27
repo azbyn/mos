@@ -20,7 +20,8 @@ QString Token::toString() const {
     // clang-format off
     case Type::eof: return "EOF";
     case Type::newLine: return "\n";
-    case Type::terminator: return ";";
+    case Type::indent: return "INDENT";
+    case Type::dedent: return "DEDENT";
     case Type::comma: return ", ";
     case Type::true_: return "true";
     case Type::false_: return "false";

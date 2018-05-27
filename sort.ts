@@ -1,4 +1,4 @@
-#!/home/azbyn/Projects/d_throwaway/throwaway_script
+#!/home/azbyn/Projects/qt_ts/qt_ts
 fun sort(data) {
     size = data.Size();
     for (a in range(1, size)) {
@@ -19,4 +19,3 @@ d = [3,54,4, 0, 8, 65];
 sorted = sort(d);
 println("s=", sorted);
 println("d=", d);
-#TODO add properties (make Pi one)

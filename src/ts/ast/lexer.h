@@ -7,13 +7,16 @@
 #include <QFile>
 #include <QTextStream>
 #include <vector>
+#include <exception>
 
 struct Lexer {
     std::vector<std::vector<Token>>* out;
     std::vector<Token>* line;
     QFile file;
     QString str;
-    Lexer(std::vector<std::vector<Token>>* out, const QString& path) : out(out), file(path) {
+    Lexer(std::vector<std::vector<Token>>* out,
+          std::vector<int>* levels,
+          const QString& path) : out(out), file(path) {
         if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             qWarning() << "invalid path :" << path;
             return;
@@ -22,16 +25,28 @@ struct Lexer {
         qDebug() << "reading " << path;
         QTextStream in(&file);
 
-        out->clear();
+        //out->clear();
         out->emplace_back();
         line = &out->back();
+        levels->push_back(0);
         while (!in.atEnd()) {
             str = in.readLine();
             if (regexIgnore("^\\s*#")) continue;
+            if (regexIgnore("^\\s*$")) continue;
+            int lvl = 0;
+            while(str[0] == '\t') {
+                ++lvl;
+                str.remove(0, 1);
+            }
+            levels->push_back(lvl);
             while (str.size()) {
+                //qDebug() << "<<" << str;
                 if (regexIgnore("^\\s+")) continue;
                 if (str[0] == '#') break;
-                if (pat(";", TT::terminator)) continue;
+                if (str[0] == ';') {
+                    str.remove(0, 1);
+                    continue;
+                }
                 if (pat(",", TT::comma)) continue;
                 if (pat(".", TT::dot)) continue;
                 if (regex("^0[xbo][0-9A-Fa-f]+", TT::number)) continue;
@@ -51,7 +66,7 @@ struct Lexer {
                         if (str == "false") return Token(TT::false_);
                         return Token(TT::identifier, str);
                     })) continue;
-                if (regex("\"(.*?)\"", 1, TT::string)) continue;
+                if (regex("^\"([^\"]*)\"", 1, TT::string)) continue;
                 if (pat("~=", TT::catEq)) continue;
                 if (pat("+=", TT::plusEq)) continue;
                 if (pat("-=", TT::minusEq)) continue;
@@ -101,7 +116,8 @@ struct Lexer {
                 if (pat("=", TT::assign)) continue;
                 if (pat("?", TT::question)) continue;
                 if (pat(":", TT::colon)) continue;
-                Q_ASSERT_X(0, "lex", "invalid char"); // format!"invalid char '%s'"(str[0]));
+                qCritical() << "invalid char" << str[0];
+                throw std::runtime_error("invalid char");
             }
             out->emplace_back();
             line = &out->back();
@@ -124,6 +140,7 @@ private:
         QRegExp ptrn(ptrnStr);
         int pos = ptrn.indexIn(str);
         if (pos < 0) return false;
+        //qDebug("pos : %d", pos +1 == ptrn.cap(0).size());
         auto val = ptrn.cap(cap);
         line->emplace_back(tt, val);
         str.remove(0, ptrn.cap(0).size());
@@ -137,6 +154,7 @@ private:
         int pos = ptrn.indexIn(str);
         if (pos < 0)
             return false;
+        //qDebug("pos : %d", pos +1 == ptrn.cap(0).size());
         auto val = ptrn.cap(cap);
         line->push_back(f(val));
         str.remove(0, ptrn.cap(0).size());
@@ -150,12 +168,9 @@ private:
         int pos = ptrn.indexIn(str);
         if (pos < 0)
             return false;
+        //qDebug("pos : %d", pos +1 == ptrn.cap(0).size());
         str.remove(0, ptrn.cap(0).size());
         return true;
     }
 };
-
-inline void lex(std::vector<std::vector<Token>>* out, const QString& path) {
-    Lexer l(out, path);
-}
 #endif

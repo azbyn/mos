@@ -57,7 +57,7 @@ void EditorText::paint(QPainter* const p) {
     auto drawLineNumber = [this, lineCount, p, &lineNum] {
         if (!config::hasLineNumbers) return;
         auto num = lineNum;
-        if (num == Editor::cursorY()) {
+        if (num == Ed::cursorY()) {
             p->setPen(colors::base05);
             p->setFont(bold);
         }
@@ -65,7 +65,7 @@ void EditorText::paint(QPainter* const p) {
             p->setPen(colors::base03);
             p->setFont(font);
         }
-        auto txt = QString::number(num + 1);
+        auto txt = QString::number(num+1);
         auto padding = 2 + (digits(lineCount) - txt.size()) * fsd.width;
         p->drawText(padding, fsd.ascent + fsd.height * num, txt);
         p->setFont(font);
@@ -79,6 +79,7 @@ void EditorText::paint(QPainter* const p) {
     for (auto line = Ed::lines().begin(), eof = Ed::lines().end();
          line != eof; ++line, ++lineNum) {
         drawLineNumber();
+        vCursor.rx() = Ed::getIndentation(lineNum) * config::indentSize;
         tokNum = 0;
         for (auto tok = line->begin(), eol = line->end(); tok != eol; ++tok, ++tokNum) {
             auto prevTT = [tokNum, &tok] {
@@ -115,7 +116,6 @@ void EditorText::paint(QPainter* const p) {
         }
         checkCursor();
         if (width < vCursor.x()) width = vCursor.x();
-        vCursor.rx() = Ed::getIndentation(lineNum) * config::indentSize;
         ++vCursor.ry();
     }
     setHeight(std::max(height + 2, minHeight));

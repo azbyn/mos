@@ -16,7 +16,8 @@ private enum typeDatas = [
     //      typeName,     symbolicStr, functionName
     TypeData("eof",          "EOF",       ""         ),//only used by parser
     TypeData("newLine",      "NL",        ""         ),
-    TypeData("terminator",   ";",         ""         ),
+    TypeData("indent",       "Indent",    ""         ),
+    TypeData("dedent",       "Dedent",    ""         ),
     TypeData("comma",        ",",         ""         ),
     TypeData("true_",        "true",      ""         ),
     TypeData("false_",       "false",     ""         ),
@@ -117,9 +118,10 @@ tsstring tsstr(const Token* t) {
 tsstring toStr(const Token* t) {
     import ts.misc;
     final switch (t.type) {
-    case TT.eof: return "EOF";
-    case TT.newLine: return "\n";
-    case TT.terminator: return ";";
+    case TT.eof: return "EOF ";
+    case TT.newLine: return "NL ";// \n";
+    case TT.indent: return "→ ";
+    case TT.dedent: return "←";
     case TT.comma: return ", ";
     case TT.true_: return "true";
     case TT.false_: return "false";

@@ -5,7 +5,8 @@
 enum class TT {
     eof,
     newLine,
-    terminator,
+    indent,
+    dedent,
     comma,
     true_,
     false_,
@@ -106,7 +107,8 @@ QColor Token::color(F1 prevType, F2 nextType) const {
     switch (type) {
     case TT::eof:
     case TT::newLine:
-    case TT::terminator:
+    case TT::indent:
+    case TT::dedent:
     case TT::comma:
         return colors::delimiters;
     case TT::true_:
@@ -144,6 +146,7 @@ QColor Token::color(F1 prevType, F2 nextType) const {
 
 
 //inline Token tok_eof(QString s = "") { return Token(Token::Type::eof, s); }
+/*
 inline Token tok_newLine(QString s = "") { return Token(Token::Type::newLine, s); }
 inline Token tok_terminator(QString s = "") { return Token(Token::Type::terminator, s); }
 inline Token tok_comma(QString s = "") { return Token(Token::Type::comma, s); }
@@ -211,7 +214,7 @@ inline Token tok_rshEq(QString s = "") { return Token(Token::Type::rshEq, s); }
 inline Token tok_andEq(QString s = "") { return Token(Token::Type::andEq, s); }
 inline Token tok_xorEq(QString s = "") { return Token(Token::Type::xorEq, s); }
 inline Token tok_orEq(QString s = "") { return Token(Token::Type::orEq, s); }
-
+*/
 using TT = Token::Type;
 
 #endif //TS_TOKEN_H

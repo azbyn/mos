@@ -3,7 +3,13 @@ import QtQuick.Controls 1.4
 import ts 1.0
 
 Rectangle {
-    function getText() { return txt.text.replace("#", "##").replace("\n", "#n").replace("\t", "#t"); }
+    function getTextAndReset() {
+        Qt.inputMethod.hide();
+        var v = txt.text.replace("#", "##").replace("\n", "#n").replace("\t", "#t");
+        reset();
+        console.log("getText", v);
+        return v;
+    }
     function undo()  { txt.undo(); }
     function redo()  { txt.redo(); }
     function left()  { --txt.cursorPosition; }

@@ -45,18 +45,6 @@ int NumberText::length() const {
     return width() * percX / fsd.width;
 }
 
-/*void NumberText::setCursorScreen(QPointF p) {
-    if (!isActive) return;
-    p -= origin();
-    
-    auto t = p.y() / fsd.height;
-    qDebug() << "cs:" << p.x() << "," << t;
-    if (t >= 1 || t < 0) return;
-    cursor.rx() = (int)(p.x() / fsd.width);
-
-    update();
-    }*/
-
 void NumberText::paint(QPainter* p) {
     auto c = colors::background;
     c.setAlpha(128);

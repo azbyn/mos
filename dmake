@@ -23,7 +23,7 @@ else {
     $BUILD_DIR = "build";
     $ARCH = "";
     $QMAKE = "qmake";
-    $QMAKE_ARGS = "";
+    $QMAKE_ARGS = "CONFIG+=debug";
 }
 
 open MKFILE, ">", 'Makefile';
@@ -36,6 +36,11 @@ android:
 	@make -C build_android
 
 clean: desktop_clean
+dclean: desktop_dclean
+desktop_dclean:
+	@make -C build dclean
+android_dclean:
+	@make -C build dclean
 desktop_clean:
 	@make -C build clean
 android_clean:
@@ -97,7 +102,7 @@ PRE_TARGETDEPS += d
 d.commands = make -f dlang.mk
 
 QMAKE_EXTRA_TARGETS += dclean
-CLEAN_DEPS += dclean
+#CLEAN_DEPS += dclean
 dclean.commands = make -f dlang.mk clean
 
 qnx: target.path = /tmp/\$\${TARGET}/bin

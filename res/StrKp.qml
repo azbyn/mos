@@ -18,13 +18,21 @@ Rectangle {
         ['->',   function(){ strText.right(); }],
         ["undo", function(){ strText.undo(); }],
         ["redo", function(){ strText.redo(); }],
-        ["ok",   function(){
-            if (isStr)
-                editor.add_string(strText.getText());
-            else
-                editor.add_identifier(strText.getText());
-            strText.reset();
+        ["ok",   function() {
+            Qt.inputMethod.hide();
+            var s = strText.getTextAndReset();
+            console.log("ok", s);
+            if (s.length === 0) {
+                console.log("invalid!");
+                return;
+            }
             ep.setCurr(KeypadType.Main);
+
+
+            if (isStr)
+                editor.add_string(s);
+            else
+                editor.add_identifier(s);
         }],
     ]
     property int spacing: 1
