@@ -38,36 +38,41 @@ Keypad {
     btnData: [
         ["if", function(){
             editor.add_if();
-            editor.addParenBody();
+            editor.add_colon();
+            editor.cursorLeft();
             back();
         }],
         ["else", function(){
             editor.add_else();
-            editor.addBody();
+            editor.add_colon();
             back();
         }],
         ["fun", function(){
-            /* fun [](|) {
-               }
+            /* fun [](|):
             */
             editor.add_fun();
-            editor.addSquarePair();
-            editor.cursorRight();
-            editor.addParenBody();
+            editor.add_lSquare();
+            editor.add_rSquare();
+            editor.add_lParen();
+            var c = editor.getCursor();
+            editor.add_rParen();
+            editor.add_colon();
+            editor.setCursorUnsafe(c);
             back();
         }],
 
         ["while", function(){
             editor.add_while();
-            editor.addParenBody();
+            editor.add_colon();
+            editor.cursorLeft();
             back();
         }],
         ["for", function(){
             editor.add_for();
-            editor.addParenBody();
-            back();
+            var c = editor.getCursor();
             editor.add_in();
-            back();
+            editor.add_colon();
+            editor.setCursorUnsafe(c);
         }],
         ["in",       function(){ editor.add_in(); back(); }],
         ["return",   function(){ editor.add_return(); back(); }],

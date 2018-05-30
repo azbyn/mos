@@ -81,16 +81,8 @@ void EditorText::paint(QPainter* const p) {
         drawLineNumber();
         vCursor.rx() = Ed::getIndentation(lineNum) * config::indentSize;
         tokNum = 0;
+        TT prevTT = TT::eof;
         for (auto tok = line->begin(), eol = line->end(); tok != eol; ++tok, ++tokNum) {
-            auto prevTT = [tokNum, &tok] {
-                if (tokNum == 0) {
-                    // we could do recursion but it's overkill
-                    // as prevTT is only used for `fun foo` and
-                    // that's not usualy on different lines
-                    return TT::eof;
-                }
-                return (tok - 1)->type;
-            };
             auto nextTT = [&tok, &eol, &line, &eof] {
                 auto next = tok + 1;
                 if (next == eol) {
@@ -107,12 +99,16 @@ void EditorText::paint(QPainter* const p) {
                 return TT::eof;
             };
             checkCursor();
+
+            if (isSpaceBetween(prevTT, tok->type))
+                ++vCursor.rx();
             p->setPen(tok->color(prevTT, nextTT));
             auto str = tok->toString();
             p->drawText(vCursor.x() * fsd.width + origin.x(),
                         fsd.ascent + fsd.height * vCursor.y(),
                         str);
             vCursor.rx() += str.size();
+            prevTT = tok->type;
         }
         checkCursor();
         if (width < vCursor.x()) width = vCursor.x();

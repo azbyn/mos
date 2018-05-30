@@ -50,16 +50,6 @@ ApplicationWindow {
             add_rCurly();
             setCursorUnsafe(c);
         }
-        function addParenBody() {
-            add_lParen();
-            var c = getCursor();
-            add_rParen();
-            add_lCurly();
-            add_newLine();
-            add_rCurly();
-            add_newLine();
-            setCursorUnsafe(c);
-        }
         onSetOut: {
             console.log("SetOut: '", value, "'");
             out.text = value;
@@ -84,9 +74,10 @@ ApplicationWindow {
 
     Component.onCompleted: {
         setType(PageType.Edit);
-
-        editor.run();
-        setType(PageType.Out);
+        /*if (Qt.application.arguments.lenght === 2) {
+            editor.run();
+            setType(PageType.Out);
+        }*/
 
         //Qt.inputMethod.hide();
 

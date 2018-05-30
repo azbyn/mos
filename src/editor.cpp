@@ -11,7 +11,9 @@ static void update() {
 }
 
 Editor* Editor::Instance = nullptr;
-Editor::Editor() : data{{},} {
+Editor::Editor() : data{
+                       {},
+                   } {
     if (Instance != nullptr) throw "EXPECTED ONE INSTANCE OF Editor";
     Instance = this;
 #ifndef ANDROID
@@ -23,9 +25,18 @@ Editor::Editor() : data{{},} {
 }
 void Editor::addToken(TT type, const QString& val) {
     auto& v = data[cursor.y()];
-    qDebug()<< "AddToken:" << (int)type << "," << val;
+    qDebug() << "AddToken:" << (int)type << "," << val;
     v.emplace(v.begin() + cursor.x(), Token(type, val));
     ++cursor.rx();
+    update();
+}
+void Editor::add_indent() {
+    ++levels[cursor.y()];
+    update();
+}
+void Editor::decrementIndent() {
+    Q_ASSERT(levels[cursor.y()] > 0);
+    --levels[cursor.y()];
     update();
 }
 
@@ -54,13 +65,17 @@ void Editor::cursorRight() {
 }
 void Editor::del() {
     if (cursor.x() == 0) {
+        if (levels[cursor.y()] != 0) {
+            decrementIndent();
+            return;
+        }
         if (cursor.y() == 0) return;
         auto old = data.begin() + cursor.y();
         auto& now = data[--cursor.ry()];
         cursor.rx() = now.size();
         now.insert(now.end(), old->begin(), old->end());
         data.erase(old);
-        levels.erase(levels.begin() +cursor.y());
+        levels.erase(levels.begin() + cursor.y() + 1);
     }
     else {
         auto& v = data[cursor.y()];
@@ -83,7 +98,7 @@ void Editor::add_newLine() {
         }
         else {
             data.insert(it + 1, std::vector<Token>(it->begin() + cursor.x(), it->end()));
-            levels.insert(levels.begin() + cursor.y() + 1, l);
+            levels.insert(levels.begin() + cursor.y() + 1, l + 1);
             auto& v = data[cursor.y()];
             v = std::vector<Token>(v.begin(), v.begin() + cursor.x());
         }
@@ -101,9 +116,9 @@ void Editor::run() {
     std::vector<DToken> dtoks;
     int prevLevel = 0;
     size_t i = 0;
-    for (auto l : levels) {
+    /*for (auto l : levels) {
         qDebug("lvl: %d", l);
-    }
+        }*/
     for (auto& line : data) {
         int level = levels[i];
         //qDebug("[%ld] = %d", i, level);
@@ -113,25 +128,50 @@ void Editor::run() {
             //qDebug("diff @%ld", dtoks.size());
             while (prevLevel > level) {
                 dtoks.emplace_back(TT::dedent);
-                
+
                 dtoks.emplace_back(TT::newLine);
                 --prevLevel;
-                qDebug("--%d", level);
+                //qDebug("--%d", level);
             }
             while (prevLevel < level) {
                 dtoks.emplace_back(TT::indent);
                 ++prevLevel;
-                qDebug("++%d", level);
+                //qDebug("++%d", level);
             }
         }
+        for (auto it = line.begin(), end = line.end(); it != end; ++it) {
+#define ADD_EQ(_nrml, _eq)               \
+    case TT::_nrml:                      \
+        if (it + 1 != end && (it+1)->type == TT::assign) {   \
+            qDebug("asgn " #_eq);        \
+            dtoks.emplace_back(TT::_eq); \
+            ++it;                        \
+            continue;                    \
+        }                                \
+        break;
 
-        for (auto& t : line) {
-            dtoks.emplace_back(t);
+            switch (it->type) {
+                ADD_EQ(plus, plusEq);
+                ADD_EQ(minus, minusEq);
+                ADD_EQ(mply, mplyEq);
+                ADD_EQ(tilde, catEq);
+                ADD_EQ(div, divEq);
+                ADD_EQ(intDiv, intDivEq);
+                ADD_EQ(mod, modEq);
+                ADD_EQ(pow, powEq);
+                ADD_EQ(lsh, lshEq);
+                ADD_EQ(rsh, rshEq);
+                ADD_EQ(and_, andEq);
+                ADD_EQ(xor_, xorEq);
+                ADD_EQ(or_, orEq);
+            default: break;
+            }
+#undef ADD_EQ
+            dtoks.emplace_back(*it);
         }
         dtoks.emplace_back(TT::newLine);
         ++i;
         prevLevel = level;
-        qDebug("newline");
         //toks.insert(toks.end(), line.begin(), line.end());
     }
     auto level = levels.back();
@@ -163,7 +203,7 @@ void Editor::_setCursorCell(int x, int y) {
     }
 
     auto& vec = data[y];
-    auto col = x;// - (levels[y] * config::indentSize);
+    auto col = x - (levels[y] * config::indentSize);
     cursor.ry() = y;
     if (col <= 0) {
         //qDebug("setcurs %ld, 0", line);
@@ -174,18 +214,22 @@ void Editor::_setCursorCell(int x, int y) {
     int prev = 0;
     int curr = 0;
     int i = 0;
-
+    TT prevTT = TT::eof;
     for (auto& t : vec) {
         prev = curr;
         curr += t.toString().size();
+
+        if (isSpaceBetween(prevTT, t.type))
+            ++curr;
+        prevTT = t.type;
         if (col > curr) {
             ++i;
             continue;
         }
         auto mid = (curr + prev) * 0.5f;
         cursor.rx() = i + (col >= mid ? 1 : 0);
-        if (cursor.x() < 0) cursor.rx() = 0;
-        //qDebug("setcurs %ld, %d %lf: (%d, %d)", line, i, col, prev, curr);
+        if (cursor.x() < 0)
+            cursor.rx() = 0;
         return;
     }
     cursor.rx() = vec.size();

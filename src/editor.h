@@ -33,13 +33,8 @@ public:
 
 
 public slots:
-    void incrementLevel() {
-        ++levels[cursor.y()];
-    }
-    void decrementLevel() {
-        if (levels[cursor.y()] >0)
-            --levels[cursor.y()];
-    }
+    void add_indent();
+    void decrementIndent();
     void run();
     QString getFontName() const;
 

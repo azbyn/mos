@@ -55,6 +55,81 @@ void assert_(Pos p, Env e, Obj v, Obj[] args) {
 tsfloat Pi() {
     return PI;
 }
+//make more python like
+tsfloat abs_(tsfloat v) { return abs(v); }
+tsint abs_(tsint v) { return abs(v); }
+tsfloat sin_(tsfloat v) { return sin(v); }
+tsfloat cos_(tsfloat v) { return cos(v); }
+tsfloat tan_(tsfloat v) { return tan(v); }
+tsfloat acos_(tsfloat v) { return acos(v); }
+tsfloat asin_(tsfloat v) { return asin(v); }
+tsfloat atan_(tsfloat v) { return atan(v); }
+tsfloat atan2_(tsfloat y, tsfloat x) { return atan2(y, x); }
+tsfloat cosh_(tsfloat v) { return cosh(v); }
+tsfloat sinh_(tsfloat v) { return sinh(v); }
+tsfloat tanh_(tsfloat v) { return tanh(v); }
+tsfloat acosh_(tsfloat v) { return acosh(v); }
+tsfloat asinh_(tsfloat v) { return asinh(v); }
+tsfloat atanh_(tsfloat v) { return atanh(v); }
+tsfloat sqrt_(tsfloat v) { return sqrt(v); }
+tsfloat exp_(tsfloat v) { return exp(v); }
+tsfloat expm1_(tsfloat v) { return expm1(v); }
+//tsfloat frexp_(tsfloat v) { return (v); }
+//tsfloat ilogb_(tsfloat v) { return ilogb(v); }
+tsfloat log_(tsfloat v) { return log(v); }
+tsfloat log10_(tsfloat v) { return log10(v); }
+tsfloat log1p_(tsfloat v) { return log1p(v); }
+tsfloat log2_(tsfloat v) { return log2(v); }
+//tsfloat logb_(tsfloat v) { return logb(v); }
+tsfloat fmod_(tsfloat x, tsfloat y) { return fmod(x,y); }
+//nothrow @nogc @trusted real modf(real x, ref real i);
+tsfloat scalbn_(tsfloat x, tsint n) {return scalbn(x, cast(int) n); }
+tsfloat cbrt_(tsfloat v) { return cbrt(v); }
+tsfloat fabs_(tsfloat v) { return fabs(v); }
+tsfloat hypot_(tsfloat x, tsfloat y) { return hypot(x, y); }
+tsfloat ceil_(tsfloat x) { return ceil(x); }
+tsfloat cbrt_(tsfloat v) { return cbrt(v); }
+tsfloat floor_(tsfloat v) { return floor(v); }
+tsfloat round_(tsfloat v) { return round(v); }
+tsfloat quantize_(tsfloat v, tsfloat unit) { return quantize(v, unit); }
+tsfloat nearbyint_(tsfloat v) { return nearbyint(v); }
+tsfloat rint_(tsfloat v) { return rint(v); }
+tsint iround_(tsfloat v) { return cast(tsint) lround(v); }
+tsint irint_(tsfloat v) { return cast(tsint) lrint(v); }
+tsfloat remainder_(tsfloat x, tsfloat y) { return remainder(x, y); }
+//tsfloat remquo_(tsfloat x, tsfloat y) { return remquo(x, y); }
+bool isNaN_(tsfloat x) { return isNaN(x); }
+bool isFinite_(tsfloat x) { return isFinite(x); }
+bool isNormal_(tsfloat x) { return isNormal(x); }
+bool isSubnormal_(tsfloat x) { return isSubnormal(x); }
+bool isInfinity_(tsfloat x) { return isInfinity(x); }
+bool isIdentical_(tsfloat x, tsfloat y) { return isIdentical(x, y); }
+tsint signbit_(tsfloat x) { return signbit(x); }
+tsfloat sgn_(tsfloat x) { return sgn(x); }
+tsint sgn_(tsint x) { return sgn(x); }
+tsfloat pow_(tsfloat x, tsfloat y) { return pow(x, y); }
+
+tsfloat max_(tsfloat x, tsfloat y) { return x> y ? x : y; }
+tsfloat max_(tsint x, tsfloat y)   { return x> y ? x : y; }
+tsfloat max_(tsfloat x, tsint y)   { return x> y ? x : y; }
+tsint max_(tsint x, tsint y)      { return x> y ? x : y; }
+
+tsfloat min_(tsfloat x, tsfloat y) { return x< y ? x : y; }
+tsfloat min_(tsint x, tsfloat y)   { return x< y ? x : y; }
+tsfloat min_(tsfloat x, tsint y)   { return x< y ? x : y; }
+tsint   min_(tsint x, tsint y)     { return x< y ? x : y; }
+bool approxEq_(tsfloat x, tsfloat y, tsfloat diff = 1e-05) {return approxEqual(x, y, diff); }
+
+/*
+	abs  fabs  sqrt  cbrt  hypot  poly  nextPow2  truncPow2 
+Trigonometry	sin  cos  tan  asin  acos  atan  atan2  sinh  cosh  tanh  asinh  acosh  atanh  expi 
+Rounding	ceil  floor  round  lround  trunc  rint  lrint  nearbyint  rndtol  quantize 
+Exponentiation & Logarithms	pow  exp  exp2  expm1  ldexp  frexp  log  log2  log10  logb  ilogb  log1p  scalbn 
+Modulus	fmod  modf  remainder 
+Floating-point operations	approxEqual  feqrel  fdim  fmax  fmin  fma  nextDown  nextUp  nextafter  NaN  getNaNPayload  cmp 
+Introspection	isFinite  isIdentical  isInfinity  isNaN  isNormal  isSubnormal  signbit  sgn  copysign  isPowerOf2 
+Hardware Control	IeeeFlags  FloatingPointControl 
+ */
 
 void srand(tsint seed) {
     gen.seed(seed);

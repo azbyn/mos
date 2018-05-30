@@ -21,9 +21,10 @@ Keypad {
         ["123",         function(){ ep.setCurr(KeypadType.Number); }],
         ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
         ["other\nobjs", function(){ }],
-        ["+-=",         function(){ ep.setCurr(KeypadType.Operators); }],
+        [">+-",         function(){ ep.setCurr(KeypadType.Operators); }],
 
-        ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
+        ["\\t",     function(){ editor.add_indent(); }],
+        //["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
         ["if\nfor", function(){ ep.setCurr(KeypadType.Statements) }],
         ["\\n",     function(){ editor.add_newLine(); }],
@@ -34,12 +35,10 @@ Keypad {
         ["()", function(){
             editor.addParenPair();
         }],
-        ["{}", function(){
-            editor.addCurlyPair();
+        ["=", function(){
+            editor.add_assign();
+            //editor.addCurlyPair();
         }],
-        [";", function(){
-            editor.add_terminator();
-            editor.add_newLine();
-        }],
+        ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
     ]
 }

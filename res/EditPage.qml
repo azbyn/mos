@@ -13,6 +13,7 @@ Item {
 
     Component.onCompleted: {
         setCurr(KeypadType.Main);
+
         //setCurr(KeypadType.Operators);
     }
     function close() {

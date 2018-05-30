@@ -73,6 +73,8 @@ enum class TT {
     xorEq,
     orEq,
 };
+bool isSpaceBetween(TT t1, TT t2);
+
 
 struct Token {
     using Type = TT;
@@ -85,8 +87,9 @@ struct Token {
         : type(type), val(std::move(val)) {}
 
     QString toString() const;
-    template<typename F1, typename F2>
-    QColor color(F1 prevType, F2 nextType) const;
+    template<typename F>
+    QColor color(TT prevType, F nextType) const;
+
 };
 struct DToken {
     TT type;
@@ -102,8 +105,8 @@ struct DToken {
     void del();
 };
 
-template<typename F1, typename F2>
-QColor Token::color(F1 prevType, F2 nextType) const {
+template<typename F>
+QColor Token::color(TT prevType, F nextType) const {
     switch (type) {
     case TT::eof:
     case TT::newLine:
@@ -125,7 +128,7 @@ QColor Token::color(F1 prevType, F2 nextType) const {
     case TT::return_:
         return colors::keywords;
     case TT::identifier:
-        return nextType() == TT::lParen || prevType() == TT::fun ?
+        return nextType() == TT::lParen || prevType == TT::fun ?
             colors::functions : colors::variables;
     case TT::number: return colors::numbers;
     case TT::string: return colors::strings;

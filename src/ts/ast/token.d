@@ -187,7 +187,6 @@ tsstring toStr(const Token* t) {
     case TT.andEq: return " &= ";
     case TT.xorEq: return " ^= ";
     case TT.orEq: return " |= ";
-
     }
     /*
     import core.stdc.stdlib : free;

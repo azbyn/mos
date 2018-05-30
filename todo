@@ -4,5 +4,6 @@ linewrap
 string escape sequence highlighting
 
 misc:
+add good on screen keyboadd
 use dejavu sans for default 
 try qvector instead of std::vector

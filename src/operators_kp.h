@@ -11,13 +11,10 @@ class OperatorsKp : public QQuickPaintedItem {
 private:
     enum State {
         Main,
-        Misc,
         Math,
         Comp,
         Bool,
         Bitwise,
-        Assign1,
-        Assign2,
 
         Len
     } state = State::Main;
@@ -37,11 +34,16 @@ private:
 #define SD_SET_STATE(_str, _state) \
     {_str, [](OperatorsKp* k) { k->setState(State::_state); }}
 
-#define SD_ADD_TOK(_str, _tt) \
-    {_str, [](OperatorsKp* k) { k->back(); Editor::Instance->add_##_tt(); }}
+#define SD_ADD_TOK(_str, _tt)                   \
+    {_str, [](OperatorsKp* k) {                 \
+            k->gotoMain();                      \
+            k->setState(State::Main);           \
+            Editor::Instance->add_##_tt();      \
+        }}
 #define SD_ADD_TOK2(_str, _tt1, _tt2)           \
     {_str, [](OperatorsKp* k) {                 \
-            k->back();                      \
+            k->gotoMain();                      \
+            k->setState(State::Main);           \
             Editor::Instance->add_##_tt1();     \
             Editor::Instance->add_##_tt2();     \
     }}
@@ -52,19 +54,12 @@ private:
         //Main
         {{
             SD_ADD_TOK(".", dot),
-            SD_ADD_TOK("=", assign),
-            SD_SET_STATE("misc", Misc),
-            SD_SET_STATE("& ^ |", Bitwise),
-            SD_SET_STATE("+= **=", Assign1),
-            SD_SET_STATE("~= |=", Assign2),
-            SD_SET_STATE("+ %", Math),
-            SD_SET_STATE("!= <", Comp),
-        }},
-        // Misc
-        {{
             SD_ADD_TOK("~", tilde),
             SD_ADD_TOK2("?:", question, colon),
             SD_ADD_TOK2("[]", lSquare, rSquare),
+            SD_SET_STATE("& ^ |", Bitwise),
+            SD_SET_STATE("+ %", Math),
+            SD_SET_STATE("!= <", Comp),
         }},
         // Math
         {{
@@ -100,26 +95,6 @@ private:
             SD_ADD_TOK("|", bOr),
             SD_ADD_TOK("<<", lsh),
             SD_ADD_TOK(">>", rsh),
-        }},
-        //TODO remove these and convert ie '+' and '=' to '+='
-        // Assign1
-        {{
-            SD_ADD_TOK("+=", plusEq),
-            SD_ADD_TOK("-=", minusEq),
-            SD_ADD_TOK("*=", mplyEq),
-            SD_ADD_TOK("/=", divEq),
-            SD_ADD_TOK("//=", intDivEq),
-            SD_ADD_TOK("%=", modEq),
-            SD_ADD_TOK("**=", powEq),
-        }},
-        // Assign2
-        {{
-            SD_ADD_TOK("~=", catEq),
-            SD_ADD_TOK("<<=", lshEq),
-            SD_ADD_TOK(">>=", rshEq),
-            SD_ADD_TOK("&=", andEq),
-            SD_ADD_TOK("|=", orEq),
-            SD_ADD_TOK("^=", xorEq),
         }},
     }};
 #undef SD_ADD_TOK

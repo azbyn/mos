@@ -7,10 +7,8 @@ fun dis(a,b): a-b
 b = 1;
 x = dis(
 	2 + 2.0,
-	dis(9,
-	1.5
-	)
-	)
+		dis(9,
+		1.5))
 println(x)
 add2 = add(2)
 println(add2(7))
