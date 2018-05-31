@@ -98,10 +98,6 @@ struct DToken {
     explicit DToken(TT tt) : type(tt), len(0), str(nullptr) {}
     explicit DToken(const Token& t);
 
-    //DToken(const DToken&) = delete;
-    //DToken(DToken&&) = delete;
-    //DToken& operator=(const DToken&) = delete;
-    //DToken& operator=(DToken&&) = delete;
     void del();
 };
 
@@ -117,6 +113,7 @@ QColor Token::color(TT prevType, F nextType) const {
     case TT::true_:
     case TT::false_:
     case TT::nil:
+        return colors::constants;
     case TT::fun:
     case TT::if_:
     case TT::else_:
@@ -126,14 +123,14 @@ QColor Token::color(TT prevType, F nextType) const {
     case TT::for_:
     case TT::in:
     case TT::return_:
+    case TT::lambda:
+    case TT::arrow:
         return colors::keywords;
     case TT::identifier:
         return nextType() == TT::lParen || prevType == TT::fun ?
             colors::functions : colors::variables;
     case TT::number: return colors::numbers;
     case TT::string: return colors::strings;
-    case TT::lambda:
-    case TT::arrow:
         return colors::operators;
     case TT::lParen:
     case TT::rParen:

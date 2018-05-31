@@ -324,11 +324,6 @@ private:
     // funcDef: "fun" Identifier [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
     // funcParams: Identifier ["," cont [funParams]]
     bool funcDef(out AstNode res) {
-        return fun!true(res);
-    }
-    // fun: "fun" [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
-    // funcParams: Identifier ["," cont [funParams]]
-    bool fun(bool isDef = false)(out AstNode res) {
         void funcParams(TT terminator, ref tsstring[] args) {
             const(Token)* p;
             while (!is_(TT.eof, terminator)) {
@@ -345,10 +340,9 @@ private:
         const(Token)* f;
         if (!consume(f, TT.fun))
             return false;
-        static if (isDef) {
-            const(Token)* t;
-            require(t, TT.identifier);
-        }
+        const(Token)* t;
+        require(t, TT.identifier);
+
         tsstring[] captures;
         if (consume(TT.lSquare)) {
             funcParams(TT.rSquare, captures);
@@ -359,13 +353,11 @@ private:
         tsstring[] params;
         funcParams(TT.rParen, params);
         require(TT.colon);
-        res = astLambda(getPos(f), captures, params, body_());
-
-        static if (isDef)
-            res = astAssign(getPos(t), astVariable(getPos(t), t.tsstr), res);
+        res = astAssign(getPos(t), astVariable(getPos(t), t.tsstr),
+                        astLambda(getPos(f), captures, params, body_()));
         return true;
     }
-    // if_: "if" expression ":" body_ [ "else" ":" body_ ]
+    // if_: "if" expression ":" body_ {"\n"} [ "else" ":" body_ ]
     bool if_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.if_))
@@ -373,6 +365,8 @@ private:
         auto cond = expression();
         require(TT.colon);
         auto b = body_();
+        while (consume(TT.newLine)) continue;
+
         AstNode else_ = null;
         if (consume(TT.else_)) {
             require(TT.colon);
@@ -409,7 +403,7 @@ private:
         cont();
         auto col = expression();
         require(TT.colon);
-        auto body_ = stmt();
+        auto body_ = body_();
         tsstring index, val;
         if (b is null) {
             index = "_";
@@ -595,13 +589,11 @@ private:
         return a;
     }
     // lambda: "λ" { Identifier cont } | Identifier "->" cont expression
-    //       | term | fun
+    //       | term
     AstNode lambda() {
         const(Token)* t;
         if (!consume(t, TT.lambda)) {
             AstNode res;
-            if (fun(res))
-                return res;
             return term();
         }
         tsstring[] params;

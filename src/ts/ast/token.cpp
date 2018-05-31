@@ -231,6 +231,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         switch (t1) {
         case TT::string:
         case TT::number:
+        case TT::else_:
         case TT::true_:
         case TT::false_:
         case TT::nil:

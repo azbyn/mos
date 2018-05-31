@@ -23,8 +23,7 @@ Keypad {
         ["other\nobjs", function(){ }],
         [">+-",         function(){ ep.setCurr(KeypadType.Operators); }],
 
-        ["\\t",     function(){ editor.add_indent(); }],
-        //["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
+        ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
         ["if\nfor", function(){ ep.setCurr(KeypadType.Statements) }],
         ["\\n",     function(){ editor.add_newLine(); }],
@@ -39,6 +38,6 @@ Keypad {
             editor.add_assign();
             //editor.addCurlyPair();
         }],
-        ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
+        ["\\t",     function(){ editor.add_indent(); }],
     ]
 }

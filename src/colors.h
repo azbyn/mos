@@ -33,13 +33,13 @@ const QColor delimiters      = base05;
 const QColor functions       = base0D;
 const QColor variables       = base05;
 const QColor numbers         = base09;
+const QColor constants       = base09;
 const QColor strings         = base0B;
 const QColor keywords        = base0E;
 const QColor classes         = base0A;
 const QColor escapeSequences = base0A;
 // clang-format on
 } // namespace colors
-//Q_PROPERTY(MessageBody* body READ body WRITE setBody NOTIFY bodyChanged)
 
 class Colors_qml : public QObject {
     Q_OBJECT
