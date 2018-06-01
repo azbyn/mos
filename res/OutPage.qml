@@ -11,20 +11,32 @@ Rectangle {
     width: parent.width
     height: parent.height - y
 
-    property alias text: txt.text
     ScrollView {
         id: sv
         anchors.fill: parent
+        width: root.width
+        height: root.height
         //anchors.margins: 4
         flickableItem.flickableDirection: Flickable.AutoFlickIfNeeded
+        OutText {
+            id: outText
+            width: root.width
+            height: root.height
+        }
+
+        /*
         Text {
             id: txt
             text: ""
             width: root.width
             height: root.height
             color: Colors.base05
-            font.family: editor.getFontName()
+            font.family: editor.getFontFamMono()
             font.pointSize: 14
-        }
+            onTextChanged: {
+                width = contentWidth
+                height = contentHeight
+            }
+        }*/
     }
 }

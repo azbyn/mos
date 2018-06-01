@@ -21,7 +21,7 @@ Keypad {
         ["back", function(){ ep.setCurr(KeypadType.Main); } ],
         ["<-",   function(){ numText.cursorLeft(); } ],
         ['->',   function(){ numText.cursorRight() ;} ],
-        ["del",  function(){ numText.del(); } ],
+        ["⌫",  function(){ numText.del(); } ],
     ]
     quickPerc: 0.1
 

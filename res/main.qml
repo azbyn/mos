@@ -50,14 +50,6 @@ ApplicationWindow {
             add_rCurly();
             setCursorUnsafe(c);
         }
-        onSetOut: {
-            console.log("SetOut: '", value, "'");
-            out.text = value;
-        }
-        onAppendOut: {
-            console.log("AppendOut: '", value, "'");
-            out.text += value;
-        }
     }
 
     function setType(x) {
@@ -73,11 +65,20 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
+        /*function Timer() {
+            return Qt.createQmlObject("import QtQuick 2.0; Timer {}", app);
+        }*/
         setType(PageType.Edit);
-        /*if (Qt.application.arguments.lenght === 2) {
+        if (1) {
+            /*var timer = new Timer();
+            timer.interval = 1000;
+            timer.repeat = false;
+            timer.triggered.connect(function() {*/
             editor.run();
             setType(PageType.Out);
-        }*/
+            /*});
+            timer.start();*/
+        }
 
         //Qt.inputMethod.hide();
 

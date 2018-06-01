@@ -28,7 +28,7 @@ Keypad {
         ["->",   function(){ editor.cursorRight() ;} ],
         ["undo", function(){}],
         ["redo", function(){}],
-        ["del",  function(){ editor.del(); } ],
+        ["⌫",  function(){ editor.del(); } ],
     ]
     quickPerc: 0.1
 
@@ -73,6 +73,7 @@ Keypad {
             editor.add_in();
             editor.add_colon();
             editor.setCursorUnsafe(c);
+            back();
         }],
         ["in",       function(){ editor.add_in(); back(); }],
         ["return",   function(){ editor.add_return(); back(); }],

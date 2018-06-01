@@ -1,7 +1,7 @@
 #include "editor.h"
 
 #include "editor_text.h"
-//#include "indentation_helper.h"
+#include "out_text.h"
 #include "ts/ast/lexer.h"
 
 void tsrun(const DToken* ptr, int len);
@@ -11,9 +11,7 @@ static void update() {
 }
 
 Editor* Editor::Instance = nullptr;
-Editor::Editor() : data{
-                       {},
-                   } {
+Editor::Editor() : data{{},} {
     if (Instance != nullptr) throw "EXPECTED ONE INSTANCE OF Editor";
     Instance = this;
 #ifndef ANDROID
@@ -107,11 +105,8 @@ void Editor::add_newLine() {
     ++cursor.ry();
     update();
 }
-void Editor::puts(const QString& value) {
-    appendOut(value);
-}
 void Editor::run() {
-    setOut("");
+    tsclear();
     //QVector<DToken> toks;
     std::vector<DToken> dtoks;
     int prevLevel = 0;
@@ -188,7 +183,9 @@ void Editor::run() {
 
     tsrun(dtoks.data(), dtoks.size());
 }
-QString Editor::getFontName() const { return EditorText::Instance->getFontName(); }
+
+QString Editor::getFontFamSans() const{ return config::fontFamSans; }
+QString Editor::getFontFamMono() const{ return config::fontFamMono; }
 
 void Editor::_setCursorCell(int x, int y) {
     if (y < 0) {
@@ -234,8 +231,4 @@ void Editor::_setCursorCell(int x, int y) {
     }
     cursor.rx() = vec.size();
     //qDebug("setcurs %ld, $ (%d)", line, cursor.x());
-}
-
-void tsputs(const ushort* sh, size_t len) {
-    Editor::Instance->puts(QString::fromUtf16(sh, len));
 }

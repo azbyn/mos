@@ -73,8 +73,8 @@ set cpo&vim
 "   built-in below (use 'from __future__ import print_function' in 2)
 " - async and await were added in ts 3.5 and are soft keywords.
 "
-syn keyword tsStatement	as assert break continue del exec global
-syn keyword tsStatement	lambda nonlocal pass print return with yield
+syn keyword tsStatement	break continue
+"syn keyword tsStatement	lambda nonlocal pass print return with yield
 syn keyword tsStatement	class fun nextgroup=tsFunction skipwhite
 syn keyword tsConditional	elif else if
 syn keyword tsRepeat	for while

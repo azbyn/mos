@@ -10,9 +10,7 @@
 
 EditorTextBase::EditorTextBase(QQuickItem* parent, int fontSize)
     : QQuickPaintedItem(parent) {
-    int id = QFontDatabase::addApplicationFont(config::fontPath);
-    QString family = QFontDatabase::applicationFontFamilies(id).at(0);
-    font = QFont(family);
+    font = QFont(config::fontFamMono);
 
     font.setPointSize(fontSize);
     fsd = FontSizeData(font);

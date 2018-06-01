@@ -1,9 +1,18 @@
 editText:
-scrollable
 linewrap
 string escape sequence highlighting
+squiggly lines
+cursor blink
+
+outPage:
+test color output
 
 misc:
 add good on screen keyboadd
-use dejavu sans for default 
 try qvector instead of std::vector
+
+dlang:
+delete bioverloads
+enums
+del keyword
+add properties (make Pi one)

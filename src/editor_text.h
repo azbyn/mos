@@ -29,8 +29,8 @@ public:
     float getMinHeight() const;
     void setMinHeight(float value);
 
-public slots:
-    QString getFontName() const { return font.family(); }
+//public slots:
+//   QString getFontName() const { return font.family(); }
 
 protected:
     QPoint origin() const override;

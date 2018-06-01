@@ -10,7 +10,7 @@ Keypad {
         ["undo", function(){ } ],
         ["redo", function(){} ],
         ["find", function(){} ],
-        ["del",  function(){ editor.del(); } ],
+        ["⌫",  function(){ editor.del(); } ],
     ]
     quickPerc: 0.1
 
@@ -18,10 +18,10 @@ Keypad {
     sizeY: 3
     perc: 0.108 * sizeY
     btnData: [
-        ["123",         function(){ ep.setCurr(KeypadType.Number); }],
-        ['"str"',       function(){ ep.setCurr(KeypadType.String); }],
-        ["other\nobjs", function(){ }],
-        [">+-",         function(){ ep.setCurr(KeypadType.Operators); }],
+        ["123",            function(){ ep.setCurr(KeypadType.Number); }],
+        ['"str"',          function(){ ep.setCurr(KeypadType.String); }],
+        ["true λ\n{} nil", function(){ ep.setCurr(KeypadType.OtherObjs) }],
+        ["> + -\n % =",    function(){ ep.setCurr(KeypadType.Operators); }],
 
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],

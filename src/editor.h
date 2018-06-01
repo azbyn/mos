@@ -22,7 +22,6 @@ public:
 
     Editor();
     void addToken(TT type, const QString& val = {});
-    void puts(const QString& value);
 
     static const std::vector<std::vector<Token>>& lines()  { return Instance->data; }
     static auto lineCount() { return Instance->data.size(); }
@@ -36,7 +35,8 @@ public slots:
     void add_indent();
     void decrementIndent();
     void run();
-    QString getFontName() const;
+    QString getFontFamSans() const;
+    QString getFontFamMono() const;
 
     void cursorLeft();
     void cursorRight();
@@ -115,12 +115,6 @@ public slots:
     void add_xorEq()                      { addToken(TT::xorEq); }
     void add_orEq()                       { addToken(TT::orEq); }
     // clang-format on
-public:
-signals:
-    void setOut(const QString& value);
-    void appendOut(const QString& value);
-public:
-    friend void tsputs(const ushort* sh, size_t len);
 };
 
 

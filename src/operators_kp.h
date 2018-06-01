@@ -58,6 +58,7 @@ private:
             SD_ADD_TOK2("?:", question, colon),
             SD_ADD_TOK2("[]", lSquare, rSquare),
             SD_SET_STATE("& ^ |", Bitwise),
+            SD_SET_STATE("&& || !", Bool),
             SD_SET_STATE("+ %", Math),
             SD_SET_STATE("!= <", Comp),
         }},

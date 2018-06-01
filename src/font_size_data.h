@@ -4,7 +4,7 @@
 #include <QFontMetricsF>
 
 struct FontSizeData {
-    float width, height, ascent, xHeight;
+    float width, height, ascent/*, descent*/, xHeight;
 
     FontSizeData() = default;
     FontSizeData(const QFont& font) {
@@ -13,6 +13,7 @@ struct FontSizeData {
         width = fm.width(str)/str.size(); //fm.maxWidth();
         height = fm.height();
         ascent = fm.ascent();
+        //descent = fm.descent();
         xHeight = fm.xHeight();
     }
 };

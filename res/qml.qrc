@@ -19,5 +19,24 @@
         <file>StmtKp.qml</file>
         <file>EditorTextQml.qml</file>
         <file>OperatorsKpQml.qml</file>
+        <file>OtherObjsKp.qml</file>
+        <file>fonts/DejaVuSerifCondensed.ttf</file>
+        <file>fonts/DejaVuSerifCondensed-Italic.ttf</file>
+        <file>fonts/DejaVuSerifCondensed-BoldItalic.ttf</file>
+        <file>fonts/DejaVuSerifCondensed-Bold.ttf</file>
+        <file>fonts/DejaVuSerif.ttf</file>
+        <file>fonts/DejaVuSerif-Italic.ttf</file>
+        <file>fonts/DejaVuSerif-BoldItalic.ttf</file>
+        <file>fonts/DejaVuSerif-Bold.ttf</file>
+        <file>fonts/DejaVuSansCondensed.ttf</file>
+        <file>fonts/DejaVuSansCondensed-BoldOblique.ttf</file>
+        <file>fonts/DejaVuSansCondensed-Oblique.ttf</file>
+        <file>fonts/DejaVuSansCondensed-Bold.ttf</file>
+        <file>fonts/DejaVuSans.ttf</file>
+        <file>fonts/DejaVuSans-ExtraLight.ttf</file>
+        <file>fonts/DejaVuSans-Oblique.ttf</file>
+        <file>fonts/DejaVuSans-BoldOblique.ttf</file>
+        <file>fonts/DejaVuSans-Bold.ttf</file>
+        <file>fonts/DejaVuMathTeXGyre.ttf</file>
     </qresource>
 </RCC>

@@ -24,6 +24,7 @@ Rectangle {
         id: buttonText
         text: parent.description
         anchors.centerIn: parent
+        font.family: editor.getFontFamSans()
         //font.pixelSize: parent.height * .5
         //style: Text.Sunken
         color: Colors.base00

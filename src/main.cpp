@@ -2,6 +2,7 @@
 #include "keypad_type.h"
 #include "operators_kp.h"
 #include "lib_type.h"
+#include "out_text.h"
 #include "page_type.h"
 #include "number_text.h"
 #include "colors.h"
@@ -32,6 +33,7 @@ int mainCpp(int argc, char *argv[]) {
     REGISTER_TYPE(NumberText);
     REGISTER_TYPE(OperatorsKp);
     REGISTER_TYPE(Editor);
+    REGISTER_TYPE(OutText);
 
     //qmlRegisterType<EditorText>("ts", 1, 0, "EditorText");
     //qmlRegisterType<NumberText>("ts", 1, 0, "NumberText");
@@ -56,6 +58,8 @@ int mainCpp(int argc, char *argv[]) {
         });
 
 
+    config::start();
+    OutText::init();
     /*
     qmlRegisterSingletonType<Editor>(
         "ts", 1, 0, "Editor",

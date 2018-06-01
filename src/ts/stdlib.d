@@ -57,7 +57,7 @@ tsfloat Pi() {
 }
 //make more python like
 tsfloat abs_(tsfloat v) { return abs(v); }
-tsint abs_(tsint v) { return abs(v); }
+//tsint abs_(tsint v) { return abs(v); }
 tsfloat sin_(tsfloat v) { return sin(v); }
 tsfloat cos_(tsfloat v) { return cos(v); }
 tsfloat tan_(tsfloat v) { return tan(v); }
@@ -84,7 +84,6 @@ tsfloat log2_(tsfloat v) { return log2(v); }
 tsfloat fmod_(tsfloat x, tsfloat y) { return fmod(x,y); }
 //nothrow @nogc @trusted real modf(real x, ref real i);
 tsfloat scalbn_(tsfloat x, tsint n) {return scalbn(x, cast(int) n); }
-tsfloat cbrt_(tsfloat v) { return cbrt(v); }
 tsfloat fabs_(tsfloat v) { return fabs(v); }
 tsfloat hypot_(tsfloat x, tsfloat y) { return hypot(x, y); }
 tsfloat ceil_(tsfloat x) { return ceil(x); }
@@ -106,30 +105,19 @@ bool isInfinity_(tsfloat x) { return isInfinity(x); }
 bool isIdentical_(tsfloat x, tsfloat y) { return isIdentical(x, y); }
 tsint signbit_(tsfloat x) { return signbit(x); }
 tsfloat sgn_(tsfloat x) { return sgn(x); }
-tsint sgn_(tsint x) { return sgn(x); }
+//tsint sgn_(tsint x) { return sgn(x); }
 tsfloat pow_(tsfloat x, tsfloat y) { return pow(x, y); }
 
 tsfloat max_(tsfloat x, tsfloat y) { return x> y ? x : y; }
-tsfloat max_(tsint x, tsfloat y)   { return x> y ? x : y; }
-tsfloat max_(tsfloat x, tsint y)   { return x> y ? x : y; }
-tsint max_(tsint x, tsint y)      { return x> y ? x : y; }
+//tsfloat max_(tsint x, tsfloat y)   { return x> y ? x : y; }
+//tsfloat max_(tsfloat x, tsint y)   { return x> y ? x : y; }
+//tsint max_(tsint x, tsint y)      { return x> y ? x : y; }
 
 tsfloat min_(tsfloat x, tsfloat y) { return x< y ? x : y; }
-tsfloat min_(tsint x, tsfloat y)   { return x< y ? x : y; }
-tsfloat min_(tsfloat x, tsint y)   { return x< y ? x : y; }
-tsint   min_(tsint x, tsint y)     { return x< y ? x : y; }
+//tsfloat min_(tsint x, tsfloat y)   { return x< y ? x : y; }
+//tsfloat min_(tsfloat x, tsint y)   { return x< y ? x : y; }
+//tsint   min_(tsint x, tsint y)     { return x< y ? x : y; }
 bool approxEq_(tsfloat x, tsfloat y, tsfloat diff = 1e-05) {return approxEqual(x, y, diff); }
-
-/*
-	abs  fabs  sqrt  cbrt  hypot  poly  nextPow2  truncPow2 
-Trigonometry	sin  cos  tan  asin  acos  atan  atan2  sinh  cosh  tanh  asinh  acosh  atanh  expi 
-Rounding	ceil  floor  round  lround  trunc  rint  lrint  nearbyint  rndtol  quantize 
-Exponentiation & Logarithms	pow  exp  exp2  expm1  ldexp  frexp  log  log2  log10  logb  ilogb  log1p  scalbn 
-Modulus	fmod  modf  remainder 
-Floating-point operations	approxEqual  feqrel  fdim  fmax  fmin  fma  nextDown  nextUp  nextafter  NaN  getNaNPayload  cmp 
-Introspection	isFinite  isIdentical  isInfinity  isNaN  isNormal  isSubnormal  signbit  sgn  copysign  isPowerOf2 
-Hardware Control	IeeeFlags  FloatingPointControl 
- */
 
 void srand(tsint seed) {
     gen.seed(seed);
@@ -200,6 +188,10 @@ tsstring sprintf(Pos pos, Env env, tsstring fmt, Obj[] args) {
 void print(Obj[] args) {
     foreach (a; args)
         tsputs(a);
+}
+void printred(Obj[] args) {
+    foreach (a; args)
+        tsputsred(a.toStr);
 }
 void println(Obj[] args) {
     print(args);

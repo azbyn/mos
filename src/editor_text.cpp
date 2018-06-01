@@ -16,7 +16,7 @@ EditorText::EditorText(QQuickItem* parent)
     : EditorTextBase(parent, config::fontSize) {
     bold = font;
     bold.setBold(true);
-    if (Instance != nullptr)
+    if (Instance)
         throw std::runtime_error("EXPECTED ONE INSTANCE OF EditorText");
     Instance = this;
 }

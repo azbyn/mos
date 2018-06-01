@@ -37,6 +37,7 @@ Item {
         varKp.visible   = false;
         stmtKp.visible  = false;
         opKp.visible    = false;
+        ooKp.visible    = false;
 
         switch (x) {
         case KeypadType.Main:
@@ -72,6 +73,9 @@ Item {
         case KeypadType.Operators:
             curr = opKp;
             break;
+        case KeypadType.OtherObjs:
+            curr = ooKp;
+            break;
         default:
             console.log("INVALID CURR: ", x);
             return;
@@ -83,6 +87,10 @@ Item {
     OperatorsKpQml {
         id: opKp
     }
+    OtherObjsKp {
+        id: ooKp
+    }
+
     MainKp {
         id: mainKp
     }
@@ -122,13 +130,18 @@ Item {
         x: strText.x
         y: strText.y + strText.height
     }
-    StrKp {
+
+    /*StrKp {
         id: varKp
         width: strText.width
         height: root.height * perc
         x: strText.x
         y: strText.y + strText.height
         isStr: false
+    }*/
+
+    LibKp {
+        id: varKp
     }
 
     LibKp {
