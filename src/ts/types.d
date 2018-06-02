@@ -9,7 +9,6 @@ pure nothrow @nogc @safe:
 
     ptrdiff_t i;
     alias i this;
-
 } //make it mangle differently to int
 
 

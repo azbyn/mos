@@ -21,6 +21,12 @@ static:
         return res ~ ")";
     }
     tsstring type() { return "tuple"; }
+    tsint PropSet_Test(Tuple* t, tsint i) {
+        import com.log;
+        tslog("<TEST");
+        t.val[0] = objInt(i);
+        return i;
+    }
 
     tsint Size(Tuple v) { return v.val.length; }
     Obj opIndex(Pos pos, Tuple v, tsint i) {

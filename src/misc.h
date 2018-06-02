@@ -3,7 +3,7 @@
 
 #include <QString>
 #include <cstdint>
-
+/*
 typedef int Pos;
 
 struct TsException : std::exception {
@@ -16,7 +16,7 @@ struct TsException : std::exception {
     virtual const char* what() const throw() {
         return "Please get the QString msg";
     }
-};
+    };*/
 
 constexpr int digits(uint64_t num) {
     // clang-format off

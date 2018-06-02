@@ -8,7 +8,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
     "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Dict", "Tuple"
+    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", 
     ];
 
 class AstNode {
@@ -85,7 +85,14 @@ class AstNode {
         AstNode rvalue;
         AstNode lvalue;
     }
-
+    struct SetterDef {
+        tsstring name;
+        AstNode val;
+    }
+    struct GetterDef {
+        tsstring name;
+        AstNode val;
+    }
     struct Subscript {
         AstNode val;
         AstNode index;
@@ -184,6 +191,8 @@ class AstNode {
             (MethodCall v) {fv(v.obj); fv(v.args); },
             (Lambda v) { res ~= v.body_.freeVars(bound ~ v.params); },
             (Assign v) { fv(v.rvalue, v.lvalue); },
+            (SetterDef v) { fv(v.val); },
+            (GetterDef v) { fv(v.val); },
             (Subscript v) { fv(v.val, v.index); },
             (Member v) { fv(v.val); },
             (And v) { fv(v.a, v.b); },
@@ -254,6 +263,8 @@ class AstNode {
             (MethodCall v) => format!"methodCall '%s':%s%s"(v.name, str(v.obj), str(v.args)),
             (Lambda v) => format!"lambda (%s) [%s]:%s"(v.params.joiner(","), v.captures.joiner(","), str(v.body_)),
             (Assign v) => format!"assign:%s"(str(v.rvalue, v.lvalue)),
+            (SetterDef v) => format!"setterDef %s:%s"(v.name, str(v.val)),
+            (GetterDef v) => format!"getterDef %s:%s"(v.name, str(v.val)),
             (Subscript v) => format!"subscript:%s"(str(v.val, v.index)),
             (Member v) => format!"member '%s':%s"(v.member, str(v.val)),
             (And v) => format!"and:%s"(str(v.a, v.b)),
@@ -263,7 +274,7 @@ class AstNode {
             (For v) => format!"for %s, %s:%s"(v.index, v.val, str(v.collection, v.body_)),
             (Body v) => "body:" ~ str(v.val),
             (List v) => "list:" ~ str(v.val),
-            (Tuple v) => "list:" ~ str(v.val),
+            (Tuple v) => "tuple:" ~ str(v.val),
             (Dict v) => "dict:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,

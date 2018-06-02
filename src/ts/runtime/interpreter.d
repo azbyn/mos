@@ -8,6 +8,7 @@ import ts.type_table;
 import ts.builtin;
 import ts.runtime.env;
 import ts.objects.obj;
+import ts.objects.property;
 import ts.misc;
 import stdd.array;
 import stdd.format;
@@ -21,19 +22,12 @@ public Obj eval(BlockManager man) {
     //auto len = man.finish();
     return eval(man.mainBlock, Pos(-1), new Env(man.mainBlock.st), null, null);
 }
-Obj checkProp(Obj o, Pos p, Env e) {
-    import ts.objects;
-    Obj impl(T)(T f){
-        return f.ft == FuncType.Getter ? f(p, e, []) : o;
-    }
-    return o.val.tryVisit!(
-        (Function f) => impl(f),
-        (Closure f) => impl(f),
-        (BIFunction f) => impl(f),
-        (BIOverloads f) => impl(f),
-        () => o,
-        )();
+private Obj checkGetter(Obj x, Pos pos, Env env) {
+    return x.val.tryVisit!(
+        (Property p) => p.callGet(pos, env),
+        () => x);
 }
+
 public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null) {
     //writefln("eval @%d", bl.st.offset);
     if (env !is null)
@@ -51,7 +45,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
     if (bl.args.length != length)
         throw new RuntimeException(pos, format!"Expected %s args, got %s"(bl.args.length, length));
     foreach (i, a; bl.args) {
-        env.set(a, argv[i]);
+        env.set(pos, env, a, argv[i]);
     }
 
 
@@ -117,8 +111,13 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             auto b = pop();
             auto a = pop();
             auto val = bl.getStr(op.val);
-            stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%sSet"(val), "opFwdSet",
-                                 (Obj f) => f.call(pos, env, a, b),
+            Obj setterErr(Obj o) {
+                throw new RuntimeException(pos, format!"%s doesn't have a setter"(val));
+            }
+            stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%s"(val), "opFwdSet",
+                                 (Obj f) => f.val.tryVisit!(
+                                     (Property p) => p.callSetMember(pos, env, a, b),
+                                     () => setterErr(f)),
                                  (Obj f) => f.call(pos, env, a, objString(val), b));
         } break;
         case OPCode.MemberGet: {
@@ -126,8 +125,10 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             auto a = pop();
             auto val = bl.getStr(op.val);
             stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%s"(val), "opFwd",
-                                 (Obj f) => f.call(pos, env, a),
-                                 (Obj f) => f.call(pos, env, a, objString(val))).checkProp(pos, env);
+                                (Obj f) =>f.val.tryVisit!(
+                                     (Property p) => p.callGetMember(pos, env, a),
+                                     () => f),
+                                (Obj f) => f.call(pos, env, a, objString(val)));
         } break;
         case OPCode.SubscriptGet: {
             assert(len >= 2);
@@ -149,24 +150,21 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             return pop();
         }
         case OPCode.LoadConst: {
-            stack ~= bl.getConst(op.val).checkProp(pos, env);//check prop probably not needed
+            stack ~= bl.getConst(op.val).checkGetter(pos, env);//check prop probably not needed
         } break;
         case OPCode.LoadVal: {
-            stack ~= env.get(op).checkProp(pos, env);
+            stack ~= env.get(pos, env, op);//.checkGetter(pos, env);
         } break;
         case OPCode.LoadLib: {
-            stack ~= bl.lib.get(op.val).checkProp(pos, env);
+            stack ~= bl.lib.get(op.val).checkGetter(pos, env);
         } break;
-        case OPCode.MakeClosure:
-        case OPCode.MakeClosureGet:
-        case OPCode.MakeClosureSet:{
-            FuncType ft = cast(FuncType) (op.code - OPCode.MakeClosure);
+        case OPCode.MakeClosure: {
             auto cm = bl.man.closures[op.val];
             Obj*[OffsetVal] caps;
             foreach (c; cm.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= objClosure(bl.man.blocks[cm.blockIndex], caps, ft);
+            stack ~= objClosure(bl.man.blocks[cm.blockIndex], caps);
         } break;
         case OPCode.MakeList: {
             assert(len >= op.val);
@@ -186,7 +184,17 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         case OPCode.Assign: {
             assert(len >= 1);
             auto a = pop();
-            stack ~= env.set(op, a);
+            stack ~= env.set(pos, env, op, a);
+        } break;
+        case OPCode.SetterDef: {
+            assert(len >= 1);
+            auto a = pop();
+            stack ~= env.setterDef(pos, op, a);
+        } break;
+        case OPCode.GetterDef: {
+            assert(len >= 1);
+            auto a = pop();
+            stack ~= env.getterDef(pos, op, a);
         } break;
         case OPCode.Jmp: {
             msg = format!"%d"(op.val);

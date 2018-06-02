@@ -102,16 +102,15 @@ class Block {
     }
     void addClosureOrFunc(Pos pos, Block block, FuncType ft) {
         if (block.captures.length == 0)
-            addConst(pos, objFunction(block, ft));
+            addConst(pos, objFunction(block));
         else
-            addClosure(pos, block, block.captures, ft);
+            addClosure(pos, block, block.captures);
     }
 
-
-    void addClosure(Pos pos, Block bl, OffsetVal[] captures, FuncType ft) {
+    void addClosure(Pos pos, Block bl, OffsetVal[] captures) {
         man.blocks ~= bl;
         man.closures ~= ClosureMaker(man.blocks.length - 1, captures);
-        addVal(pos, cast(OPCode)(OPCode.MakeClosure + ft), man.closures.length - 1);
+        addVal(pos, cast(OPCode)(OPCode.MakeClosure), man.closures.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -179,6 +178,18 @@ class Block {
             return;
         addVal(pos, OPCode.Assign, st.get(pos, man, var));
     }
+    void addSetterDef(Pos pos, tsstring var) {
+        if (var == "_")
+            return;
+        addVal(pos, OPCode.SetterDef, st.get(pos, man, var));
+    }
+    void addGetterDef(Pos pos, tsstring var) {
+        if (var == "_")
+            return;
+        addVal(pos, OPCode.GetterDef, st.get(pos, man, var));
+    }
+
+
 
     tsstring getStr(size_t i) {
         assert(i < man.strs.length, format!"str %s out of range (%s)"(i, man.strs.length));
@@ -245,8 +256,6 @@ class Block {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
             case OPCode.MakeClosure:
-            case OPCode.MakeClosureGet:
-            case OPCode.MakeClosureSet:
                 r ~= tsformat!"(%s)"(man.closures[o.val].toString(man));
                 break;
             case OPCode.LoadConst:
@@ -261,10 +270,11 @@ class Block {
             case OPCode.MemberSet:
                 r ~= tsformat!"(%s)"(man.strs[o.val]);
                 break;
-                //case OPCode.subscriptGet:
-                //case OPCode.subscriptSet:
+                //case OPCode.SubscriptGet:
+                //case OPCode.SubscriptSet:
             case OPCode.LoadVal:
             case OPCode.Assign:
+            case OPCode.SetterDef:
                 r ~= tsformat!"(%s)"(st.getStr(man, o));
                 break;
             case OPCode.LoadLib:

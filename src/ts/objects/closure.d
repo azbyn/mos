@@ -11,11 +11,9 @@ import ts.misc;
 struct Closure {
     Block val;
     Obj*[OffsetVal] captures;
-    FuncType ft;
-    this(Block val, Obj*[OffsetVal] captures, FuncType ft) {
+    this(Block val, Obj*[OffsetVal] captures) {
         this.val = val;
         this.captures = captures;
-        this.ft = ft;
     }
 
     Obj opCall(Pos pos, Env env, Obj[] args) {

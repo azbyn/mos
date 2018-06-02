@@ -6,10 +6,8 @@ import ts.runtime.env;
 
 struct BIFunction {
     Obj function(Pos, Env, Obj[]) val;
-    FuncType ft;
-    this(Obj function(Pos, Env, Obj[]) @system val, FuncType ft) {
+    this(Obj function(Pos, Env, Obj[]) @system val) {
         this.val = val;
-        this.ft = ft;
     }
 
     Obj opCall(Pos pos, Env env, Obj[] a) { return val(pos, env, a); }

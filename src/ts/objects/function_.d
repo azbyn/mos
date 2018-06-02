@@ -9,10 +9,8 @@ import ts.misc;
 
 struct Function {
     Block val;
-    FuncType ft;
-    this(Block val, FuncType ft) {
+    this(Block val) {
         this.val = val;
-        this.ft = ft;
     }
 
     Obj opCall(Pos pos, Env env, Obj[] args) {

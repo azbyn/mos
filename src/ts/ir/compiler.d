@@ -24,6 +24,7 @@ enum OPCode {
     Call,
     MemberSet,
     MemberGet,
+    //MemberSetterDef,
     MethodCall,
     SubscriptGet,
     SubscriptSet,
@@ -32,13 +33,12 @@ enum OPCode {
     LoadVal,
     LoadLib,
     Assign,
+    SetterDef,
+    GetterDef,
     MakeList,
     MakeTuple,
     MakeDict,
-    //the order here must be identical to FuncType (ie. Default, Getter, Setter)
     MakeClosure,
-    MakeClosureGet,
-    MakeClosureSet,
     Jmp,
     Cmp,
     Binary,
@@ -192,6 +192,14 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
                 },
                 () { throw new IRException(pos, "Invalid assignment"); }
             )();
+        },
+        (AstNode.SetterDef v) {
+            ir(v.val);
+            bl.addSetterDef(pos, v.name);
+        },
+        (AstNode.GetterDef v) {
+            ir(v.val);
+            bl.addGetterDef(pos, v.name);
         },
         (AstNode.Subscript v) {
             ir(v.val);

@@ -20,10 +20,6 @@ spacing in dlang output
 load stdlib at compile time
 enums
 static asserts
-separate stdd from dclean
-add tuples to parser
-add prop to parser
 opCat no overloads only string concatenation (like perl5's '.')
 ?imports
 ?del keyword
-add properties (make Pi one)

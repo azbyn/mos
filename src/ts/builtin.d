@@ -135,7 +135,7 @@ auto getFunImpl(alias fun)() {
     });
 }
 
-Obj getFun(alias T, string fun, FuncType ft)() {
+Obj getFun(alias T, string fun)() {
     Obj function(Pos, Env, Obj[])[int] val;
     static foreach (o; __traits(getOverloads, T, fun)) {{
         static if (__traits(getProtection, o) == "public" &&
@@ -147,7 +147,7 @@ Obj getFun(alias T, string fun, FuncType ft)() {
             val[f.i] = f.val;
         }
     }}
-    return objBIOverloads(val, ft);
+    return objBIOverloads(val);
 }
 auto getFuncData(string f)() {
     import stdd.algorithm.searching;
@@ -179,10 +179,10 @@ static this() {
     _nil = new Obj(Nil());
 
     Obj defaultToString(T)() {
-        return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()), FuncType.Default);
+        return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()));
     }
-    Obj defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true), FuncType.Default);
-    Obj defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false), FuncType.Default);
+    Obj defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true));
+    Obj defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false));
 
     _typeTable = new TypeTable();
     Obj[tsstring] objs;
@@ -196,7 +196,7 @@ static this() {
         pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
-                type.ctor = getFun!(T, m, FuncType.Default);
+                type.ctor = getFun!(T, m);
                 objs[T.type()] = objBIFunction(
                     (Pos p, Env e, Obj[] a) {
                         import stdd.array;
@@ -206,11 +206,14 @@ static this() {
                         args[1..$] = a[];
                         typeTable.tryCtor!T.call(p, e, args);
                         return v;
-                    }, FuncType.Default);
+                    });
             }
             else static if (m != "type") {{
                 enum data = getFuncData!m;
-                type.members[data.name] = getFun!(T, m, data.ft);
+                assignFuncType!(data.ft)(type.members, data.name, getFun!(T, m));
+                static if (data.name == "Test") {
+                    tslog!"das test %s"(*type.members["Test"].peek!Property);
+                }
             }}
             /*
             else static if (m == "toString") {
@@ -228,7 +231,7 @@ static this() {
                     enum name = data.name[0..$-1];
                 else
                     enum name = data.name;
-                objs[name] = getFun!(mixin(mod), f, data.ft);
+                assignFuncType!(data.ft)(objs, name, getFun!(mixin(mod), f));
             }}
         }
     }

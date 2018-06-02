@@ -7,10 +7,8 @@ import stdd.format;
 
 struct BIOverloads {
     Obj function(Pos, Env, Obj[])[int] val;
-    FuncType ft;
-    this(Obj function(Pos, Env, Obj[])[int] val, FuncType ft) {
+    this(Obj function(Pos, Env, Obj[])[int] val) {
         this.val = val;
-        this.ft = ft;
     }
 
     Obj opCall(Pos pos, Env env, Obj[] a) {

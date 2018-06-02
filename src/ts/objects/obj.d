@@ -18,7 +18,7 @@ public import stdd.variant;
 enum types = [
     "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
     "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
-    "TupleIter",
+    "TupleIter", "Property"
     ];
 
 
@@ -127,11 +127,12 @@ class Obj {
         return binary(pos, env, name, other);
     }
 
+    /*
     Obj call(T...)(Pos pos, Env env, T a) {
         return call(pos, env, [a]);
-    }
+        }*/
 
-    Obj call(Pos p, Env e, Obj[] args) {
+    Obj call(Pos p, Env e, Obj[] args...) {
         //dfmt off
         return val.tryVisit!(
             (Function f) => f(p, e, args),
@@ -158,6 +159,13 @@ class Obj {
     bool isNil() {
         return val.peek!(Nil) !is null;
     }
+    bool is_(T)() {
+        return val.peek!(T) !is null;
+    }
+    T* peek(T)() {
+        return val.peek!(T);
+    }
+
 }
 
 static foreach (t; types)

@@ -278,12 +278,13 @@ private:
         return astBody(getPos(t), nodes);
     }
 
-    // statement: funDef | return | if | while | for | ctrlFlow
+    // statement: funDef | prop | return | if | while | for | ctrlFlow
     //          | expression '\n'
     AstNode stmt() {
         AstNode n;
         //dfmt off
         if (funcDef(n)) return n;
+        if (prop(n)) return n;
         if (return_(n)) return n;
         if (if_(n)) return n;
         if (while_(n)) return n;
@@ -316,30 +317,30 @@ private:
         return true;
     }
 
-    // funcDef: ("fun" | "prop") Identifier ["="] [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
     // funcParams: Identifier ["," cont [funParams]]
-    bool funcDef(out AstNode res) {
-        void funcParams(TT terminator, ref tsstring[] args) {
-            const(Token)* p;
-            while (!is_(TT.Eof, terminator)) {
-                cont();
-                require(p, TT.Identifier);
-                args ~= p.tsstr;
-                if (!consume(TT.Comma))
-                    break;
-            }
+    void funcParams(TT terminator, ref tsstring[] args) {
+        const(Token)* p;
+        while (!is_(TT.Eof, terminator)) {
             cont();
-            require(terminator);
+            require(p, TT.Identifier);
+            args ~= p.tsstr;
+            if (!consume(TT.Comma))
+                break;
         }
+        cont();
+        require(terminator);
+    }
 
+    // prop: propGet | propSet
+    // propGet: "prop" Identifier [ "[" cont funcParams cont "]" ] "["(" ")"] ":" body_
+    // propSet: "prop" Identifier "=" [ "[" cont funcParams cont "]" ] "(" cont Identifier cont ")" ":" body_
+    bool prop(out AstNode res) {
         const(Token)* f;
-        if (!consume(f, TT.Fun) && !consume(f, TT.Prop))
+        if (!consume(f, TT.Prop))
             return false;
-        FuncType ft = f.type == TT.Fun ? FuncType.Default : FuncType.Getter;
         const(Token)* t;
         require(t, TT.Identifier);
-        if (ft == FuncType.Getter && consume(TT.Assign))
-            ft = FuncType.Setter;
+        FuncType ft = consume(TT.Assign) ? FuncType.Setter : FuncType.Getter;
 
         tsstring[] captures;
         if (consume(TT.LSquare)) {
@@ -347,12 +348,46 @@ private:
         }
 
         cont();
+        if (ft == FuncType.Getter) {
+            if (consume(TT.LParen))
+                require(TT.RParen);
+            require(TT.Colon);
+            tsstring[] params;
+            res = astGetterDef(getPos(t), t.tsstr,
+                               astLambda(getPos(f), captures, params, body_(), ft));
+        } else {
+            const(Token)* param;
+            require(TT.LParen);
+            require(param, TT.Identifier);
+            require(TT.RParen);
+            require(TT.Colon);
+
+            res = astSetterDef(getPos(t), t.tsstr,
+                               astLambda(getPos(f), captures, [param.tsstr], body_(), ft));
+        }
+        return true;
+
+    }
+
+    // funcDef: "fun" Identifier [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
+    bool funcDef(out AstNode res) {
+        const(Token)* f;
+        if (!consume(f, TT.Fun))
+            return false;
+        const(Token)* t;
+        require(t, TT.Identifier);
+
+        tsstring[] captures;
+        if (consume(TT.LSquare)) {
+            funcParams(TT.RSquare, captures);
+        }
+        cont();
         require(TT.LParen);
         tsstring[] params;
         funcParams(TT.RParen, params);
         require(TT.Colon);
         res = astAssign(getPos(t), astVariable(getPos(t), t.tsstr),
-                        astLambda(getPos(f), captures, params, body_(), ft));
+                        astLambda(getPos(f), captures, params, body_(), FuncType.Default));
         return true;
     }
     // if_: "if" expression ":" body_ {"\n"} {"elif" expression ":" body_ {"\n"} } [ "else" ":" body_ ]
