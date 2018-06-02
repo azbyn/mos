@@ -56,6 +56,6 @@ void EditorTextBase::setCursorScreen(QPointF p) {
 void EditorTextBase::drawCursor(QPainter* p, int x, int y) const {
     auto o = origin();
     p->fillRect(fsd.width * x + o.x(), fsd.height * y + o.y(),
-                fsd.width * config::cursorPerc, fsd.height, colors::cursor);
+                fsd.width * config::cursorPerc, fsd.height, colors::Cursor);
 }
 

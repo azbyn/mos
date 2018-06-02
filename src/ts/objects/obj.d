@@ -10,24 +10,21 @@ import stdd.format;
 public import ts.ast.token;
 public import ts.runtime.env;
 public import ts.builtin;
+public import ts.misc : FuncType;
+import ts.stdlib;
 
 public import stdd.variant;
 
-
 enum types = [
     "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
-    "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range"
+    "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
+    "TupleIter",
     ];
+
 
 class RuntimeException : TSException {
     this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
         super(pos, msg, file, line);
-    }
-}
-
-class ArgCountException : RuntimeException {
-    this(A, B)(Pos pos, A expected, B got, string file = __FILE__, size_t line = __LINE__) {
-        super(pos, format!"Expected %d args, found %d"(expected, got), file, line);
     }
 }
 
@@ -50,10 +47,15 @@ class Obj {
     override const nothrow @safe size_t toHash() {
         return val.toHash();
     }
+    private static auto getName(T)() {
+        static if ( __traits(compiles, "T.type"))
+            return T.type;
+        else return typeid(T);
+    }
     T* getPtr(T)(Pos pos) {
         auto a = val.peek!T;
         if (a is null)
-            throw new RuntimeException(pos, format!"Expected type %s, got %s"(typeid(T), val.type));
+            throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, type()));
         return a;
     }
 
@@ -70,7 +72,7 @@ class Obj {
         else {
             auto a = val.peek!T;
             if (a is null)
-                throw new RuntimeException(pos, format!"Expected type %s, got %s"(typeid(T), val.type));
+                throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, type()));
             return *a;
         }
     }
@@ -161,7 +163,7 @@ class Obj {
 static foreach (t; types)
     mixin(format!`Obj obj%s(A...)(A args) {
                       return new Obj(%s(args));
-                  }`(t, t));
+                  }`(t[$-1] =='_'? t[0..$-1]: t, t));
 unittest {
     import stdd.stdio;
 

@@ -82,6 +82,7 @@ void OutText::paint(QPainter* p) {
         f.setUnderline(d.flags & A_UNDERLINE);
         p->setFont(f);
         p->setPen(d.fg);
+
         auto x = vCursor.x() * fsd.width + leftMargin;
         auto y = fsd.ascent + fsd.height * vCursor.y();
         p->fillRect(QRectF(x, y - fsd.ascent, fsd.width*len, fsd.height), d.bg);

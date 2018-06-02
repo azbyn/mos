@@ -32,8 +32,6 @@ public:
 
 
 public slots:
-    void add_indent();
-    void decrementIndent();
     void run();
     QString getFontFamSans() const;
     QString getFontFamMono() const;
@@ -44,76 +42,76 @@ public slots:
     QPoint getCursor() const { return cursor; }
     void setCursorUnsafe(QPoint p) { cursor = p; }
 
-    void add_newLine();
+    void decrementIndent();
+    void addIndent();
+    void addNewLine();
 
     // clang-format off
-    //void add_separator()                  { addToken(TT::separator); }
-    //void add_indent()                     { addToken(TT::indent); }
-    void add_comma()                      { addToken(TT::comma); }
-    void add_true()                       { addToken(TT::true_); }
-    void add_false()                      { addToken(TT::false_); }
-    void add_nil()                        { addToken(TT::nil); }
-    void add_if()                         { addToken(TT::if_); }
-    void add_else()                       { addToken(TT::else_); }
-    void add_break()                      { addToken(TT::break_); }
-    void add_continue()                   { addToken(TT::continue_); }
-    void add_while()                      { addToken(TT::while_); }
-    void add_for()                        { addToken(TT::for_); }
-    void add_in()                         { addToken(TT::in); }
-    void add_fun()                        { addToken(TT::fun); }
-    void add_return()                     { addToken(TT::return_); }
-    void add_identifier(const QString& s) { addToken(TT::identifier, s); }
-    void add_number(const QString& s)     { addToken(TT::number, s); }
-    void add_string(const QString& s)     { addToken(TT::string, s); }
-    void add_lambda()                     { addToken(TT::lambda); }
-    void add_arrow()                      { addToken(TT::arrow); }
-    void add_lParen()                     { addToken(TT::lParen); }
-    void add_rParen()                     { addToken(TT::rParen); }
-    void add_lSquare()                    { addToken(TT::lSquare); }
-    void add_rSquare()                    { addToken(TT::rSquare); }
-    void add_lCurly()                     { addToken(TT::lCurly); }
-    void add_rCurly()                     { addToken(TT::rCurly); }
-    void add_dot()                        { addToken(TT::dot); }
-    void add_inc()                        { addToken(TT::inc); }
-    void add_dec()                        { addToken(TT::dec); }
-    void add_plus()                       { addToken(TT::plus); }
-    void add_minus()                      { addToken(TT::minus); }
-    void add_mply()                       { addToken(TT::mply); }
-    void add_div()                        { addToken(TT::div); }
-    void add_intDiv()                     { addToken(TT::intDiv); }
-    void add_mod()                        { addToken(TT::mod); }
-    void add_pow()                        { addToken(TT::pow); }
-    void add_eq()                         { addToken(TT::eq); }
-    void add_ne()                         { addToken(TT::ne); }
-    void add_lt()                         { addToken(TT::lt); }
-    void add_gt()                         { addToken(TT::gt); }
-    void add_le()                         { addToken(TT::le); }
-    void add_ge()                         { addToken(TT::ge); }
-    void add_and()                        { addToken(TT::and_); }
-    void add_or()                         { addToken(TT::or_); }
-    void add_not()                        { addToken(TT::not_); }
-    void add_xor()                        { addToken(TT::xor_); }
-    void add_bAnd()                       { addToken(TT::bAnd); }
-    void add_bOr()                        { addToken(TT::bOr); }
-    void add_lsh()                        { addToken(TT::lsh); }
-    void add_rsh()                        { addToken(TT::rsh); }
-    void add_tilde()                      { addToken(TT::tilde); }
-    void add_assign()                     { addToken(TT::assign); }
-    void add_question()                   { addToken(TT::question); }
-    void add_colon()                      { addToken(TT::colon); }
-    void add_catEq()                      { addToken(TT::catEq); }
-    void add_plusEq()                     { addToken(TT::plusEq); }
-    void add_minusEq()                    { addToken(TT::minusEq); }
-    void add_mplyEq()                     { addToken(TT::mplyEq); }
-    void add_divEq()                      { addToken(TT::divEq); }
-    void add_intDivEq()                   { addToken(TT::intDivEq); }
-    void add_modEq()                      { addToken(TT::modEq); }
-    void add_powEq()                      { addToken(TT::powEq); }
-    void add_lshEq()                      { addToken(TT::lshEq); }
-    void add_rshEq()                      { addToken(TT::rshEq); }
-    void add_andEq()                      { addToken(TT::andEq); }
-    void add_xorEq()                      { addToken(TT::xorEq); }
-    void add_orEq()                       { addToken(TT::orEq); }
+    void addComma()                      { addToken(TT::Comma); }
+    void addTrue()                       { addToken(TT::True); }
+    void addFalse()                      { addToken(TT::False); }
+    void addNil()                        { addToken(TT::Nil); }
+    void addIf()                         { addToken(TT::If); }
+    void addElse()                       { addToken(TT::Else); }
+    void addBreak()                      { addToken(TT::Break); }
+    void addContinue()                   { addToken(TT::Continue); }
+    void addWhile()                      { addToken(TT::While); }
+    void addFor()                        { addToken(TT::For); }
+    void addIn()                         { addToken(TT::In); }
+    void addFun()                        { addToken(TT::Fun); }
+    void addReturn()                     { addToken(TT::Return); }
+    void addIdentifier(const QString& s) { addToken(TT::Identifier, s); }
+    void addNumber(const QString& s)     { addToken(TT::Number, s); }
+    void addString(const QString& s)     { addToken(TT::String, s); }
+    void addLambda()                     { addToken(TT::Lambda); }
+    void addArrow()                      { addToken(TT::Arrow); }
+    void addLParen()                     { addToken(TT::LParen); }
+    void addRParen()                     { addToken(TT::RParen); }
+    void addLSquare()                    { addToken(TT::LSquare); }
+    void addRSquare()                    { addToken(TT::RSquare); }
+    void addLCurly()                     { addToken(TT::LCurly); }
+    void addRCurly()                     { addToken(TT::RCurly); }
+    void addDot()                        { addToken(TT::Dot); }
+    void addInc()                        { addToken(TT::Inc); }
+    void addDec()                        { addToken(TT::Dec); }
+    void addPlus()                       { addToken(TT::Plus); }
+    void addMinus()                      { addToken(TT::Minus); }
+    void addMply()                       { addToken(TT::Mply); }
+    void addDiv()                        { addToken(TT::Div); }
+    void addIntDiv()                     { addToken(TT::IntDiv); }
+    void addMod()                        { addToken(TT::Mod); }
+    void addPow()                        { addToken(TT::Pow); }
+    void addEq()                         { addToken(TT::Eq); }
+    void addNe()                         { addToken(TT::Ne); }
+    void addLt()                         { addToken(TT::Lt); }
+    void addGt()                         { addToken(TT::Gt); }
+    void addLe()                         { addToken(TT::Le); }
+    void addGe()                         { addToken(TT::Ge); }
+    void addAnd()                        { addToken(TT::And); }
+    void addOr()                         { addToken(TT::Or); }
+    void addNot()                        { addToken(TT::Not); }
+    void addXor()                        { addToken(TT::Xor); }
+    void addBAnd()                       { addToken(TT::BAnd); }
+    void addBOr()                        { addToken(TT::BOr); }
+    void addLsh()                        { addToken(TT::Lsh); }
+    void addRsh()                        { addToken(TT::Rsh); }
+    void addTilde()                      { addToken(TT::Tilde); }
+    void addAssign()                     { addToken(TT::Assign); }
+    void addQuestion()                   { addToken(TT::Question); }
+    void addColon()                      { addToken(TT::Colon); }
+    void addCatEq()                      { addToken(TT::CatEq); }
+    void addPlusEq()                     { addToken(TT::PlusEq); }
+    void addMinusEq()                    { addToken(TT::MinusEq); }
+    void addMplyEq()                     { addToken(TT::MplyEq); }
+    void addDivEq()                      { addToken(TT::DivEq); }
+    void addIntDivEq()                   { addToken(TT::IntDivEq); }
+    void addModEq()                      { addToken(TT::ModEq); }
+    void addPowEq()                      { addToken(TT::PowEq); }
+    void addLshEq()                      { addToken(TT::LshEq); }
+    void addRshEq()                      { addToken(TT::RshEq); }
+    void addAndEq()                      { addToken(TT::AndEq); }
+    void addXorEq()                      { addToken(TT::XorEq); }
+    void addOrEq()                       { addToken(TT::OrEq); }
     // clang-format on
 };
 

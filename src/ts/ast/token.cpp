@@ -18,75 +18,77 @@ static std::string to_string(int x) {
 QString Token::toString() const {
     switch (type) {
     // clang-format off
-    case Type::eof: return "EOF";
-    case Type::newLine: return "\n";
-    case Type::indent: return "INDENT";
-    case Type::dedent: return "DEDENT";
-    case Type::comma: return ",";
-    case Type::true_: return "true";
-    case Type::false_: return "false";
-    case Type::nil: return "nil";
-    case Type::fun: return "fun";
-    case Type::if_: return "if";
-    case Type::else_: return "else";
-    case Type::break_: return "break";
-    case Type::continue_: return "continue";
-    case Type::while_: return "while";
-    case Type::for_: return "for";
-    case Type::in: return "in";
-    case Type::return_: return "return";
-    case Type::identifier: return val;
-    case Type::number: return val;
-    case Type::string: return QString("\"%1\"").arg(val);
-    case Type::lambda: return "λ";
-    case Type::arrow: return "->";
-    case Type::lParen: return "(";
-    case Type::rParen: return ")";
-    case Type::lSquare: return "[";
-    case Type::rSquare: return "]";
-    case Type::lCurly: return "{";
-    case Type::rCurly: return "}";
-    case Type::dot: return ".";
-    case Type::inc: return "++";
-    case Type::dec: return "--";
-    case Type::plus: return "+";
-    case Type::minus: return "-";
-    case Type::mply: return "*";
-    case Type::div: return "/";
-    case Type::intDiv: return "//";
-    case Type::mod: return "%";
-    case Type::pow: return "**";
-    case Type::eq: return "==";
-    case Type::ne: return "!=";
-    case Type::lt: return "<";
-    case Type::gt: return ">";
-    case Type::le: return "<=";
-    case Type::ge: return ">=";
-    case Type::and_: return "&&";
-    case Type::or_: return "||";
-    case Type::not_: return "!";
-    case Type::xor_: return "^";
-    case Type::bAnd: return "&";
-    case Type::bOr: return "|";
-    case Type::lsh: return "<<";
-    case Type::rsh: return ">>";
-    case Type::tilde: return "~";
-    case Type::assign: return "=";
-    case Type::question: return "?";
-    case Type::colon: return ":";
-    case Type::catEq: return "~=";
-    case Type::plusEq: return "+=";
-    case Type::minusEq: return "-=";
-    case Type::mplyEq: return "*=";
-    case Type::divEq: return "/=";
-    case Type::intDivEq: return "//=";
-    case Type::modEq: return "%=";
-    case Type::powEq: return "**=";
-    case Type::lshEq: return "<<=";
-    case Type::rshEq: return ">>=";
-    case Type::andEq: return "&=";
-    case Type::xorEq: return "^=";
-    case Type::orEq: return  "|=";
+    case Type::Eof: return "EOF";
+    case Type::NewLine: return "\n";
+    case Type::Indent: return "INDENT";
+    case Type::Dedent: return "DEDENT";
+    case Type::Comma: return ",";
+    case Type::True: return "true";
+    case Type::False: return "false";
+    case Type::Nil: return "nil";
+    case Type::Fun: return "fun";
+    case Type::Prop: return "prop";
+    case Type::If: return "if";
+    case Type::Elif: return "elif";
+    case Type::Else: return "else";
+    case Type::Break: return "break";
+    case Type::Continue: return "continue";
+    case Type::While: return "while";
+    case Type::For: return "for";
+    case Type::In: return "in";
+    case Type::Return: return "return";
+    case Type::Identifier: return val;
+    case Type::Number: return val;
+    case Type::String: return QString("\"%1\"").arg(val);
+    case Type::Lambda: return "λ";
+    case Type::Arrow: return "->";
+    case Type::LParen: return "(";
+    case Type::RParen: return ")";
+    case Type::LSquare: return "[";
+    case Type::RSquare: return "]";
+    case Type::LCurly: return "{";
+    case Type::RCurly: return "}";
+    case Type::Dot: return ".";
+    case Type::Inc: return "++";
+    case Type::Dec: return "--";
+    case Type::Plus: return "+";
+    case Type::Minus: return "-";
+    case Type::Mply: return "*";
+    case Type::Div: return "/";
+    case Type::IntDiv: return "//";
+    case Type::Mod: return "%";
+    case Type::Pow: return "**";
+    case Type::Eq: return "==";
+    case Type::Ne: return "!=";
+    case Type::Lt: return "<";
+    case Type::Gt: return ">";
+    case Type::Le: return "<=";
+    case Type::Ge: return ">=";
+    case Type::And: return "&&";
+    case Type::Or: return "||";
+    case Type::Not: return "!";
+    case Type::Xor: return "^";
+    case Type::BAnd: return "&";
+    case Type::BOr: return "|";
+    case Type::Lsh: return "<<";
+    case Type::Rsh: return ">>";
+    case Type::Tilde: return "~";
+    case Type::Assign: return "=";
+    case Type::Question: return "?";
+    case Type::Colon: return ":";
+    case Type::CatEq: return "~=";
+    case Type::PlusEq: return "+=";
+    case Type::MinusEq: return "-=";
+    case Type::MplyEq: return "*=";
+    case Type::DivEq: return "/=";
+    case Type::IntDivEq: return "//=";
+    case Type::ModEq: return "%=";
+    case Type::PowEq: return "**=";
+    case Type::LshEq: return "<<=";
+    case Type::RshEq: return ">>=";
+    case Type::AndEq: return "&=";
+    case Type::XorEq: return "^=";
+    case Type::OrEq: return  "|=";
         // clang-format on
     }
     throw std::logic_error(std::string("INVALID ") + to_string((int)type));
@@ -101,228 +103,230 @@ void DToken::del() {
     str = nullptr;
 }
 bool isSpaceBetween(TT t1, TT t2) {
-    if (t1 == TT::eof) return false;
+    if (t1 == TT::Eof) return false;
     switch (t2) {
     // clang-format off
-    case TT::eof:
-    case TT::newLine:
-    case TT::indent:
-    case TT::dedent:
+    case TT::Eof:
+    case TT::NewLine:
+    case TT::Indent:
+    case TT::Dedent:
         return false;
-    case TT::fun:
-    case TT::if_:
-    case TT::else_:
-    case TT::break_:
-    case TT::continue_:
-    case TT::while_:
-    case TT::for_:
-    case TT::in:
-    case TT::return_:
+    case TT::Fun:
+    case TT::Prop:
+    case TT::If:
+    case TT::Elif:
+    case TT::Else:
+    case TT::Break:
+    case TT::Continue:
+    case TT::While:
+    case TT::For:
+    case TT::In:
+    case TT::Return:
 
-    case TT::arrow:
-    case TT::not_:
-    case TT::question:
-    case TT::plus:
-    case TT::minus:
-    case TT::mply:
-    case TT::div:
-    case TT::intDiv:
-    case TT::mod:
-    case TT::pow:
-    case TT::eq:
-    case TT::ne:
-    case TT::lt:
-    case TT::gt:
-    case TT::le:
-    case TT::ge:
-    case TT::and_:
-    case TT::or_:
-    case TT::xor_:
-    case TT::bAnd:
-    case TT::bOr:
-    case TT::lsh:
-    case TT::rsh:
-    case TT::tilde:
-    case TT::catEq:
-    case TT::plusEq:
-    case TT::minusEq:
-    case TT::mplyEq:
-    case TT::divEq:
-    case TT::intDivEq:
-    case TT::modEq:
-    case TT::powEq:
-    case TT::lshEq:
-    case TT::rshEq:
-    case TT::andEq:
-    case TT::xorEq:
-    case TT::orEq:
+    case TT::Arrow:
+    case TT::Not:
+    case TT::Question:
+    case TT::Plus:
+    case TT::Minus:
+    case TT::Mply:
+    case TT::Div:
+    case TT::IntDiv:
+    case TT::Mod:
+    case TT::Pow:
+    case TT::Eq:
+    case TT::Ne:
+    case TT::Lt:
+    case TT::Gt:
+    case TT::Le:
+    case TT::Ge:
+    case TT::And:
+    case TT::Or:
+    case TT::Xor:
+    case TT::BAnd:
+    case TT::BOr:
+    case TT::Lsh:
+    case TT::Rsh:
+    case TT::Tilde:
+    case TT::CatEq:
+    case TT::PlusEq:
+    case TT::MinusEq:
+    case TT::MplyEq:
+    case TT::DivEq:
+    case TT::IntDivEq:
+    case TT::ModEq:
+    case TT::PowEq:
+    case TT::LshEq:
+    case TT::RshEq:
+    case TT::AndEq:
+    case TT::XorEq:
+    case TT::OrEq:
         return true;
 
-    case TT::number:
-    case TT::string:
+    case TT::Number:
+    case TT::String:
         switch (t1) {
-        case TT::lParen:
-        case TT::rParen:
-        case TT::lSquare:
-        case TT::lCurly:
-        case TT::not_:
-        case TT::inc:
-        case TT::dec:
+        case TT::LParen:
+        case TT::RParen:
+        case TT::LSquare:
+        case TT::LCurly:
+        case TT::Not:
+        case TT::Inc:
+        case TT::Dec:
             return false;
         default: return true;
         }
-    case TT::lParen:
-    case TT::lSquare:
-    case TT::lCurly:
+    case TT::LParen:
+    case TT::LSquare:
+    case TT::LCurly:
         switch (t1) {
-        case TT::lambda:
-        case TT::lParen:
-        case TT::rParen:
-        case TT::lSquare:
-        case TT::rSquare:
-        case TT::lCurly:
-        case TT::rCurly:
-        case TT::not_:
-        case TT::inc:
-        case TT::dec:
-        case TT::identifier:
-        case TT::true_:
-        case TT::false_:
-        case TT::nil:
-        case TT::fun:
+        case TT::Lambda:
+        case TT::LParen:
+        case TT::RParen:
+        case TT::LSquare:
+        case TT::RSquare:
+        case TT::LCurly:
+        case TT::RCurly:
+        case TT::Not:
+        case TT::Inc:
+        case TT::Dec:
+        case TT::Identifier:
+        case TT::True:
+        case TT::False:
+        case TT::Nil:
+        case TT::Fun:
 
             return false;
         default: return true;
         }
-    case TT::rParen:
-    case TT::rSquare:
-    case TT::rCurly:
+    case TT::RParen:
+    case TT::RSquare:
+    case TT::RCurly:
         switch (t1) {
-        case TT::number:
-        case TT::string:
-        case TT::true_:
-        case TT::false_:
-        case TT::nil:
-        case TT::lambda:
-        case TT::lParen:
-        case TT::rParen:
-        case TT::lSquare:
-        case TT::rSquare:
-        case TT::lCurly:
-        case TT::rCurly:
-        case TT::not_:
-        case TT::inc:
-        case TT::dec:
-        case TT::identifier:
+        case TT::Number:
+        case TT::String:
+        case TT::True:
+        case TT::False:
+        case TT::Nil:
+        case TT::Lambda:
+        case TT::LParen:
+        case TT::RParen:
+        case TT::LSquare:
+        case TT::RSquare:
+        case TT::LCurly:
+        case TT::RCurly:
+        case TT::Not:
+        case TT::Inc:
+        case TT::Dec:
+        case TT::Identifier:
             return false;
         default: return true;
         }
-    case TT::dot:
+    case TT::Dot:
         switch (t1) {
-        case TT::string:
-        case TT::rParen:
-        case TT::rSquare:
-        case TT::rCurly:
-        case TT::identifier:
+        case TT::String:
+        case TT::RParen:
+        case TT::RSquare:
+        case TT::RCurly:
+        case TT::Identifier:
             return false;
         default: return true;
         }
-    case TT::colon:
+    case TT::Colon:
         switch (t1) {
-        case TT::string:
-        case TT::number:
-        case TT::else_:
-        case TT::true_:
-        case TT::false_:
-        case TT::nil:
-        case TT::rParen:
-        case TT::rSquare:
-        case TT::rCurly:
-        case TT::inc:
-        case TT::dec:
-        case TT::identifier:
+        case TT::String:
+        case TT::Number:
+        case TT::Else:
+        case TT::True:
+        case TT::False:
+        case TT::Nil:
+        case TT::RParen:
+        case TT::RSquare:
+        case TT::RCurly:
+        case TT::Inc:
+        case TT::Dec:
+        case TT::Identifier:
             return false;
         default: return true;
         }
-    case TT::assign:
+    case TT::Assign:
         switch (t1) {
-        case TT::plus:
-        case TT::minus:
-        case TT::mply:
-        case TT::div:
-        case TT::intDiv:
-        case TT::mod:
-        case TT::pow:
-        case TT::eq:
-        case TT::ne:
-        case TT::lt:
-        case TT::gt:
-        case TT::le:
-        case TT::ge:
-        case TT::and_:
-        case TT::or_:
-        case TT::xor_:
-        case TT::bAnd:
-        case TT::bOr:
-        case TT::lsh:
-        case TT::rsh:
-        case TT::tilde:
-            return false;
-        default: return true;
-        }
-
-    case TT::inc:
-    case TT::dec:
-        switch (t1) {
-        case TT::string:
-        case TT::number:
-        case TT::lParen:
-        case TT::rParen:
-        case TT::lSquare:
-        case TT::rSquare:
-        case TT::lCurly:
-        case TT::rCurly:
-        case TT::true_:
-        case TT::false_:
-        case TT::nil:
-        case TT::identifier:
-            return false;
-        default: return true;
-        }
-    case TT::true_:
-    case TT::false_:
-    case TT::nil:
-    case TT::identifier:
-        switch (t1) {
-        case TT::lParen:
-        case TT::lSquare:
-        case TT::lCurly:
-        case TT::not_:
-        case TT::inc:
-        case TT::dot:
-        case TT::dec:
-            return false;
-        default: return true;
-        }
-    case TT::comma:
-        switch (t1) {
-        case TT::rParen:
-        case TT::rSquare:
-        case TT::rCurly:
-        case TT::identifier:
-        case TT::number:
-        case TT::true_:
-        case TT::false_:
-        case TT::nil:
+        case TT::Plus:
+        case TT::Minus:
+        case TT::Mply:
+        case TT::Div:
+        case TT::IntDiv:
+        case TT::Mod:
+        case TT::Pow:
+        case TT::Eq:
+        case TT::Ne:
+        case TT::Lt:
+        case TT::Gt:
+        case TT::Le:
+        case TT::Ge:
+        case TT::And:
+        case TT::Or:
+        case TT::Xor:
+        case TT::BAnd:
+        case TT::BOr:
+        case TT::Lsh:
+        case TT::Rsh:
+        case TT::Tilde:
             return false;
         default: return true;
         }
 
-    case TT::lambda:
+    case TT::Inc:
+    case TT::Dec:
         switch (t1) {
-        case TT::lParen:
-        case TT::lSquare:
-        case TT::lCurly:
+        case TT::String:
+        case TT::Number:
+        case TT::LParen:
+        case TT::RParen:
+        case TT::LSquare:
+        case TT::RSquare:
+        case TT::LCurly:
+        case TT::RCurly:
+        case TT::True:
+        case TT::False:
+        case TT::Nil:
+        case TT::Identifier:
+            return false;
+        default: return true;
+        }
+    case TT::True:
+    case TT::False:
+    case TT::Nil:
+    case TT::Identifier:
+        switch (t1) {
+        case TT::LParen:
+        case TT::LSquare:
+        case TT::LCurly:
+        case TT::Not:
+        case TT::Inc:
+        case TT::Dot:
+        case TT::Dec:
+            return false;
+        default: return true;
+        }
+    case TT::Comma:
+        switch (t1) {
+        case TT::RParen:
+        case TT::RSquare:
+        case TT::RCurly:
+        case TT::Identifier:
+        case TT::Number:
+        case TT::True:
+        case TT::False:
+        case TT::Nil:
+            return false;
+        default: return true;
+        }
+
+    case TT::Lambda:
+        switch (t1) {
+        case TT::LParen:
+        case TT::LSquare:
+        case TT::LCurly:
             return false;
         default: return true;
         }

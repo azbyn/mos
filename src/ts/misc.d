@@ -3,6 +3,12 @@ module ts.misc;
 import ts.ast.token : tsstring;
 import ts.types;
 
+enum FuncType {
+    Default,
+    Getter,
+    Setter,
+}
+
 tsstring tsformat(tsstring fmt, A...)(A args) {
     import stdd.format;
 

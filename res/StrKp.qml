@@ -30,9 +30,9 @@ Rectangle {
 
 
             if (isStr)
-                editor.add_string(s);
+                editor.addString(s);
             else
-                editor.add_identifier(s);
+                editor.addIdentifier(s);
         }],
     ]
     property int spacing: 1
@@ -58,8 +58,8 @@ Rectangle {
                 text: root.btnData[index][0]
                 onClicked/*Pressed*/: root.btnData[index][1]()
                 font.pointSize: 14
-                color: Colors.base05
-                txtColor: Colors.base00
+                color: Colors.Base05
+                txtColor: Colors.Base00
             }
         }
     }

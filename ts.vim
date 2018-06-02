@@ -75,14 +75,14 @@ set cpo&vim
 "
 syn keyword tsStatement	break continue
 "syn keyword tsStatement	lambda nonlocal pass print return with yield
-syn keyword tsStatement	class fun nextgroup=tsFunction skipwhite
+"syn keyword tsStatement	class fun prop nextgroup=tsFunction skipwhite
 syn keyword tsConditional	elif else if
 syn keyword tsRepeat	for while
 syn keyword tsOperator	and in is not or 
 syn keyword tsException	except finally raise try
 syn keyword tsInclude	from import
 syn keyword tsAsync		async await
-syn keyword tsDeclaration fun
+syn keyword tsDeclaration fun prop
 
 hi def link     tsDeclaration       Keyword
 

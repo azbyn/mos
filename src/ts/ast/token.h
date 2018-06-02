@@ -3,78 +3,79 @@
 
 #include "colors.h"
 enum class TT {
-    eof,
-    newLine,
-    indent,
-    dedent,
-    comma,
-    true_,
-    false_,
-    nil,
-    fun,
-    if_,
-    else_,
-    break_,
-    continue_,
-    while_,
-    for_,
-    in,
-    return_,
-    identifier,
-    number,
-    string,
-    lambda,
-    arrow,
-    lParen,
-    rParen,
-    lSquare,
-    rSquare,
-    lCurly,
-    rCurly,
-    dot,
-    inc,
-    dec,
-    plus,
-    minus,
-    mply,
-    div,
-    intDiv,
-    mod,
-    pow,
-    eq,
-    ne,
-    lt,
-    gt,
-    le,
-    ge,
-    and_,
-    or_,
-    not_,
-    xor_,
-    bAnd,
-    bOr,
-    lsh,
-    rsh,
-    tilde,
-    assign,
-    question,
-    colon,
-    catEq,
-    plusEq,
-    minusEq,
-    mplyEq,
-    divEq,
-    intDivEq,
-    modEq,
-    powEq,
-    lshEq,
-    rshEq,
-    andEq,
-    xorEq,
-    orEq,
+    Eof,
+    NewLine,
+    Indent,
+    Dedent,
+    Comma,
+    True,
+    False,
+    Nil,
+    Fun,
+    Prop,
+    If,
+    Elif,
+    Else,
+    Break,
+    Continue,
+    While,
+    For,
+    In,
+    Return,
+    Identifier,
+    Number,
+    String,
+    Lambda,
+    Arrow,
+    LParen,
+    RParen,
+    LSquare,
+    RSquare,
+    LCurly,
+    RCurly,
+    Dot,
+    Inc,
+    Dec,
+    Plus,
+    Minus,
+    Mply,
+    Div,
+    IntDiv,
+    Mod,
+    Pow,
+    Eq,
+    Ne,
+    Lt,
+    Gt,
+    Le,
+    Ge,
+    And,
+    Or,
+    Not,
+    Xor,
+    BAnd,
+    BOr,
+    Lsh,
+    Rsh,
+    Tilde,
+    Assign,
+    Question,
+    Colon,
+    CatEq,
+    PlusEq,
+    MinusEq,
+    MplyEq,
+    DivEq,
+    IntDivEq,
+    ModEq,
+    PowEq,
+    LshEq,
+    RshEq,
+    AndEq,
+    XorEq,
+    OrEq,
 };
 bool isSpaceBetween(TT t1, TT t2);
-
 
 struct Token {
     using Type = TT;
@@ -104,43 +105,45 @@ struct DToken {
 template<typename F>
 QColor Token::color(TT prevType, F nextType) const {
     switch (type) {
-    case TT::eof:
-    case TT::newLine:
-    case TT::indent:
-    case TT::dedent:
-    case TT::comma:
-        return colors::delimiters;
-    case TT::true_:
-    case TT::false_:
-    case TT::nil:
-        return colors::constants;
-    case TT::fun:
-    case TT::if_:
-    case TT::else_:
-    case TT::break_:
-    case TT::continue_:
-    case TT::while_:
-    case TT::for_:
-    case TT::in:
-    case TT::return_:
-    case TT::lambda:
-    case TT::arrow:
-        return colors::keywords;
-    case TT::identifier:
-        return nextType() == TT::lParen || prevType == TT::fun ?
-            colors::functions : colors::variables;
-    case TT::number: return colors::numbers;
-    case TT::string: return colors::strings;
-        return colors::operators;
-    case TT::lParen:
-    case TT::rParen:
-    case TT::lSquare:
-    case TT::rSquare:
-    case TT::lCurly:
-    case TT::rCurly:
-        return colors::brackets;
+    case TT::Eof:
+    case TT::NewLine:
+    case TT::Indent:
+    case TT::Dedent:
+    case TT::Comma:
+        return colors::Delimiters;
+    case TT::True:
+    case TT::False:
+    case TT::Nil:
+        return colors::Constants;
+    case TT::Fun:
+    case TT::Prop:
+    case TT::If:
+    case TT::Elif:
+    case TT::Else:
+    case TT::Break:
+    case TT::Continue:
+    case TT::While:
+    case TT::For:
+    case TT::In:
+    case TT::Return:
+    case TT::Lambda:
+    case TT::Arrow:
+        return colors::Keywords;
+    case TT::Identifier:
+        return nextType() == TT::LParen || prevType == TT::Fun || prevType == TT::Prop ?
+            colors::Functions : colors::Variables;
+    case TT::Number: return colors::Numbers;
+    case TT::String: return colors::Strings;
+        return colors::Operators;
+    case TT::LParen:
+    case TT::RParen:
+    case TT::LSquare:
+    case TT::RSquare:
+    case TT::LCurly:
+    case TT::RCurly:
+        return colors::Brackets;
     default:
-        return colors::operators;
+        return colors::Operators;
     }
 }
 

@@ -1,13 +1,14 @@
 module ts.ast.ast_node;
 
 import stdd.format;
+import ts.misc: FuncType;
 import ts.ast.token;
 
 private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
     "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Dict",
+    "CtrlFlow", "Dict", "Tuple"
     ];
 
 class AstNode {
@@ -57,15 +58,19 @@ class AstNode {
         tsstring[] captures;
         tsstring[] params;
         AstNode body_;
-        this(tsstring[] params, AstNode body_) {
+        FuncType ft;
+
+        this(tsstring[] params, AstNode body_, FuncType ft) {
             this.params = params;
             this.captures = body_.freeVars(params);
             this.body_ = body_;
+            this.ft = ft;
         }
-        this(tsstring[] captures, tsstring[] params, AstNode body_) {
+        this(tsstring[] captures, tsstring[] params, AstNode body_, FuncType ft) {
             this.params = params;
             this.captures = captures;
             this.body_ = body_;
+            this.ft = ft;
         }
 
     }
@@ -131,6 +136,9 @@ class AstNode {
     struct List {
         AstNode[] val;
     }
+    struct Tuple {
+        AstNode[] val;
+    }
     struct Dict {
         AstNode[] val;
     }
@@ -184,8 +192,9 @@ class AstNode {
             (While v) { fv(v.cond, v.body_); },
             (For v) { add(v.index); add(v.val); fv(v.collection, v.body_); },
             (Body v) { fv(v.val); },
-            (List v) {fv(v.val);},
             (Dict v) { fv(v.val); },
+            (List v) { fv(v.val);},
+            (Tuple v) { fv(v.val);},
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
         )();
@@ -254,7 +263,8 @@ class AstNode {
             (For v) => format!"for %s, %s:%s"(v.index, v.val, str(v.collection, v.body_)),
             (Body v) => "body:" ~ str(v.val),
             (List v) => "list:" ~ str(v.val),
-            (Dict v) => "map:" ~ str(v.val),
+            (Tuple v) => "list:" ~ str(v.val),
+            (Dict v) => "dict:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,
         )();

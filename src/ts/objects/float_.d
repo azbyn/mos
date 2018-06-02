@@ -11,7 +11,7 @@ struct Float {
 
 static:
     void ctor(Float v) { v.val = 0; }
-    void ctor(Pos p, Env e, Float v, Obj o) {
+    void ctor(Pos p, Float v, Obj o) {
         //dfmt off
         o.val.tryVisit!(
             (Int i) { v.val = i.val; },
@@ -21,56 +21,56 @@ static:
                     throw new RuntimeException(p, format!"Can't parse '%s' to a float"(s.val));
                 }
             },
-            () { invalidType(p, e, "int, float or string", o.type); }
+            () { invalidType(p, "int, float or string", o.type); }
         )();
         //dfmt on
     }
 
     tsstring toString(tsfloat f) { return f.to!tsstring; }
     tsstring type() { return "float"; }
-    Obj opAdd(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opAdd(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a + i.val),
             (Float f) => objFloat(a + f.val),
             () => nil,
         )();
     }
-    Obj opSub(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opSub(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a + i.val),
             (Float f) => objFloat(a + f.val),
             () => nil,
         )();
     }
-    Obj opMply(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opMply(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a * i.val),
             (Float f) => objFloat(a * f.val),
             () => nil,
         )();
     }
-    Obj opDiv(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opDiv(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a / i.val),
             (Float f) => objFloat(a / f.val),
             () => nil,
         )();
     }
-    Obj opIntDiv(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opIntDiv(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objInt((a / i.val).to!tsint),
             (Float f) => objInt((a / f.val).to!tsint),
             () => nil,
         )();
     }
-    Obj opMod(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opMod(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a % i.val),
             (Float f) => objFloat(a % f.val),
             () => nil,
         )();
     }
-    Obj opPow(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opPow(Pos p, tsfloat a, Obj b) {
         import stdd.math;
         return b.val.tryVisit!(
             (Int i) => objFloat(pow(a, i.val)),
@@ -79,7 +79,7 @@ static:
         )();
     }
 
-    Obj opCmp(Pos p, Env e, tsfloat a, Obj b){
+    Obj opCmp(Pos p, tsfloat a, Obj b){
         Obj impl(T)(T o){
             return objInt(a == o.val ? 0 : (a < o.val ? -1 : 1));
         }
@@ -89,7 +89,7 @@ static:
             () => nil,
         )();
     }
-    Obj opEq(Pos p, Env e, tsfloat a, Obj b) {
+    Obj opEq(Pos p, tsfloat a, Obj b) {
         Obj impl(T)(T o) { return objBool(a == o.val); }
         return b.val.tryVisit!(
             (Int i) => impl(i),

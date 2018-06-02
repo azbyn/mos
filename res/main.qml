@@ -26,28 +26,28 @@ ApplicationWindow {
     }
     property var editor: Editor {
         function addParenPair() {
-            add_lParen();
+            addLParen();
             var c = getCursor();
-            add_rParen();
+            addRParen();
             setCursorUnsafe(c);
         }
         function addCurlyPair() {
-            add_lCurly();
+            addLCurly();
             var c = getCursor();
-            add_rCurly();
+            addRCurly();
             setCursorUnsafe(c);
         }
         function addSquarePair() {
-            add_lSquare();
+            addLSquare();
             var c = getCursor();
-            add_rSquare();
+            addRSquare();
             setCursorUnsafe(c);
         }
         function addBody() {
             var c = getCursor();
-            add_lCurly();
-            add_newLine();
-            add_rCurly();
+            addLCurly();
+            addNewLine();
+            addRCurly();
             setCursorUnsafe(c);
         }
     }

@@ -27,7 +27,7 @@ static:
             init(args[0], args[1], args[2]);
             break;
         default:
-            invalidArgcRange(p, e, 1, 3, args.length);
+            invalidArgcRange(p, 1, 3, args.length);
             break;
         }
     }

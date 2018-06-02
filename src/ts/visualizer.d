@@ -13,14 +13,14 @@ tsstring visualizeArrow(const(Token)[] toks, size_t pos) {
         return tsformat!"index %s"(pos);
     ptrdiff_t a, b;
     for (a = pos - 1; a > 0; --a) {
-        if (toks[a].type == TT.newLine) {
+        if (toks[a].type == TT.NewLine) {
             ++a;
             break;
         }
     }
     size_t len = toks.length;
     for (b = pos + 1; b < len; ++b) {
-        if (toks[b].type == TT.newLine)
+        if (toks[b].type == TT.NewLine)
             break;
     }
     if (a < 0) a = 0;

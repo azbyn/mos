@@ -14,6 +14,14 @@ import stdd.typecons;
 import stdd.array;
 import stdd.conv : to;
 
+/*
+__fun()  - hidden from ts
+fun_()   - in ts shown as fun()
+Prop_fun()    - property getter, shown as Prop
+PropSet_fun() - property setter, shown as Prop
+Prop()        - propertyGetter, shown as Prop (Starts with a capital letter)
+ */
+
 __gshared private {
     TypeTable _typeTable;
     Lib _stdlib;
@@ -39,24 +47,37 @@ Obj toObj(T)(T t) {
     else static if (is(T==bool)) return objBool(t);
     else static if (is(T==tsfloat)) return objFloat(t);
     else static if (is(T==tsstring)) return objString(t);
-    else static if (is(T==Obj[])) return objList(t);
+    //else static if (is(T==Obj[])) return objList(t);
     else static if (is(T==Obj[Obj])) return objMap(t);
     else return new Obj(t);
     //dfmt on
 }
 private:
 
-auto getFunCall(alias fun, bool hasPos)() {
+enum PreInfo {
+    None,
+    PosOnly,
+    PosEnv,
+}
+
+auto getFunCall(alias fun, PreInfo preInfo)() {
     struct Res {
         int len;
         string val;
         void function(Pos, size_t) check;
     }
-    
-    enum offset = hasPos ? 2 : 0;
     string res = "fun(";
-    static if (hasPos)
+    static if (preInfo == PreInfo.None) {
+        enum offset = 0;
+    }
+    else static if (preInfo == PreInfo.PosOnly) {
+        enum offset = 1;
+        res ~= "p, ";
+    }
+    else {
+        enum offset = 2;
         res ~= "p, e, ";
+    }
     enum int len = Parameters!fun.length - offset;
     static foreach (i, p; Parameters!fun[offset .. $]) {
         static if (is(p==Obj[])) {
@@ -87,11 +108,15 @@ auto getFunImpl(alias fun)() {
     enum isVoid = is(ReturnType!fun == void);
     //string res = format!"(Pos p, Env e, Obj[] a) { assert(a.length == %s); }";
     static if (Parameters!fun.length > 0 && is(Parameters!fun[0] == Pos)) {
-        static assert(Parameters!fun.length >= 2 && is(Parameters!fun[1] == Env));
-        enum funCall = getFunCall!(fun, true);
+        static if (Parameters!fun.length >= 2 && is(Parameters!fun[1] == Env)) {
+            enum funCall = getFunCall!(fun, PreInfo.PosEnv);
+        }
+        else {
+            enum funCall = getFunCall!(fun, PreInfo.PosOnly);
+        }
     }
     else {
-        enum funCall = getFunCall!(fun, false);
+        enum funCall = getFunCall!(fun, PreInfo.None);
     }
     //pragma(msg, format!"'%s' len = %s"(funCall.val, funCall.len));
     return Res!(Obj function(Pos, Env, Obj[]))(funCall.len, (Pos p, Env e, Obj[] args) {
@@ -110,7 +135,7 @@ auto getFunImpl(alias fun)() {
     });
 }
 
-Obj getFun(alias T, string fun)() {
+Obj getFun(alias T, string fun, FuncType ft)() {
     Obj function(Pos, Env, Obj[])[int] val;
     static foreach (o; __traits(getOverloads, T, fun)) {{
         static if (__traits(getProtection, o) == "public" &&
@@ -122,16 +147,42 @@ Obj getFun(alias T, string fun)() {
             val[f.i] = f.val;
         }
     }}
-    return objBIOverloads(val);
+    return objBIOverloads(val, ft);
 }
+auto getFuncData(string f)() {
+    import stdd.algorithm.searching;
+    import stdd.uni;
+    struct Res {
+        tsstring name;
+        FuncType ft;
+    }
+    static if (f.startsWith("Prop_")){
+        enum name = f["Prop_".length..$];
+        enum ft = FuncType.Getter;
+    }
+    else static if (f.startsWith("PropSet_")){
+        enum name = f["PropSet_".length..$];
+        enum ft = FuncType.Setter;
+    }
+    else static if (f[0].isUpper) {
+        enum name = f;
+        enum ft = FuncType.Getter;
+    }
+    else {
+        enum name = f;
+        enum ft = FuncType.Default;
+    }
+    return Res(name.to!tsstring, ft);
+}
+
 static this() {
     _nil = new Obj(Nil());
 
     Obj defaultToString(T)() {
-        return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()));
+        return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()), FuncType.Default);
     }
-    Obj defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true));
-    Obj defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false));
+    Obj defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true), FuncType.Default);
+    Obj defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false), FuncType.Default);
 
     _typeTable = new TypeTable();
     Obj[tsstring] objs;
@@ -142,10 +193,10 @@ static this() {
         type.members["toString"] = defaultToString!T();
         type.members["toBool"] = defaultToBool;
         type.members["opEquals"] = defaultOpEquals;
-        //pragma(msg, format!"\t<type %s>"(t));
+        pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
-                type.ctor = getFun!(T, m);
+                type.ctor = getFun!(T, m, FuncType.Default);
                 objs[T.type()] = objBIFunction(
                     (Pos p, Env e, Obj[] a) {
                         import stdd.array;
@@ -155,11 +206,12 @@ static this() {
                         args[1..$] = a[];
                         typeTable.tryCtor!T.call(p, e, args);
                         return v;
-                    });
+                    }, FuncType.Default);
             }
-            else static if (m != "type") {
-                type.members[m] = getFun!(T, m);
-            }
+            else static if (m != "type") {{
+                enum data = getFuncData!m;
+                type.members[data.name] = getFun!(T, m, data.ft);
+            }}
             /*
             else static if (m == "toString") {
                 type.members[m] = getFun!(T, m);
@@ -168,14 +220,16 @@ static this() {
         _typeTable.add!T(type);
     }}
     //_typeTable.print();
-    static foreach (f; __traits(allMembers, ts.stdlib)) {
-        if (f[0..2] != "__") {
-            //for defining functions such as assert
-            static if (f.back() == '_')
-                enum name = f[0..$-1];
-            else
-                enum name = f;
-            objs[name.to!tsstring] = getFun!(ts.stdlib, f);
+    static foreach (mod; modulesInStdlib) {
+        static foreach (f; __traits(allMembers, mixin(mod))) {
+            static if (f[0..2] != "__") {{
+                enum data = getFuncData!f;
+                static if (f.back() == '_')
+                    enum name = data.name[0..$-1];
+                else
+                    enum name = data.name;
+                objs[name] = getFun!(mixin(mod), f, data.ft);
+            }}
         }
     }
     _stdlib = new Lib(objs);

@@ -2,7 +2,7 @@ import QtQuick 2.0
 import ts 1.0
 
 Rectangle {
-    color: Colors.base00
+    color: Colors.Base00
     width: parent.width
     height: parent.height * perc
     x: 0
@@ -18,6 +18,6 @@ Rectangle {
     }
 
     function getPerc() {
-        return perc
+        return perc;
     }
 }

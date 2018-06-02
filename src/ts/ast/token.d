@@ -14,75 +14,77 @@ private struct TypeData {
 //dfmt off
 private enum typeDatas = [
     //      typeName,     symbolicStr, functionName
-    TypeData("eof",          "EOF",       ""         ),//only used by parser
-    TypeData("newLine",      "NL",        ""         ),
-    TypeData("indent",       "Indent",    ""         ),
-    TypeData("dedent",       "Dedent",    ""         ),
-    TypeData("comma",        ",",         ""         ),
-    TypeData("true_",        "true",      ""         ),
-    TypeData("false_",       "false",     ""         ),
-    TypeData("nil",          "nil",       ""         ),
-    TypeData("fun",          "fun",       ""         ),
-    TypeData("if_",          "if",        ""         ),
-    TypeData("else_",        "else",      ""         ),
-    TypeData("break_",       "break",     ""         ),
-    TypeData("continue_",    "continue",  ""         ),
-    TypeData("while_",       "while",     ""         ),
-    TypeData("for_",         "for",       ""         ),
-    TypeData("in_",          "in",        ""         ),
-    TypeData("return_",      "return ",   ""         ),
-    TypeData("identifier",   "id",        ""         ),
-    TypeData("number",       "num",       ""         ),
-    TypeData("string",       "str",       ""         ),
-    TypeData("lambda",       "λ",         ""         ),
-    TypeData("arrow",        "->",        ""         ),
-    TypeData("lParen",       "(",         ""         ),
-    TypeData("rParen",       ")",         ""         ),
-    TypeData("lSquare",      "[",         ""         ),
-    TypeData("rSquare",      "]",         ""         ),
-    TypeData("lCurly",       "{",         ""         ),
-    TypeData("rCurly",       "}",         ""         ),
-    TypeData("dot",          ".",         ""         ),
-    TypeData("inc",          "++",        "opInc"    ),
-    TypeData("dec",          "--",        "opDec"    ),
-    TypeData("plus",         "+",         "opAdd"    ),
-    TypeData("minus",        "-",         "opSub"    ),
-    TypeData("mply",         "*",         "opMply"   ),
-    TypeData("div",          "/",         "opDiv"    ),
-    TypeData("intDiv",       "//",        "opIntdiv" ),
-    TypeData("mod",          "%",         "opMod"    ),
-    TypeData("pow",          "**",        "opPow"    ),
-    TypeData("eq",           "==",        "opEq"     ),
-    TypeData("ne",           "!=",        ""         ),
-    TypeData("lt",           "<",         ""         ),
-    TypeData("gt",           ">",         ""         ),
-    TypeData("le",           "<=",        ""         ),
-    TypeData("ge",           ">=",        ""         ),
-    TypeData("and",          "&&",        ""         ),
-    TypeData("or",           "||",        ""         ),
-    TypeData("not",          "!",         "opNot"    ),
-    TypeData("xor",          "^",         "opXor"    ),
-    TypeData("bAnd",         "&",         "opAnd"    ),
-    TypeData("bOr",          "|",         "opOr"     ),
-    TypeData("lsh",          "<<",        "opLsh"    ),
-    TypeData("rsh",          ">>",        "opRsh"    ),
-    TypeData("tilde",        "~",         "opCat"    ),
-    TypeData("assign",       "=",         ""         ),
-    TypeData("question",     "?",         ""         ),
-    TypeData("colon",        ":",         ""         ),
-    TypeData("catEq",        "~=",        "opCat"    ),
-    TypeData("plusEq",       "+=",        "opAdd"    ),
-    TypeData("minusEq",      "-=",        "opSub"    ),
-    TypeData("mplyEq",       "*=",        "opMply"   ),
-    TypeData("divEq",        "/=",        "opDiv"    ),
-    TypeData("intDivEq",     "//=",       "opIntdiv" ),
-    TypeData("modEq",        "%=",        "opMod"    ),
-    TypeData("powEq",        "**=",       "opPow"    ),
-    TypeData("lshEq",        "<<=",       "opLsh"    ),
-    TypeData("rshEq",        ">>=",       "opRsh"    ),
-    TypeData("andEq",        "&=",        "opAnd"    ),
-    TypeData("xorEq",        "^=",        "opXor"    ),
-    TypeData("orEq",         "|=",        "opOr"     ),
+    TypeData("Eof",          "EOF",       ""         ),//only used by parser
+    TypeData("NewLine",      "NL",        ""         ),
+    TypeData("Indent",       "Indent",    ""         ),
+    TypeData("Dedent",       "Dedent",    ""         ),
+    TypeData("Comma",        ",",         ""         ),
+    TypeData("True",         "true",      ""         ),
+    TypeData("False",        "false",     ""         ),
+    TypeData("Nil",          "nil",       ""         ),
+    TypeData("Fun",          "fun",       ""         ),
+    TypeData("Prop",         "prop",      ""         ),
+    TypeData("If",           "if",        ""         ),
+    TypeData("Elif",         "elif",      ""         ),
+    TypeData("Else",         "else",      ""         ),
+    TypeData("Break",        "break",     ""         ),
+    TypeData("Continue",     "continue",  ""         ),
+    TypeData("While",        "while",     ""         ),
+    TypeData("For",          "for",       ""         ),
+    TypeData("In",           "in",        ""         ),
+    TypeData("Return",       "return ",   ""         ),
+    TypeData("Identifier",   "id",        ""         ),
+    TypeData("Number",       "num",       ""         ),
+    TypeData("String",       "str",       ""         ),
+    TypeData("Lambda",       "λ",         ""         ),
+    TypeData("Arrow",        "->",        ""         ),
+    TypeData("LParen",       "(",         ""         ),
+    TypeData("RParen",       ")",         ""         ),
+    TypeData("LSquare",      "[",         ""         ),
+    TypeData("RSquare",      "]",         ""         ),
+    TypeData("LCurly",       "{",         ""         ),
+    TypeData("RCurly",       "}",         ""         ),
+    TypeData("Dot",          ".",         ""         ),
+    TypeData("Inc",          "++",        "opInc"    ),
+    TypeData("Dec",          "--",        "opDec"    ),
+    TypeData("Plus",         "+",         "opAdd"    ),
+    TypeData("Minus",        "-",         "opSub"    ),
+    TypeData("Mply",         "*",         "opMply"   ),
+    TypeData("Div",          "/",         "opDiv"    ),
+    TypeData("IntDiv",       "//",        "opIntdiv" ),
+    TypeData("Mod",          "%",         "opMod"    ),
+    TypeData("Pow",          "**",        "opPow"    ),
+    TypeData("Eq",           "==",        "opEq"     ),
+    TypeData("Ne",           "!=",        ""         ),
+    TypeData("Lt",           "<",         ""         ),
+    TypeData("Gt",           ">",         ""         ),
+    TypeData("Le",           "<=",        ""         ),
+    TypeData("Ge",           ">=",        ""         ),
+    TypeData("And",          "&&",        ""         ),
+    TypeData("Or",           "||",        ""         ),
+    TypeData("Not",          "!",         "opNot"    ),
+    TypeData("Xor",          "^",         "opXor"    ),
+    TypeData("BAnd",         "&",         "opAnd"    ),
+    TypeData("BOr",          "|",         "opOr"     ),
+    TypeData("Lsh",          "<<",        "opLsh"    ),
+    TypeData("Rsh",          ">>",        "opRsh"    ),
+    TypeData("Tilde",        "~",         "opCat"    ),
+    TypeData("Assign",       "=",         ""         ),
+    TypeData("Question",     "?",         ""         ),
+    TypeData("Colon",        ":",         ""         ),
+    TypeData("CatEq",        "~=",        "opCat"    ),
+    TypeData("PlusEq",       "+=",        "opAdd"    ),
+    TypeData("MinusEq",      "-=",        "opSub"    ),
+    TypeData("MplyEq",       "*=",        "opMply"   ),
+    TypeData("DivEq",        "/=",        "opDiv"    ),
+    TypeData("IntDivEq",     "//=",       "opIntdiv" ),
+    TypeData("ModEq",        "%=",        "opMod"    ),
+    TypeData("PowEq",        "**=",       "opPow"    ),
+    TypeData("LshEq",        "<<=",       "opLsh"    ),
+    TypeData("RshEq",        ">>=",       "opRsh"    ),
+    TypeData("AndEq",        "&=",        "opAnd"    ),
+    TypeData("XorEq",        "^=",        "opXor"    ),
+    TypeData("OrEq",         "|=",        "opOr"     ),
 ];
 //dfmt on
 
@@ -118,75 +120,77 @@ tsstring tsstr(const Token* t) {
 tsstring toStr(const Token* t) {
     import ts.misc;
     final switch (t.type) {
-    case TT.eof: return "EOF ";
-    case TT.newLine: return "NL ";// \n";
-    case TT.indent: return "→ ";
-    case TT.dedent: return "←";
-    case TT.comma: return ", ";
-    case TT.true_: return "true";
-    case TT.false_: return "false";
-    case TT.nil: return "nil";
-    case TT.fun: return "fun ";
-    case TT.if_: return "if ";
-    case TT.else_: return "else ";
-    case TT.break_: return "break ";
-    case TT.continue_: return "continue ";
-    case TT.while_: return "while ";
-    case TT.for_: return "for ";
-    case TT.in_: return " in ";
-    case TT.return_: return "return ";
-    case TT.identifier: return t.tsstr;
-    case TT.number: return t.tsstr;
-    case TT.string: return tsformat!`"%s"`(t.tsstr);
-    case TT.lambda: return "λ";
-    case TT.arrow: return "->";
-    case TT.lParen: return "(";
-    case TT.rParen: return ")";
-    case TT.lSquare: return "[";
-    case TT.rSquare: return "]";
-    case TT.lCurly: return "{";
-    case TT.rCurly: return "}";
-    case TT.dot: return ".";
-    case TT.inc: return "++";
-    case TT.dec: return "--";
-    case TT.plus: return " + ";
-    case TT.minus: return " - ";
-    case TT.mply: return " * ";
-    case TT.div: return " / ";
-    case TT.intDiv: return " // ";
-    case TT.mod: return " % ";
-    case TT.pow: return " ** ";
-    case TT.eq: return " == ";
-    case TT.ne: return " != ";
-    case TT.lt: return " < ";
-    case TT.gt: return " > ";
-    case TT.le: return " <= ";
-    case TT.ge: return " >= ";
-    case TT.and: return " && ";
-    case TT.or: return " || ";
-    case TT.not: return "!";
-    case TT.xor: return " ^ ";
-    case TT.bAnd: return " & ";
-    case TT.bOr: return " | ";
-    case TT.lsh: return " << ";
-    case TT.rsh: return " >> ";
-    case TT.tilde: return " ~ ";
-    case TT.assign: return " = ";
-    case TT.question: return "?";
-    case TT.colon: return ":";
-    case TT.catEq: return " ~= ";
-    case TT.plusEq: return " += ";
-    case TT.minusEq: return " -= ";
-    case TT.mplyEq: return " *= ";
-    case TT.divEq: return " /= ";
-    case TT.intDivEq: return " //= ";
-    case TT.modEq: return " %= ";
-    case TT.powEq: return " **= ";
-    case TT.lshEq: return " <<= ";
-    case TT.rshEq: return " >>= ";
-    case TT.andEq: return " &= ";
-    case TT.xorEq: return " ^= ";
-    case TT.orEq: return " |= ";
+    case TT.Eof: return "EOF ";
+    case TT.NewLine: return "NL ";// \n";
+    case TT.Indent: return "→ ";
+    case TT.Dedent: return "←";
+    case TT.Comma: return ", ";
+    case TT.True: return "true";
+    case TT.False: return "false";
+    case TT.Nil: return "nil";
+    case TT.Fun: return "fun ";
+    case TT.Prop: return "fun ";
+    case TT.If: return "if ";
+    case TT.Elif: return "elif ";
+    case TT.Else: return "else ";
+    case TT.Break: return "break ";
+    case TT.Continue: return "continue ";
+    case TT.While: return "while ";
+    case TT.For: return "for ";
+    case TT.In: return " in ";
+    case TT.Return: return "return ";
+    case TT.Identifier: return t.tsstr;
+    case TT.Number: return t.tsstr;
+    case TT.String: return tsformat!`"%s"`(t.tsstr);
+    case TT.Lambda: return "λ";
+    case TT.Arrow: return "->";
+    case TT.LParen: return "(";
+    case TT.RParen: return ")";
+    case TT.LSquare: return "[";
+    case TT.RSquare: return "]";
+    case TT.LCurly: return "{";
+    case TT.RCurly: return "}";
+    case TT.Dot: return ".";
+    case TT.Inc: return "++";
+    case TT.Dec: return "--";
+    case TT.Plus: return " + ";
+    case TT.Minus: return " - ";
+    case TT.Mply: return " * ";
+    case TT.Div: return " / ";
+    case TT.IntDiv: return " // ";
+    case TT.Mod: return " % ";
+    case TT.Pow: return " ** ";
+    case TT.Eq: return " == ";
+    case TT.Ne: return " != ";
+    case TT.Lt: return " < ";
+    case TT.Gt: return " > ";
+    case TT.Le: return " <= ";
+    case TT.Ge: return " >= ";
+    case TT.And: return " && ";
+    case TT.Or: return " || ";
+    case TT.Not: return "!";
+    case TT.Xor: return " ^ ";
+    case TT.BAnd: return " & ";
+    case TT.BOr: return " | ";
+    case TT.Lsh: return " << ";
+    case TT.Rsh: return " >> ";
+    case TT.Tilde: return " ~ ";
+    case TT.Assign: return " = ";
+    case TT.Question: return "?";
+    case TT.Colon: return ":";
+    case TT.CatEq: return " ~= ";
+    case TT.PlusEq: return " += ";
+    case TT.MinusEq: return " -= ";
+    case TT.MplyEq: return " *= ";
+    case TT.DivEq: return " /= ";
+    case TT.IntDivEq: return " //= ";
+    case TT.ModEq: return " %= ";
+    case TT.PowEq: return " **= ";
+    case TT.LshEq: return " <<= ";
+    case TT.RshEq: return " >>= ";
+    case TT.AndEq: return " &= ";
+    case TT.XorEq: return " ^= ";
+    case TT.OrEq: return " |= ";
     }
     /*
     import core.stdc.stdlib : free;
@@ -204,12 +208,12 @@ tsstring toStr(const ref Token t) {
 tsstring unaryFunctionName(TT type) {
     switch (type) {
         // dfmt off
-    case TT.plus: return "opPlus";
-    case TT.minus: return "opMinus";
-    case TT.inc: return "opInc";
-    case TT.dec: return "opDec";
-    case TT.not: return "opNot";
-    case TT.tilde: return "opCom";
+    case TT.Plus: return "opPlus";
+    case TT.Minus: return "opMinus";
+    case TT.Inc: return "opInc";
+    case TT.Dec: return "opDec";
+    case TT.Not: return "opNot";
+    case TT.Tilde: return "opCom";
     default: assert(0);
         // dfmt on
     }

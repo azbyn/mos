@@ -26,18 +26,18 @@ Keypad {
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
         ["libs",    function(){ ep.setCurr(KeypadType.Libs); }],
         ["if\nfor", function(){ ep.setCurr(KeypadType.Statements) }],
-        ["\\n",     function(){ editor.add_newLine(); }],
+        ["\\n",     function(){ editor.addNewLine(); }],
 
         [",", function(){
-            editor.add_comma();
+            editor.addComma();
         }],
         ["()", function(){
             editor.addParenPair();
         }],
         ["=", function(){
-            editor.add_assign();
+            editor.addAssign();
             //editor.addCurlyPair();
         }],
-        ["\\t",     function(){ editor.add_indent(); }],
+        ["\\t",     function(){ editor.addIndent(); }],
     ]
 }

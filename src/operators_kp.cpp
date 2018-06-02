@@ -25,12 +25,12 @@ void OperatorsKp::setState(State s){
     update();
 }
 void OperatorsKp::paint(QPainter* p) {
-    QPen pen(colors::base01);
+    QPen pen(colors::Base01);
     pen.setWidth(2);
     p->setPen(pen);
     p->setFont(font);
 
-    p->setBrush(colors::base05);
+    p->setBrush(colors::Base05);
     p->translate(width() / 2, height() / 2);
     r1 = height() / 2;
     r2 = r1 / 3;

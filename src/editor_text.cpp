@@ -58,11 +58,11 @@ void EditorText::paint(QPainter* const p) {
         if (!config::hasLineNumbers) return;
         auto num = lineNum;
         if (num == Ed::cursorY()) {
-            p->setPen(colors::base05);
+            p->setPen(colors::Base05);
             p->setFont(bold);
         }
         else {
-            p->setPen(colors::base03);
+            p->setPen(colors::Base03);
             p->setFont(font);
         }
         auto txt = QString::number(num+1);
@@ -73,7 +73,7 @@ void EditorText::paint(QPainter* const p) {
     //p->fillRect(0, 0, width, height, colors::background);
     //draw zone where line numbers are
     if (config::hasLineNumbers) {
-        p->fillRect(0, 0, origin.x() - 2, height, colors::base01);
+        p->fillRect(0, 0, origin.x() - 2, height, colors::Base01);
     }
     int width = 0;
     for (auto line = Ed::lines().begin(), eof = Ed::lines().end();
@@ -81,7 +81,7 @@ void EditorText::paint(QPainter* const p) {
         drawLineNumber();
         vCursor.rx() = Ed::getIndentation(lineNum) * config::indentSize;
         tokNum = 0;
-        TT prevTT = TT::eof;
+        TT prevTT = TT::Eof;
         for (auto tok = line->begin(), eol = line->end(); tok != eol; ++tok, ++tokNum) {
             auto nextTT = [&tok, &eol, &line, &eof] {
                 auto next = tok + 1;
@@ -96,7 +96,7 @@ void EditorText::paint(QPainter* const p) {
                     if (next < eol)
                         return next->type;
                 }
-                return TT::eof;
+                return TT::Eof;
             };
             checkCursor();
 

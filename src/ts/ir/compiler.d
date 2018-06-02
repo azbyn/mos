@@ -18,30 +18,34 @@ import com.log;
 //TODO make case insensitive?
 
 enum OPCode {
-    nop,
-    pop,
-    dupTop,
-    call,
-    memberSet,
-    memberGet,
-    methodCall,
-    subscriptGet,
-    subscriptSet,
-    return_,
-    loadConst,
-    loadVal,
-    loadLib,
-    assign,
-    makeList,
-    makeDict,
-    makeClosure,
-    jmp,
-    cmp,
-    binary,
-    jmpIfTrueOrPop, // if (prev) { jmp } else { pop }
-    jmpIfFalseOrPop, // if (!prev){ jmp } else { pop }
-    jmpIfTruePop, // if (prev) { jmp }  pop
-    jmpIfFalsePop, // if (!prev) { jmp } pop
+    Nop,
+    Pop,
+    DupTop,
+    Call,
+    MemberSet,
+    MemberGet,
+    MethodCall,
+    SubscriptGet,
+    SubscriptSet,
+    Return,
+    LoadConst,
+    LoadVal,
+    LoadLib,
+    Assign,
+    MakeList,
+    MakeTuple,
+    MakeDict,
+    //the order here must be identical to FuncType (ie. Default, Getter, Setter)
+    MakeClosure,
+    MakeClosureGet,
+    MakeClosureSet,
+    Jmp,
+    Cmp,
+    Binary,
+    JmpIfTrueOrPop, // if (prev) { jmp } else { pop }
+    JmpIfFalseOrPop, // if (!prev){ jmp } else { pop }
+    JmpIfTruePop, // if (prev) { jmp }  pop
+    JmpIfFalsePop, // if (!prev) { jmp } pop
 }
 
 struct OP {
@@ -87,7 +91,7 @@ Block generateIR(AstNode n, Block parent, OffsetVal[] captures, tsstring[] args)
     if (auto body_ = n.val.peek!(AstNode.Body)){
         foreach (node; body_.val) {
             nodeIR(node, bl);
-            bl.add(n.pos, OPCode.pop);
+            bl.add(n.pos, OPCode.Pop);
         }
         if (bl.ops.length > 1)
             bl.ops.popBack();
@@ -101,7 +105,7 @@ BlockManager generateIR(AstNode[] nodes, Lib lib) {
     BlockManager man = new BlockManager(lib, bl);
     foreach (n; nodes) {
         nodeIR(n, bl);
-        bl.add(n.pos, OPCode.pop);
+        bl.add(n.pos, OPCode.Pop);
     }
     return man;
 }
@@ -115,13 +119,13 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
     n.val.visit!(
         (AstNode.Comma v) {
             ir(v.a);
-            bl.add(pos, OPCode.pop);
+            bl.add(pos, OPCode.Pop);
             ir(v.b);
         },
         (AstNode.ReverseComma v) {
             ir(v.a);
             ir(v.b);
-            bl.add(pos, OPCode.pop);
+            bl.add(pos, OPCode.Pop);
         },
         (AstNode.String v) {
             bl.addConst(pos, objString(v.val));
@@ -146,7 +150,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             foreach (n; v.args) {
                 ir(n);
             }
-            bl.addArgc(pos, OPCode.call, v.args.length);
+            bl.addArgc(pos, OPCode.Call, v.args.length);
         },
         (AstNode.MethodCall v) {
             ir(v.obj);
@@ -154,20 +158,20 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
                 foreach (n; v.args) {
                     ir(n);
                 }
-                bl.addStr(pos, OPCode.methodCall, v.args.length, v.name);
+                bl.addStr(pos, OPCode.MethodCall, v.args.length, v.name);
             }
             else {
-                bl.addStr(pos, OPCode.methodCall, 0, v.name);
+                bl.addStr(pos, OPCode.MethodCall, 0, v.name);
             }
         },
         (AstNode.Binary v) {
             ir(v.a);
             ir(v.b);
-            bl.addStr(pos, OPCode.binary, v.name);
+            bl.addStr(pos, OPCode.Binary, v.name);
         },
         (AstNode.Lambda v) {
             auto block = generateIR(v.body_, bl, bl.getCaptures(pos, v.captures), v.params);
-            bl.addClosureOrFunc(pos, block);
+            bl.addClosureOrFunc(pos, block, v.ft);
         },
         (AstNode.Assign v) {
             v.rvalue.val.tryVisit!(
@@ -178,13 +182,13 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
                 (AstNode.Member r) {
                     ir(r.val);
                     ir(v.lvalue);
-                    bl.addStr(pos, OPCode.memberSet, r.member);
+                    bl.addStr(pos, OPCode.MemberSet, r.member);
                 },
                 (AstNode.Subscript r) {
                     ir(r.val);
                     ir(r.index);
                     ir(v.lvalue);
-                    bl.add(pos, OPCode.subscriptSet);
+                    bl.add(pos, OPCode.SubscriptSet);
                 },
                 () { throw new IRException(pos, "Invalid assignment"); }
             )();
@@ -192,29 +196,29 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         (AstNode.Subscript v) {
             ir(v.val);
             ir(v.index);
-            bl.add(pos, OPCode.subscriptGet);
+            bl.add(pos, OPCode.SubscriptGet);
         },
         (AstNode.Member v) {
             ir(v.val);
-            bl.addStr(pos, OPCode.memberGet, v.member);
+            bl.addStr(pos, OPCode.MemberGet, v.member);
         },
         (AstNode.And v) {
             ir(v.a);
-            auto j = bl.addJmp(pos, OPCode.jmpIfFalseOrPop);
+            auto j = bl.addJmp(pos, OPCode.JmpIfFalseOrPop);
             ir(v.b);
             bl.setJmpHere(j);
         },
         (AstNode.Or v) {
             ir(v.a);
-            auto j = bl.addJmp(pos, OPCode.jmpIfTrueOrPop);
+            auto j = bl.addJmp(pos, OPCode.JmpIfTrueOrPop);
             ir(v.b);
             bl.setJmpHere(j);
         },
         (AstNode.If v) {
             ir(v.cond);
-            auto j1 = bl.addJmp(pos, OPCode.jmpIfFalseOrPop);
+            auto j1 = bl.addJmp(pos, OPCode.JmpIfFalseOrPop);
             ir(v.body_);
-            auto j2 = bl.addJmp(pos, OPCode.jmp);
+            auto j2 = bl.addJmp(pos, OPCode.Jmp);
             bl.setJmpHere(j1);
             if (v.else_ !is null)
                 ir(v.else_);
@@ -224,9 +228,9 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             auto beg = bl.here();
             auto end = bl.reserveJmp();
             ir(v.cond);
-            bl.addVal(pos, OPCode.jmpIfFalseOrPop, end);
+            bl.addVal(pos, OPCode.JmpIfFalseOrPop, end);
             ir(v.body_, beg, end);
-            bl.addVal(pos, OPCode.jmp, beg);
+            bl.addVal(pos, OPCode.Jmp, beg);
             bl.setJmpHere(end);
         },
         (AstNode.For v) {
@@ -241,67 +245,73 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             end:
              */
             ir(v.collection);
-            bl.addStr(pos, OPCode.methodCall, 0, "Iter");
+            bl.addStr(pos, OPCode.MethodCall, 0, "Iter");
             auto iter = bl.addAssignTemp(pos);
-            bl.add(pos, OPCode.pop);
+            bl.add(pos, OPCode.Pop);
             auto beg = bl.here();
             auto next = bl.reserveJmp();
             auto end = bl.reserveJmp();
 
-            bl.addVal(pos, OPCode.loadVal, iter);
-            bl.addStr(pos, OPCode.methodCall, 0, "Index");
+            bl.addVal(pos, OPCode.LoadVal, iter);
+            bl.addStr(pos, OPCode.MethodCall, 0, "Index");
             bl.addAssign(pos, v.index);
-            bl.add(pos, OPCode.pop);
+            bl.add(pos, OPCode.Pop);
 
-            bl.addVal(pos, OPCode.loadVal, iter);
-            bl.addStr(pos, OPCode.methodCall, 0, "Val");
+            bl.addVal(pos, OPCode.LoadVal, iter);
+            bl.addStr(pos, OPCode.MethodCall, 0, "Val");
             bl.addAssign(pos, v.val);
-            bl.add(pos, OPCode.pop);
+            bl.add(pos, OPCode.Pop);
             ir(v.body_, beg, end);
 
             bl.setJmpHere(next);
-            bl.addVal(pos, OPCode.loadVal, iter);
-            bl.addStr(pos, OPCode.methodCall, 0, "next");
-            bl.addVal(pos, OPCode.jmpIfTruePop, beg);
+            bl.addVal(pos, OPCode.LoadVal, iter);
+            bl.addStr(pos, OPCode.MethodCall, 0, "next");
+            bl.addVal(pos, OPCode.JmpIfTruePop, beg);
             bl.setJmpHere(end);
         },
         (AstNode.Body v) {
             //bodies don't create a new scope
             foreach(n; v.val) {
                 ir(n);
-                bl.add(pos, OPCode.pop);
+                bl.add(pos, OPCode.Pop);
             }
         },
         (AstNode.List v) {
             foreach(n; v.val) {
                 ir(n);
             }
-            bl.addVal(pos, OPCode.makeList, v.val.length);
+            bl.addVal(pos, OPCode.MakeList, v.val.length);
+        },
+        (AstNode.Tuple v) {
+            foreach(n; v.val) {
+                ir(n);
+            }
+            bl.addVal(pos, OPCode.MakeTuple, v.val.length);
         },
         (AstNode.Dict v) {
             foreach(n; v.val) {
                 ir(n);
             }
-            bl.addVal(pos, OPCode.makeDict, v.val.length);
+            bl.addVal(pos, OPCode.MakeDict, v.val.length);
         },
 
         (AstNode.Cmp v) {
             ir(v.a);
             ir(v.b);
-            bl.addVal(pos, OPCode.cmp, cast(int)v.op);
+            bl.addVal(pos, OPCode.Cmp, cast(int)v.op);
         },
         (AstNode.Return v) {
             ir(v.val);
-            bl.add(pos, OPCode.return_);
+            bl.add(pos, OPCode.Return);
         },
         (AstNode.CtrlFlow v) {
             //import ts.ast.parser;
             if (loopBeg == -1)
                 throw new IRException(pos, format!"Found %s outside loop"(v.type.symbolicStr));
             assert (loopEnd != -1);
-            auto j = v.type == TT.break_ ? loopEnd : loopBeg;
+            auto j = v.type == TT.Break ? loopEnd : loopBeg;
             tslog!"jmp from %d-%d: %d"(loopBeg, loopEnd, j);
-            bl.addVal(pos, OPCode.jmp, j);
+            bl.addVal(pos, OPCode.Jmp, j);
         },
     )();
     //dfmt on

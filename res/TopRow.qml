@@ -21,12 +21,12 @@ Rectangle {
     property int spacing: 1
     property int _old: 0
     function setBtn(x) {
-        grid.children[_old].color = Colors.base05;
-        grid.children[_old].txtColor = Colors.base00;
+        grid.children[_old].color = Colors.Base05;
+        grid.children[_old].txtColor = Colors.Base00;
         grid.children[_old].font.bold = false;
 
-        grid.children[x].color = Colors.base06;
-        grid.children[x].txtColor = Colors.base0D;
+        grid.children[x].color = Colors.Base06;
+        grid.children[x].txtColor = Colors.Base0D;
         grid.children[x].font.bold = true;
 
         _old = x;

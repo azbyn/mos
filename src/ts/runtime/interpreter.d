@@ -21,6 +21,19 @@ public Obj eval(BlockManager man) {
     //auto len = man.finish();
     return eval(man.mainBlock, Pos(-1), new Env(man.mainBlock.st), null, null);
 }
+Obj checkProp(Obj o, Pos p, Env e) {
+    import ts.objects;
+    Obj impl(T)(T f){
+        return f.ft == FuncType.Getter ? f(p, e, []) : o;
+    }
+    return o.val.tryVisit!(
+        (Function f) => impl(f),
+        (Closure f) => impl(f),
+        (BIFunction f) => impl(f),
+        (BIOverloads f) => impl(f),
+        () => o,
+        )();
+}
 public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null) {
     //writefln("eval @%d", bl.st.offset);
     if (env !is null)
@@ -53,24 +66,24 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         //writefln("%d %s l=%s", pc, op, len);
         //dfmt off
         final switch (op.code) {
-        case OPCode.nop: break;
-        case OPCode.pop:
+        case OPCode.Nop: break;
+        case OPCode.Pop:
             if (len == 0) break;
             //assert (len > 0, "stack underflow");
             stack.popBack();
             break;
-        case OPCode.dupTop:
+        case OPCode.DupTop:
             assert(len>0);
             stack ~= stack.back();
             break;
-        case OPCode.call: {
+        case OPCode.Call: {
             assert(len >= op.argc + 1);
             auto args = popN(op.argc);
 
             auto f = pop();
             stack ~= f.call(op.pos, env, args);
         } break;
-        case OPCode.methodCall: {
+        case OPCode.MethodCall: {
             assert(len >= op.argc + 1);
             auto args = popN(op.argc+1);
             auto str = bl.getStr(op.val);
@@ -79,27 +92,27 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             //writefln("msg='%s' type = %s l=%s", str, o.type, args.length);
             stack ~= typeTable.getMember(pos, o.type(), str).call(pos, env, args);
         } break;
-        case OPCode.binary: {
+        case OPCode.Binary: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
             auto str = bl.getStr(op.val);
             stack ~= a.binary(pos, env, str, b);
         } break;
-        case OPCode.cmp: {
+        case OPCode.Cmp: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
             auto val = a.cmp(pos, env, b);
             switch (cast(TT) op.val) {
-                case TT.ge: stack ~= objBool(val >= 0); break;
-                case TT.le: stack ~= objBool(val <= 0); break;
-                case TT.gt: stack ~= objBool(val > 0); break;
-                case TT.lt: stack ~= objBool(val < 0); break;
+                case TT.Ge: stack ~= objBool(val >= 0); break;
+                case TT.Le: stack ~= objBool(val <= 0); break;
+                case TT.Gt: stack ~= objBool(val > 0); break;
+                case TT.Lt: stack ~= objBool(val < 0); break;
             default: assert(0, "invalid op");
             }
         } break;
-        case OPCode.memberSet: {
+        case OPCode.MemberSet: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
@@ -108,22 +121,22 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
                                  (Obj f) => f.call(pos, env, a, b),
                                  (Obj f) => f.call(pos, env, a, objString(val), b));
         } break;
-        case OPCode.memberGet: {
+        case OPCode.MemberGet: {
             assert(len >= 1);
             auto a = pop();
             auto val = bl.getStr(op.val);
             stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%s"(val), "opFwd",
                                  (Obj f) => f.call(pos, env, a),
-                                 (Obj f) => f.call(pos, env, a, objString(val)));
+                                 (Obj f) => f.call(pos, env, a, objString(val))).checkProp(pos, env);
         } break;
-        case OPCode.subscriptGet: {
+        case OPCode.SubscriptGet: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
             stack ~= typeTable.getMember(pos, a.type(), "opIndex")
                 .call(pos, env, a, b);
         } break;
-        case OPCode.subscriptSet: {
+        case OPCode.SubscriptSet: {
             assert(len >= 3);
             auto c = pop();
             auto b = pop();
@@ -131,47 +144,55 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             stack ~= typeTable.getMember(pos, a.type(), "opIndexSet")
                 .call(pos, env, a, b, c);
         } break;
-        case OPCode.return_: {
+        case OPCode.Return: {
             assert(len >= 1);
             return pop();
         }
-        case OPCode.loadConst: {
-            stack ~= bl.getConst(op.val);
+        case OPCode.LoadConst: {
+            stack ~= bl.getConst(op.val).checkProp(pos, env);//check prop probably not needed
         } break;
-        case OPCode.loadVal: {
-            stack ~= env.get(op);
+        case OPCode.LoadVal: {
+            stack ~= env.get(op).checkProp(pos, env);
         } break;
-        case OPCode.loadLib: {
-            stack ~= bl.lib.get(op.val);
+        case OPCode.LoadLib: {
+            stack ~= bl.lib.get(op.val).checkProp(pos, env);
         } break;
-        case OPCode.makeClosure: {
+        case OPCode.MakeClosure:
+        case OPCode.MakeClosureGet:
+        case OPCode.MakeClosureSet:{
+            FuncType ft = cast(FuncType) (op.code - OPCode.MakeClosure);
             auto cm = bl.man.closures[op.val];
             Obj*[OffsetVal] caps;
             foreach (c; cm.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= objClosure(bl.man.blocks[cm.blockIndex], caps);
+            stack ~= objClosure(bl.man.blocks[cm.blockIndex], caps, ft);
         } break;
-        case OPCode.makeList: {
+        case OPCode.MakeList: {
             assert(len >= op.val);
             auto args = popN(op.val);
             stack ~= objList(args);
         } break;
-        case OPCode.makeDict: {
+        case OPCode.MakeTuple: {
+            assert(len >= op.val);
+            auto args = popN(op.val);
+            stack ~= objTuple(args);
+        } break;
+        case OPCode.MakeDict: {
             assert(len >= op.val);
             auto args = popN(op.val);
             stack ~= objDict(args);
         } break;
-        case OPCode.assign: {
+        case OPCode.Assign: {
             assert(len >= 1);
             auto a = pop();
             stack ~= env.set(op, a);
         } break;
-        case OPCode.jmp:{
+        case OPCode.Jmp: {
             msg = format!"%d"(op.val);
             jmp(pc, op.val);
         } break;
-        case OPCode.jmpIfTrueOrPop: {
+        case OPCode.JmpIfTrueOrPop: {
             assert(len >= 1);
             auto a = stack.back();
             if (a.toBool())
@@ -179,13 +200,13 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             else
                 stack.popBack();
         } break;
-        case OPCode.jmpIfTruePop: {
+        case OPCode.JmpIfTruePop: {
             assert(len >= 1);
             auto a = pop();
             if (a.toBool())
                 jmp(pc, op.val);
         } break;
-        case OPCode.jmpIfFalseOrPop: {
+        case OPCode.JmpIfFalseOrPop: {
             assert(len >= 1);
             auto a = stack.back();
             if (!a.toBool())
@@ -193,7 +214,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             else
                 stack.popBack();
         } break;
-        case OPCode.jmpIfFalsePop: {
+        case OPCode.JmpIfFalsePop: {
             assert(len >= 1);
             auto a = pop();
             if (!a.toBool())

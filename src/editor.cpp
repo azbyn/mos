@@ -28,7 +28,7 @@ void Editor::addToken(TT type, const QString& val) {
     ++cursor.rx();
     update();
 }
-void Editor::add_indent() {
+void Editor::addIndent() {
     ++levels[cursor.y()];
     update();
 }
@@ -82,7 +82,7 @@ void Editor::del() {
     }
     update();
 }
-void Editor::add_newLine() {
+void Editor::addNewLine() {
     auto l = currLevel();
     if (cursor.x() == 0) {
         levels.insert(levels.begin() + cursor.y(), l);
@@ -122,14 +122,14 @@ void Editor::run() {
         if (prevLevel != level) {
             //qDebug("diff @%ld", dtoks.size());
             while (prevLevel > level) {
-                dtoks.emplace_back(TT::dedent);
+                dtoks.emplace_back(TT::Dedent);
 
-                dtoks.emplace_back(TT::newLine);
+                dtoks.emplace_back(TT::NewLine);
                 --prevLevel;
                 //qDebug("--%d", level);
             }
             while (prevLevel < level) {
-                dtoks.emplace_back(TT::indent);
+                dtoks.emplace_back(TT::Indent);
                 ++prevLevel;
                 //qDebug("++%d", level);
             }
@@ -137,7 +137,7 @@ void Editor::run() {
         for (auto it = line.begin(), end = line.end(); it != end; ++it) {
 #define ADD_EQ(_nrml, _eq)               \
     case TT::_nrml:                      \
-        if (it + 1 != end && (it+1)->type == TT::assign) {   \
+        if (it + 1 != end && (it+1)->type == TT::Assign) {   \
             qDebug("asgn " #_eq);        \
             dtoks.emplace_back(TT::_eq); \
             ++it;                        \
@@ -146,25 +146,25 @@ void Editor::run() {
         break;
 
             switch (it->type) {
-                ADD_EQ(plus, plusEq);
-                ADD_EQ(minus, minusEq);
-                ADD_EQ(mply, mplyEq);
-                ADD_EQ(tilde, catEq);
-                ADD_EQ(div, divEq);
-                ADD_EQ(intDiv, intDivEq);
-                ADD_EQ(mod, modEq);
-                ADD_EQ(pow, powEq);
-                ADD_EQ(lsh, lshEq);
-                ADD_EQ(rsh, rshEq);
-                ADD_EQ(and_, andEq);
-                ADD_EQ(xor_, xorEq);
-                ADD_EQ(or_, orEq);
+                ADD_EQ(Plus, PlusEq);
+                ADD_EQ(Minus, MinusEq);
+                ADD_EQ(Mply, MplyEq);
+                ADD_EQ(Tilde, CatEq);
+                ADD_EQ(Div, DivEq);
+                ADD_EQ(IntDiv, IntDivEq);
+                ADD_EQ(Mod, ModEq);
+                ADD_EQ(Pow, PowEq);
+                ADD_EQ(Lsh, LshEq);
+                ADD_EQ(Rsh, RshEq);
+                ADD_EQ(And, AndEq);
+                ADD_EQ(Xor, XorEq);
+                ADD_EQ(Or, OrEq);
             default: break;
             }
 #undef ADD_EQ
             dtoks.emplace_back(*it);
         }
-        dtoks.emplace_back(TT::newLine);
+        dtoks.emplace_back(TT::NewLine);
         ++i;
         prevLevel = level;
         //toks.insert(toks.end(), line.begin(), line.end());
@@ -172,7 +172,7 @@ void Editor::run() {
     auto level = levels.back();
     qDebug("last == %d", level);
     while (level > 0) {
-        dtoks.emplace_back(TT::dedent);
+        dtoks.emplace_back(TT::Dedent);
         --level;
 
         qDebug("--prev %d", level);
@@ -211,7 +211,7 @@ void Editor::_setCursorCell(int x, int y) {
     int prev = 0;
     int curr = 0;
     int i = 0;
-    TT prevTT = TT::eof;
+    TT prevTT = TT::Eof;
     for (auto& t : vec) {
         prev = curr;
         curr += t.toString().size();

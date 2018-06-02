@@ -4,7 +4,7 @@ import ts 1.0
 
 Rectangle {
     id: root
-    color: Colors.base00
+    color: Colors.Base00
 
     function setActive(val) {
         sv.et.setActive(val);

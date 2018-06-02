@@ -19,7 +19,7 @@ Rectangle {
 
     width: buttonText.width + 20
     height: 30
-    color: Colors.base05
+    color: Colors.Base05
     Text {
         id: buttonText
         text: parent.description
@@ -27,7 +27,7 @@ Rectangle {
         font.family: editor.getFontFamSans()
         //font.pixelSize: parent.height * .5
         //style: Text.Sunken
-        color: Colors.base00
+        color: Colors.Base00
         //styleColor: "black"
     }
 

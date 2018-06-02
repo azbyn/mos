@@ -8,7 +8,6 @@ use File::Find::Wanted;
 
 my $SRC_DIR   = "src";
 my $TARGET    = "qt_ts";
-my $DLIB      = "dlib";
 #my $QMAKE     =
 
 my ($BUILD_DIR, $ARCH, $QMAKE, $QMAKE_ARGS);
@@ -37,10 +36,19 @@ android:
 
 clean: desktop_clean
 dclean: desktop_dclean
+stdddclean: desktop_stddclean
+
+
 desktop_dclean:
 	@make -C build dclean
 android_dclean:
-	@make -C build dclean
+	@make -C build_android dclean
+
+desktop_stddclean:
+	@make -C build stddclean
+android_stddclean:
+	@make -C build_android stddclean
+
 desktop_clean:
 	@make -C build clean
 android_clean:
@@ -89,7 +97,6 @@ android: LIBS += -L/home/azbyn/Android/dlang/ldc-build-runtime.tmp/lib \\
     -ldruntime-ldc -fuse-ld=bfd
 else: unix: LIBS += -ldruntime-ldc -ldl
 
-#-L\$\$PWD/build_android -l$DLIB
 android: OBJECTS += $d_objs_a
 else: OBJECTS += $d_objs_d
 
@@ -105,6 +112,9 @@ QMAKE_EXTRA_TARGETS += dclean
 #CLEAN_DEPS += dclean
 dclean.commands = make -f dlang.mk clean
 
+QMAKE_EXTRA_TARGETS += stddclean
+stddclean.commands = make -f dlang.mk stddclean
+
 qnx: target.path = /tmp/\$\${TARGET}/bin
 else: unix:!android: target.path = /opt/\$\${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
@@ -116,13 +126,26 @@ select DLANG_MK;
 
 
 $d_objs =~ s/$BUILD_DIR\/(.+\.d)/$1/g;
+my $stdd_objs = "";
+my $rest_objs = "";
+sub begins_with {
+    return substr($_[0], 0, length($_[1])) eq $_[1];
+}
+foreach my $f (@d_files) {
+    if (begins_with($f, "src/stdd")) {
+        $stdd_objs .= "$f.o \\\n";
+    } else {
+        $rest_objs .= "$f.o \\\n"
+    }
+}
 
 print <<"END";
 SRC_DIR := ../src
 OBJS    := $d_objs
+STDD_OBJS := $rest_objs
+REST_OBJS := $rest_objs
 NDK     := ~/Android/dlang/android-ndk-r16b
 CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
-TARGET  := lib$DLIB.so
 RTDIR   := /home/azbyn/Android/dlang/ldc-build-runtime.tmp
 
 DC := ~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
@@ -134,33 +157,23 @@ END
 print <<'END';
 default: $(OBJS)
 
-#$(TARGET): $(OBJS)
-#	$(CC) -Wl,-soname,$(TARGET) -shared --sysroot=$(NDK)/platforms/android-21/arch-arm $(OBJS) $(RTDIR)/lib/libphobos2-ldc.a $(RTDIR)/lib/libdruntime-ldc.a -gcc-toolchain $(NDK)/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 -fuse-ld=bfd -target armv7-none-linux-androideabi -llog -landroid -lEGL -lGLESv2 -o $(TARGET)
 
 END
 
-#\$(CC) -Wl,-soname,\$(TARGET) -shared --sysroot=\$(NDK)/platforms/android-21/arch-arm \$(OBJS) \$(LIB_PATH)/libphobos2-ldc.a \$(LIB_PATH)/libdruntime-ldc.a -gcc-toolchain \$(NDK)/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64 -fuse-ld=bfd -target armv7-none-linux-androideabi -o \$(TARGET)
-#libphobos2-ldc.a
-#Wl,-soname,libnative-activity.so
-
-#print "default:";
-#my $dobj = $d_objs;
-#print "$d_objs\n";
 for my $f (@d_files) {
     print <<"END";
 $f.o: ../$f
-	\$(DC) $ARCH -gc -I../$SRC_DIR -c \$< -of$f.o
+	\$(DC) $ARCH -g -I../$SRC_DIR -c \$< -of$f.o
 END
 #-wi-cpp-args -std=c++14 \${INCLUDES} -c \$< -betterC -of$f.o
 }
+
 print <<"END";
 .PHONY: clean
 clean:
-	\@rm -vf \$(OBJS)
-	\@rm -vf build/lib$DLIB.so
-	\@rm -vf build/lib$DLIB.a
-	\@rm -vf build_android/lib$DLIB.so
-	\@rm -vf build_android/lib$DLIB.a
+	\@rm -vf \$(REST_OBJS)
+stddclean:
+	\@rm -vf \$(STDD_OBJS)
 END
 close DLANG_MK;
 #ignore output because we get

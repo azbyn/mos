@@ -22,16 +22,16 @@ Keypad {
     perc: 0.108 * sizeY
     btnData: [
         ["λ", function(){
-            editor.add_lambda();
-            editor.add_arrow();
+            editor.addLambda();
+            editor.addArrow();
             editor.cursorLeft();
             back();
         }],
         ["[]", function(){ editor.addSquarePair(); back(); }],
         ["{}", function(){ editor.addCurlyPair(); back(); }],
 
-        ["true",  function(){ editor.add_true(); back(); }],
-        ["false", function(){ editor.add_false(); back(); }],
-        ["nil",   function(){ editor.add_nil(); back(); }],
+        ["true",  function(){ editor.addTrue(); back(); }],
+        ["false", function(){ editor.addFalse(); back(); }],
+        ["nil",   function(){ editor.addNil(); back(); }],
     ]
 }

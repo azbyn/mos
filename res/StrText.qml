@@ -29,7 +29,7 @@ Rectangle {
             //height: parent.height - 4
             //width: parent.width - 4
             font.pointSize: 16
-            color: Colors.base05;
+            color: Colors.Base05
             text: "";
             textFormat: TextEdit.PlainText
             wrapMode: TextEdit.Wrap
@@ -47,5 +47,5 @@ Rectangle {
         Qt.inputMethod.hide();
     }
 
-    color: Colors.base01;
+    color: Colors.Base01
 }

@@ -4,15 +4,26 @@ string escape sequence highlighting
 squiggly lines
 cursor blink
 
-outPage:
-test color output
+outText:
+linewrap
 
 misc:
-add good on screen keyboadd
+add good on screen keyboard
 try qvector instead of std::vector
 
+qml:
+add () elif prop
+
 dlang:
-delete bioverloads
+test elif
+spacing in dlang output
+load stdlib at compile time
 enums
-del keyword
+static asserts
+separate stdd from dclean
+add tuples to parser
+add prop to parser
+opCat no overloads only string concatenation (like perl5's '.')
+?imports
+?del keyword
 add properties (make Pi one)

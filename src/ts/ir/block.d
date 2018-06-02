@@ -100,18 +100,18 @@ class Block {
     private void add(Pos pos, OPCode code, ushort argc, OffsetVal val) {
         ops ~= OP(pos, code, val.offset, argc, val.val);
     }
-    void addClosureOrFunc(Pos pos, Block block) {
+    void addClosureOrFunc(Pos pos, Block block, FuncType ft) {
         if (block.captures.length == 0)
-            addConst(pos, objFunction(block));
+            addConst(pos, objFunction(block, ft));
         else
-            addClosure(pos, block, block.captures);
+            addClosure(pos, block, block.captures, ft);
     }
 
 
-    void addClosure(Pos pos, Block bl, OffsetVal[] captures) {
+    void addClosure(Pos pos, Block bl, OffsetVal[] captures, FuncType ft) {
         man.blocks ~= bl;
         man.closures ~= ClosureMaker(man.blocks.length - 1, captures);
-        addVal(pos, OPCode.makeClosure, man.closures.length - 1);
+        addVal(pos, cast(OPCode)(OPCode.MakeClosure + ft), man.closures.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -152,10 +152,10 @@ class Block {
         OffsetVal res;
         ulong lres;
         if (st.getName(man, var, res)) {
-            addVal(pos, OPCode.loadVal, res);
+            addVal(pos, OPCode.LoadVal, res);
         }
         else if (lib.get(var, lres)) {
-            addVal(pos, OPCode.loadLib, lres);
+            addVal(pos, OPCode.LoadLib, lres);
         }
         else
             throw new IRException(pos, format!"'%s' not defined"(var));
@@ -171,13 +171,13 @@ class Block {
             return man.consts.length - 1;
         }
 
-        addVal(pos, OPCode.loadConst, getIndex());
+        addVal(pos, OPCode.LoadConst, getIndex());
     }
 
     void addAssign(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.assign, st.get(pos, man, var));
+        addVal(pos, OPCode.Assign, st.get(pos, man, var));
     }
 
     tsstring getStr(size_t i) {
@@ -187,7 +187,7 @@ class Block {
     private int tempCounter = -1;
     auto addAssignTemp(Pos pos) {
         auto v = st.get(pos, man, tsformat!"_t%d"(++tempCounter));
-        addVal(pos, OPCode.assign, v);
+        addVal(pos, OPCode.Assign, v);
         return v;
     }
     Obj getConst(size_t i) {
@@ -195,7 +195,7 @@ class Block {
     }
 
     void addNil(Pos pos) {
-        addVal(pos, OPCode.loadConst, 0);
+        addVal(pos, OPCode.LoadConst, 0);
     }
 
     size_t addJmp(Pos pos, OPCode op) {
@@ -244,35 +244,37 @@ class Block {
         foreach (i, o; ops) {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
-            case OPCode.makeClosure:
+            case OPCode.MakeClosure:
+            case OPCode.MakeClosureGet:
+            case OPCode.MakeClosureSet:
                 r ~= tsformat!"(%s)"(man.closures[o.val].toString(man));
                 break;
-            case OPCode.loadConst:
+            case OPCode.LoadConst:
                 r ~= tsformat!"(%s)"(man.consts[o.val].toStr);
                 break;
-            case OPCode.cmp:
+            case OPCode.Cmp:
                 r ~= tsformat!"(%s)"(symbolicStr(cast(TT) o.val));
                 break;
-            case OPCode.binary:
-            case OPCode.methodCall:
-            case OPCode.memberGet:
-            case OPCode.memberSet:
+            case OPCode.Binary:
+            case OPCode.MethodCall:
+            case OPCode.MemberGet:
+            case OPCode.MemberSet:
                 r ~= tsformat!"(%s)"(man.strs[o.val]);
                 break;
                 //case OPCode.subscriptGet:
                 //case OPCode.subscriptSet:
-            case OPCode.loadVal:
-            case OPCode.assign:
+            case OPCode.LoadVal:
+            case OPCode.Assign:
                 r ~= tsformat!"(%s)"(st.getStr(man, o));
                 break;
-            case OPCode.loadLib:
+            case OPCode.LoadLib:
                 r ~= tsformat!"(%s)"(lib.getName(o.val));
                 break;
-            case OPCode.jmp:
-            case OPCode.jmpIfFalseOrPop:
-            case OPCode.jmpIfTrueOrPop:
-            case OPCode.jmpIfFalsePop:
-            case OPCode.jmpIfTruePop:
+            case OPCode.Jmp:
+            case OPCode.JmpIfFalseOrPop:
+            case OPCode.JmpIfTrueOrPop:
+            case OPCode.JmpIfFalsePop:
+            case OPCode.JmpIfTruePop:
                 r ~= tsformat!"(L%s)"(o.val);
                 break;
             default:

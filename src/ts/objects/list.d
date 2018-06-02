@@ -33,7 +33,7 @@ static:
         return v.val[i] = obj;
     }
 
-    auto opCat(List v, Obj a) { return v.val ~ a; }
+    //List opCat(List v, Obj a) { return List(v.val ~ a); }
     bool toBool(List v) { return v.val.length != 0; }
     ListIter Iter(List v) { return ListIter(v); }
 }

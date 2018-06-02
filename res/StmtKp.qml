@@ -37,48 +37,48 @@ Keypad {
     perc: 0.108 * sizeY
     btnData: [
         ["if", function(){
-            editor.add_if();
-            editor.add_colon();
+            editor.addIf();
+            editor.addColon();
             editor.cursorLeft();
             back();
         }],
         ["else", function(){
-            editor.add_else();
-            editor.add_colon();
+            editor.addElse();
+            editor.addColon();
             back();
         }],
         ["fun", function(){
             /* fun [](|):
             */
-            editor.add_fun();
-            editor.add_lSquare();
-            editor.add_rSquare();
-            editor.add_lParen();
+            editor.addFun();
+            editor.addLSquare();
+            editor.addRSquare();
+            editor.addLParen();
             var c = editor.getCursor();
-            editor.add_rParen();
-            editor.add_colon();
+            editor.addRParen();
+            editor.addColon();
             editor.setCursorUnsafe(c);
             back();
         }],
 
         ["while", function(){
-            editor.add_while();
-            editor.add_colon();
+            editor.addWhile();
+            editor.addColon();
             editor.cursorLeft();
             back();
         }],
         ["for", function(){
-            editor.add_for();
+            editor.addFor();
             var c = editor.getCursor();
-            editor.add_in();
-            editor.add_colon();
+            editor.addIn();
+            editor.addColon();
             editor.setCursorUnsafe(c);
             back();
         }],
-        ["in",       function(){ editor.add_in(); back(); }],
-        ["return",   function(){ editor.add_return(); back(); }],
-        ["break",    function(){ editor.add_break(); back(); }],
-        ["continue", function(){ editor.add_continue(); back(); }],
+        ["in",       function(){ editor.addIn(); back(); }],
+        ["return",   function(){ editor.addReturn(); back(); }],
+        ["break",    function(){ editor.addBreak(); back(); }],
+        ["continue", function(){ editor.addContinue(); back(); }],
 
     ]
 }

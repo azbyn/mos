@@ -11,5 +11,6 @@ public import ts.objects.int_;
 public import ts.objects.bool_;
 public import ts.objects.string_;
 public import ts.objects.list;
+public import ts.objects.tuple;
 public import ts.objects.dict;
 public import ts.objects.range;

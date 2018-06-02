@@ -38,14 +38,14 @@ private:
     {_str, [](OperatorsKp* k) {                 \
             k->gotoMain();                      \
             k->setState(State::Main);           \
-            Editor::Instance->add_##_tt();      \
+            Editor::Instance->add##_tt();      \
         }}
 #define SD_ADD_TOK2(_str, _tt1, _tt2)           \
     {_str, [](OperatorsKp* k) {                 \
             k->gotoMain();                      \
             k->setState(State::Main);           \
-            Editor::Instance->add_##_tt1();     \
-            Editor::Instance->add_##_tt2();     \
+            Editor::Instance->add##_tt1();     \
+            Editor::Instance->add##_tt2();     \
     }}
 
     // clang-format on
@@ -53,10 +53,10 @@ private:
     const std::array<StateData, State::Len> stateDatas = {{
         //Main
         {{
-            SD_ADD_TOK(".", dot),
-            SD_ADD_TOK("~", tilde),
-            SD_ADD_TOK2("?:", question, colon),
-            SD_ADD_TOK2("[]", lSquare, rSquare),
+            SD_ADD_TOK(".", Dot),
+            SD_ADD_TOK("~", Tilde),
+            SD_ADD_TOK2("?:", Question, Colon),
+            SD_ADD_TOK2("[]", LSquare, RSquare),
             SD_SET_STATE("& ^ |", Bitwise),
             SD_SET_STATE("&& || !", Bool),
             SD_SET_STATE("+ %", Math),
@@ -64,38 +64,38 @@ private:
         }},
         // Math
         {{
-            SD_ADD_TOK("++", inc),
-            SD_ADD_TOK("--", dec),
-            SD_ADD_TOK("+", plus),
-            SD_ADD_TOK("-", minus),
-            SD_ADD_TOK("*", dot),
-            SD_ADD_TOK("/", div),
-            SD_ADD_TOK("//", intDiv),
-            SD_ADD_TOK("%", mod),
-            SD_ADD_TOK("**", pow),
+            SD_ADD_TOK("++", Inc),
+            SD_ADD_TOK("--", Dec),
+            SD_ADD_TOK("+", Plus),
+            SD_ADD_TOK("-", Minus),
+            SD_ADD_TOK("*", Dot),
+            SD_ADD_TOK("/", Div),
+            SD_ADD_TOK("//", IntDiv),
+            SD_ADD_TOK("%", Mod),
+            SD_ADD_TOK("**", Pow),
         }},
         // Comp
         {{
-            SD_ADD_TOK("==", eq),
-            SD_ADD_TOK("!=", ne),
-            SD_ADD_TOK("<", lt),
-            SD_ADD_TOK(">", gt),
-            SD_ADD_TOK("<=", le),
-            SD_ADD_TOK(">=", ge),
+            SD_ADD_TOK("==", Eq),
+            SD_ADD_TOK("!=", Ne),
+            SD_ADD_TOK("<", Lt),
+            SD_ADD_TOK(">", Gt),
+            SD_ADD_TOK("<=", Le),
+            SD_ADD_TOK(">=", Ge),
         }},
         // Bool
         {{
-            SD_ADD_TOK("&&", and),
-            SD_ADD_TOK("||", or),
-            SD_ADD_TOK("!", not),
+            SD_ADD_TOK("&&", And),
+            SD_ADD_TOK("||", Or),
+            SD_ADD_TOK("!", Not),
         }},
         // Bitwise
         {{
-            SD_ADD_TOK("^", xor),
-            SD_ADD_TOK("&", bAnd),
-            SD_ADD_TOK("|", bOr),
-            SD_ADD_TOK("<<", lsh),
-            SD_ADD_TOK(">>", rsh),
+            SD_ADD_TOK("^", Xor),
+            SD_ADD_TOK("&", BAnd),
+            SD_ADD_TOK("|", BOr),
+            SD_ADD_TOK("<<", Lsh),
+            SD_ADD_TOK(">>", Rsh),
         }},
     }};
 #undef SD_ADD_TOK

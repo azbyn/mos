@@ -46,7 +46,7 @@ int NumberText::length() const {
 }
 
 void NumberText::paint(QPainter* p) {
-    auto c = colors::background;
+    auto c = colors::Background;
     c.setAlpha(128);
     p->fillRect(0, 0, width(), height(), c);
     auto h = paddingY + fsd.height;
@@ -56,13 +56,13 @@ void NumberText::paint(QPainter* p) {
             paddingY + fsd.height);
     p->fillRect(QRect(r.x() - margin, r.y() - margin,
                       r.width() + 2 * margin, r.height() + 2 * margin),
-                colors::base03);
-    p->fillRect(r, colors::base00);
+                colors::Base03);
+    p->fillRect(r, colors::Base00);
     auto point = QPoint(r.x() + paddingX, r.y() + (paddingY / 2) + fsd.ascent);
 
     p->setFont(font);
     //auto point = fillRectCenter(this, p, 0.8f, 0.5f, colors::base00, 5, colors::base03);
-    p->setPen(colors::defaults);
+    p->setPen(colors::Defaults);
     p->drawText(point, val);
     drawCursor(p, cursor, 0);
 }
@@ -93,7 +93,7 @@ void NumberText::setCursorScreen(QPointF p) {
 }
 bool NumberText::ok() {
     if (val.size() == 0) return false;
-    Editor::Instance->add_number(val);
+    Editor::Instance->addNumber(val);
     reset();
     return true;
 }
