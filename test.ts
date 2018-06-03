@@ -32,12 +32,14 @@
 #prop X=(v):
 #	println("setting x to:", v)
 
+for i in (1,5,56,98):
+	println(i);
 #prop x=(v): thing = v
-tpl = (1, 3, 4)
+#tpl = (1, 3, 4)
 #println("asin(1)", cos(Pi))
-tpl.Test = 9
-tpl2 = tuple(tpl)
-println("x:", tuple.toBool(tpl2))
+#tpl.Test = 9
+#tpl2 = tuple(tpl)
+#println("x:", tuple.toBool(tpl2))
 #printfln("sz: @, [0]: @, Tail: @", tpl.Size, tpl[0], tpl.Tail)
 #X = 5
 #printfln("x: @", X)

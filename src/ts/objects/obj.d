@@ -140,8 +140,8 @@ class Obj {
             (BIFunction f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
             (Type_ f) => f.callCtor(p, e, args),
-            () => member(p, "opCall").call(p, e, args)
-            //throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
+            //() => member(p, "opCall").call(p, e, args)
+            () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
         )();
         //dfmt on
     }

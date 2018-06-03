@@ -243,17 +243,17 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         },
         (AstNode.For v) {
             /*
-              iter = collection.Iter();
+              iter = collection.Iter;
             beg:
-              v.index = iter.Index();
-              v.val = iter.Val();
+              v.index = iter.Index;
+              v.val = iter.Val;
               body();
             next:
               if (iter.next()) goto beg;
             end:
              */
             ir(v.collection);
-            bl.addStr(pos, OPCode.MethodCall, 0, "Iter");
+            bl.addStr(pos, OPCode.MemberGet, 0, "Iter");
             auto iter = bl.addAssignTemp(pos);
             bl.add(pos, OPCode.Pop);
             auto beg = bl.here();
@@ -261,12 +261,12 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             auto end = bl.reserveJmp();
 
             bl.addVal(pos, OPCode.LoadVal, iter);
-            bl.addStr(pos, OPCode.MethodCall, 0, "Index");
+            bl.addStr(pos, OPCode.MemberGet, 0, "Index");
             bl.addAssign(pos, v.index);
             bl.add(pos, OPCode.Pop);
 
             bl.addVal(pos, OPCode.LoadVal, iter);
-            bl.addStr(pos, OPCode.MethodCall, 0, "Val");
+            bl.addStr(pos, OPCode.MemberGet, 0, "Val");
             bl.addAssign(pos, v.val);
             bl.add(pos, OPCode.Pop);
             ir(v.body_, beg, end);
