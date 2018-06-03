@@ -54,6 +54,7 @@ struct Lexer {
                 if (regex("^[0-9]+", TT::Number)) continue;
                 if (regex("^[_a-zA-Z][_a-zA-Z0-9]*", 0, [](const QString& str) {
                         if (str == "return") return Token(TT::Return);
+                        if (str == "struct") return Token(TT::Struct);
                         if (str == "fun") return Token(TT::Fun);
                         if (str == "prop") return Token(TT::Prop);
                         if (str == "if") return Token(TT::If);

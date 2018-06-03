@@ -5,6 +5,7 @@ import ts.runtime.env;
 import ts.ast.token;
 import stdd.conv;
 import stdd.format;
+import stdd.array;
 
 private alias Tuple = Tuple_;
 struct Tuple_ {
@@ -13,7 +14,10 @@ struct Tuple_ {
         this.val = val;
     }
 static:
-    void ctor(Tuple v) { v.val = []; }
+    void ctor(Tuple* v) { v.val = []; }
+    void ctor(Tuple* v, Tuple o) {
+        v.val = o.val;
+    }
     tsstring toString(Tuple v) {
         tsstring res = "(";
         foreach (o; v.val)

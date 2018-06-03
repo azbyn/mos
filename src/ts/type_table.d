@@ -47,6 +47,11 @@ class TypeTable {
         if(auto ctor = get!T.ctor) return ctor;
         throw new TypeException(p, format!"Type '%s' doesn't have a ctor"(getName!T));
     }
+    Obj getCtor(Pos p, tsstring t) {
+        if(auto ctor = get(t).ctor) return ctor;
+        throw new TypeException(p, format!"Type '%s' doesn't have a ctor"(t));
+    }
+
     Obj tryCtor(T)() { return get!T.ctor; }
     Obj getMember(Pos pos, tsstring type, tsstring s) {
         if (type !in data)

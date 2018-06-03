@@ -15,3 +15,4 @@ public import ts.objects.tuple;
 public import ts.objects.dict;
 public import ts.objects.property;
 public import ts.objects.range;
+public import ts.objects.type;

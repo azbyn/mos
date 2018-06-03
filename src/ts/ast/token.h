@@ -11,6 +11,7 @@ enum class TT {
     True,
     False,
     Nil,
+    Struct,
     Fun,
     Prop,
     If,

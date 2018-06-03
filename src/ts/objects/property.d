@@ -52,20 +52,16 @@ Obj assignSetter(Obj[] arr, size_t index, Obj val) {
 }
 Obj assignSetter(Index)(Obj[Index] arr, Index index, Obj val) {
     Property* p;
-    pragma(msg, format!("assign setter ")());
-
     Obj* ptr = index in arr;
     if (ptr !is null && (p = ptr.peek!Property) !is null) {
-        tslog("<<is ss");
         return p.set = val;
     }
-    tslog("<<is new");
     return arr[index] = objProperty(null, val);
 }
 
 Obj assignGetter(Obj[] arr, size_t index, Obj val) {
     assert(index < arr.length);
-    tslog!"getter on [%s] , %s"(index, arr.length);
+    //tslog!"getter on [%s] , %s"(index, arr.length);
     if (arr[index] !is null) {
         Property* p = arr[index].peek!Property;
         if (p !is null) {

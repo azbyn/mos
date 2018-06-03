@@ -193,11 +193,23 @@ static this() {
         type.members["toString"] = defaultToString!T();
         type.members["toBool"] = defaultToBool;
         type.members["opEquals"] = defaultOpEquals;
-        pragma(msg, format!"\t<type %s>"(t));
+        //pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
                 type.ctor = getFun!(T, m);
-                objs[T.type()] = objBIFunction(
+            }
+            else static if (m != "type") {{
+                enum data = getFuncData!m;
+                assignFuncType!(data.ft)(type.members, data.name, getFun!(T, m));
+            }}
+            /*
+            else static if (m == "toString") {
+                type.members[m] = getFun!(T, m);
+            }*/
+        }
+        if (!is(T == Type_))
+            objs[T.type()] = objType(T.type(), () => new Obj(T()));
+/* = objBIFunction(
                     (Pos p, Env e, Obj[] a) {
                         import stdd.array;
                         auto v = new Obj(T());
@@ -206,20 +218,8 @@ static this() {
                         args[1..$] = a[];
                         typeTable.tryCtor!T.call(p, e, args);
                         return v;
-                    });
-            }
-            else static if (m != "type") {{
-                enum data = getFuncData!m;
-                assignFuncType!(data.ft)(type.members, data.name, getFun!(T, m));
-                static if (data.name == "Test") {
-                    tslog!"das test %s"(*type.members["Test"].peek!Property);
-                }
-            }}
-            /*
-            else static if (m == "toString") {
-                type.members[m] = getFun!(T, m);
-            }*/
-        }
+                        });*/
+
         _typeTable.add!T(type);
     }}
     //_typeTable.print();

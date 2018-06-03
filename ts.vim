@@ -82,7 +82,7 @@ syn keyword tsOperator	and in is not or
 syn keyword tsException	except finally raise try
 syn keyword tsInclude	from import
 syn keyword tsAsync		async await
-syn keyword tsDeclaration fun prop
+syn keyword tsDeclaration fun prop struct
 
 hi def link     tsDeclaration       Keyword
 

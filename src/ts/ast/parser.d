@@ -396,7 +396,6 @@ private:
             require(TT.Colon);
             last.peek!(AstNode.If).else_ = body_();
         }
-        // res = new AstNode(getPos(t), stmt);//astIf(getPos(t), cond, b, *lastElse);
         return true;
     }
     // while_: "while" expression ":" body_

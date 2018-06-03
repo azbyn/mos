@@ -18,7 +18,7 @@ public import stdd.variant;
 enum types = [
     "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
     "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
-    "TupleIter", "Property"
+    "TupleIter", "Property", "Type_"
     ];
 
 
@@ -139,7 +139,9 @@ class Obj {
             (Closure f) => f(p, e, args),
             (BIFunction f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
-            () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
+            (Type_ f) => f.callCtor(p, e, args),
+            () => member(p, "opCall").call(p, e, args)
+            //throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
         )();
         //dfmt on
     }
