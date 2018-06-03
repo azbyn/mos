@@ -159,6 +159,8 @@ class AstNode {
 
     mixin(genVal());
     Pos pos;
+    T* peek(T)() { return val.peek!T; }
+
 
     this(T)(Pos pos, T val) {
         this.val = val;

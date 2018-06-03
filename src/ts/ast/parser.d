@@ -243,27 +243,6 @@ private:
         }
         return true;
     }
-    /+
-    void contend(bool continued) {
-        /*if (!continued) return;
-        if (contStackPop()) {
-            require(TT.newLine);
-            require(TT.dedent);
-        }else {
-            //require(TT.newLine);
-            }*/
-        /*
-        while(!isEof()) {
-            if (!consume(TT.newLine)) break;
-            }*/
-    }
-    static string cont(string file = __FILE__, size_t line = __LINE__) {
-        return format!`
-        bool continued%d = contstart();
-        scope(exit) {
-            contend(continued%d);
-        }`(line, line);
-    } +/
     // body_: statement | NewLine Indent { stmt } Dedent
     AstNode body_() {
         const(Token)* t;
@@ -398,27 +377,26 @@ private:
         auto cond = expression();
         require(TT.Colon);
         auto b = body_();
-        auto stmt = AstNode.If(cond, b, null);
-        AstNode* lastElse = &stmt.else_;
+        //AstNode* lastElse = &stmt.else_;
+        res = astIf(getPos(t), cond, b, null);
+        auto last = res;
+
         while (consume(TT.NewLine)) continue;
-
-        const(Token)* t1;
-        while (!consume(t1, TT.Elif)) {
-            auto elcond = expression();
+        while (consume(t, TT.Elif)) {
+            cond = expression();
             require(TT.Colon);
-            auto elbody = body_();
-            auto elstmt = AstNode.If(elcond, elbody, null);
-            *lastElse = new AstNode(getPos(t1), elstmt);
-            lastElse = &elstmt.else_;
-
+            b = body_();
+            auto curr = astIf(getPos(t), cond, b, null);
+            last.peek!(AstNode.If).else_ = curr;
+            last = curr;
             while (consume(TT.NewLine)) continue;
         }
 
         if (consume(TT.Else)) {
             require(TT.Colon);
-            *lastElse = body_();
+            last.peek!(AstNode.If).else_ = body_();
         }
-        res = astIf(getPos(t), cond, b, *lastElse);
+        // res = new AstNode(getPos(t), stmt);//astIf(getPos(t), cond, b, *lastElse);
         return true;
     }
     // while_: "while" expression ":" body_
