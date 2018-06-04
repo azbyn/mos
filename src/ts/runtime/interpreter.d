@@ -163,12 +163,12 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             stack ~= bl.lib.get(op.val).checkGetter(pos, env);
         } break;
         case OPCode.MakeClosure: {
-            auto cm = bl.man.closures[op.val];
+            auto b = bl.man.blocks[op.val];
             Obj*[OffsetVal] caps;
-            foreach (c; cm.captures) {
+            foreach (c; b.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= objClosure(bl.man.blocks[cm.blockIndex], caps);
+            stack ~= objClosure(b, caps);
         } break;
         case OPCode.MakeList: {
             assert(len >= op.val);
@@ -239,16 +239,28 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             t.members["toString"] = defaultToString();
             t.members["toBool"] = defaultToBool;
             t.members["opEquals"] = defaultOpEquals;
-
-            foreach (name, b; tm.members) {
-                t.members[name] = b.eval(pos, env, []);
+            Obj*[OffsetVal] caps;
+            foreach (c; tm.captures) {
+                caps[c] = env.getPtr(c);
             }
 
+            foreach (name, b; tm.members) {
+                t.members[name] = b.eval(pos, env, [], caps);
+            }
+            Obj funcOrClosure(Block b) {
+                if (b.captures.length == 0) return objFunction(b);
+                Obj*[OffsetVal] caps;
+                foreach (c; b.captures) {
+                    caps[c] = env.getPtr(c);
+                }
+
+                return objClosure(b, caps);
+            }
             foreach (name, b; tm.methods) {
                 if (name == "ctor") {
-                    t.ctor = objFunction(b);
+                    t.ctor = funcOrClosure(b);
                 } else {
-                    t.members[name] = objFunction(b);
+                    t.members[name] = funcOrClosure(b);
                 }
             }
             import ts.objects.user_defined;

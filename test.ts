@@ -1,8 +1,10 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
-struct Foo(dict):
-	fun ctor(this, val):
+capture = "k"
+kp = "kp"
+struct Foo[capture](dict):
+	fun ctor[kp](this, val):
 		println("ctor w ", type(this))
-		this.base["whatever"] = val
+		this.base["whatever"] = kp
 
 	prop Val(this): return this.base["whatever"]
 	prop Val=(this, val): this.base["whatever"] = val
@@ -13,10 +15,14 @@ struct Foo(dict):
 		return this.Val.toString()
 
 	staticThing = 56
+	k = capture
+
 foo = Foo(5)
 println(foo)
 Foo.doSmth(foo)
 println(Foo.staticThing)
+println(Foo.k)
+
 #dict = { }
 #dict["ja"] = 1
 #println(dict["ja"])

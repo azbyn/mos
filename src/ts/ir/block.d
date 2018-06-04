@@ -78,13 +78,12 @@ class Block {
         if (block.captures.length == 0)
             addConst(pos, objFunction(block));
         else
-            addClosure(pos, block, block.captures);
+            addClosure(pos, block);
     }
 
-    void addClosure(Pos pos, Block bl, OffsetVal[] captures) {
+    void addClosure(Pos pos, Block bl) {
         man.blocks ~= bl;
-        man.closures ~= ClosureMaker(man.blocks.length - 1, captures);
-        addVal(pos, OPCode.MakeClosure, man.closures.length - 1);
+        addVal(pos, OPCode.MakeClosure, man.blocks.length - 1);
     }
     void addType(Pos pos, TypeMaker tm) {
         man.types ~= tm;
@@ -218,13 +217,19 @@ class Block {
     tsstring toStr(Pos p, Env e) {
         tsstring r = "";
         r ~= tsformat!"\noffset = %d"(st.offset);
-
         if (args !is null) {
             r ~= "\nargs: ";
             foreach (a; args) {
                 r ~= tsformat!"\no:%s, %s: %s"(a.offset, a.val, st.getStr(man, a));
             }
         }
+        if (captures !is null) {
+            r ~= "\ncaptures: ";
+            foreach (a; captures) {
+                r ~= tsformat!"\ncap:%s"(a);
+            }
+        }
+
         tsstring getLabel(ulong pos) {
             tsstring res = "";
             foreach (i, l; man.jumpTable) {
@@ -239,7 +244,7 @@ class Block {
                 r ~= tsformat!"(%s)"(man.types[o.val].toString(p, e));
                 break;
             case OPCode.MakeClosure:
-                r ~= tsformat!"(%s)"(man.closures[o.val].toString(p, e, man));
+                r ~= tsformat!"(%s)"(man.blocks[o.val].toStr(p, e));
                 break;
             case OPCode.LoadConst:
                 r ~= tsformat!"(%s)"(man.consts[o.val].toStr(p, e));

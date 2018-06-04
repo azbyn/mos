@@ -303,7 +303,7 @@ private:
         return true;
     }
 
-    // funcParams: Identifier ["," cont [funParams]]
+    // funcParams: Identifier [ "," cont [funParams]] Terminator
     void funcParams(TT terminator, ref tsstring[] args) {
         const(Token)* p;
         while (!is_(TT.Eof, terminator)) {
@@ -316,10 +316,18 @@ private:
         cont();
         require(terminator);
     }
+    // captures: [ "[" cont funcParams cont "]" ]
+    tsstring[] captures() {
+        tsstring[] res;
+        if (consume(TT.LSquare)) {
+            funcParams(TT.RSquare, res);
+        }
+        return res;
+    }
 
     // prop: propGet | propSet
-    // propGet: "prop" Identifier [ "[" cont funcParams cont "]" ] "["(" cont [Identifier cont] ")"] ":" body_
-    // propSet: "prop" Identifier "=" [ "[" cont funcParams cont "]" ] "(" cont Identifier cont ["," Identifier cont] ")" ":" body_
+    // propGet: "prop" Identifier captures "["(" cont [Identifier cont] ")"] ":" body_
+    // propSet: "prop" Identifier "=" captures "(" cont Identifier cont ["," Identifier cont] ")" ":" body_
     bool prop(out AstNode res) {
         Pos p;
         Pos p2;
@@ -344,11 +352,7 @@ private:
         name = t.tsstr;
         ft = consume(TT.Assign) ? FuncType.Setter : FuncType.Getter;
 
-        tsstring[] captures;
-        if (consume(TT.LSquare)) {
-            funcParams(TT.RSquare, captures);
-        }
-
+        tsstring[] caps = captures();
         cont();
         tsstring[] params;
         const(Token)* p;
@@ -375,11 +379,11 @@ private:
         }
 
         require(TT.Colon);
-        res = AstNode.Lambda(captures, params, body_);
+        res = AstNode.Lambda(caps, params, body_);
         return true;
     }
 
-    // funcDef: "fun" Identifier [ "[" cont funcParams cont "]" ] "(" cont funcParams cont ")" ":" body_
+    // funcDef: "fun" Identifier captures "(" funcParams ")" ":" body_
     bool funcDef(out AstNode res) {
         tsstring name;
         AstNode.Lambda val;
@@ -398,16 +402,13 @@ private:
         p = getPos(t);
         p2 = getPos(f);
         name = t.tsstr;
-        tsstring[] captures;
-        if (consume(TT.LSquare)) {
-            funcParams(TT.RSquare, captures);
-        }
+        tsstring[] caps = captures();
         cont();
         require(TT.LParen);
         tsstring[] params;
         funcParams(TT.RParen, params);
         require(TT.Colon);
-        res = AstNode.Lambda(captures, params, body_());
+        res = AstNode.Lambda(caps, params, body_());
         return true;
     }
     // if_: "if" expression ":" body_ {"\n"} {"elif" expression ":" body_ {"\n"} } [ "else" ":" body_ ]
@@ -480,21 +481,11 @@ private:
         res = astFor(getPos(t), index, val, col, body_);
         return true;
     }
-    // struct_: "struct" Identifier "(" Identifier ")" ":" "\n" Indent { {"\n"} structData} Dedent
+    // struct_: "struct" Identifier captures [ "(" [Identifier] ")" ] ":" "\n" Indent { {"\n"} structData} Dedent
     // structData: funcDef | prop | memberAssign
     // memberAssign: Identifier "=" cont ternary
-
     bool struct_(out AstNode res) {
         if (!consume(TT.Struct)) return false;
-        const(Token)* t;
-        require(t, TT.Identifier);
-        require(TT.LParen);
-        auto base = requireIdentifier();
-        require(TT.RParen);
-        require(TT.Colon);
-        require(TT.NewLine);
-        require(TT.Indent);
-
         AstNode[tsstring] members;
         AstNode.Lambda[tsstring] methods;
         AstNode.Lambda[tsstring] setters;
@@ -534,6 +525,23 @@ private:
         bool structData() {
             return memberFuncDef() || memberProp() || memberAssign();
         }
+
+        const(Token)* t;
+        require(t, TT.Identifier);
+        tsstring base = "nil";
+        tsstring[] caps = captures();
+
+        if (consume(TT.LParen)) {
+            const(Token)* b;
+            if (consume(b, TT.Identifier)){
+                base = b.tsstr;
+            }
+            require(TT.RParen);
+        }
+        require(TT.Colon);
+        require(TT.NewLine);
+        require(TT.Indent);
+
         /*if (!structData())
           throw new ParserException(getPos(t), "please use 'pass' for an empty struct definition");*/
         while (true) {
@@ -541,7 +549,7 @@ private:
             if (!structData()) break;
         }
         require(TT.Dedent);
-        res = astStructDef(getPos(t), t.tsstr, base, members, methods, getters, setters);
+        res = astStructDef(getPos(t), t.tsstr, base, caps, members, methods, getters, setters);
         return true;
     }
 

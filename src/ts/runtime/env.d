@@ -49,7 +49,8 @@ class Env {
             return objs[val.val].checkGetter(p, e);
         if (auto o = captures.get(val, null))
             return o.checkGetter(p, e);
-        assert(0);
+        import stdd.format;
+        assert(0, format!"get %s"(val));
     }
     Obj* getPtr(OffsetVal val) {
         if (val.offset == offset)

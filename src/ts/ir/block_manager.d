@@ -7,22 +7,10 @@ import ts.ir.lib;
 import ts.ir.compiler;
 import ts.misc;
 
-struct ClosureMaker {
-    size_t blockIndex;
-    OffsetVal[] captures;
-    tsstring toString(Pos p, Env e, BlockManager man) {
-        tsstring res = "<closureMaker>\ncaps: \n";
-        foreach (c; captures) {
-            res ~= tsformat!"%s, %s (%s)\n"(c.offset, c.val, man.tables[0].getStr(man, c));
-        }
-        res ~= "block:" ~ man.getCMBlock(this).toStr(p, e);
-
-        return res ~ "\n</closureMaker>";
-    }
-}
 struct TypeMaker {
     tsstring name;
     tsstring base;
+    OffsetVal[] captures;
     Block[tsstring] members;
     Block[tsstring] methods;
     Block[tsstring] getters;
@@ -55,7 +43,6 @@ class BlockManager {
     SymbolTable[] tables;
     tsstring[] strs;
     Block[] blocks;
-    ClosureMaker[] closures;
     TypeMaker[] types;
     size_t[] jumpTable;
 
@@ -71,12 +58,6 @@ class BlockManager {
     ushort addST(SymbolTable st){
         tables ~= st;
         return cast(ushort) (tables.length - 1);
-    }
-    Block getCMBlock(ClosureMaker cm) {
-        return blocks[cm.blockIndex];
-    }
-    Block getCMBlock(size_t index) {
-        return getCMBlock(closures[index]);
     }
 
     size_t addJump(size_t pos = -1) {

@@ -38,7 +38,7 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
         }
         return 1;
     }
-    //try {
+    try {
         resetTypeTable();
         tslog("\nIR");
         Lib lib = stdlib();
@@ -48,9 +48,9 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
         tslog("\nOutput:");
         auto res = man.eval();
         tslog!"res = '%s'"(res.toStr_unsafe);
-        /*}
+    }
     catch (TSException e) {
         tsputsln(visualizeError(toks, e.pos, "Error: " ~ e.msg));
-        }*/
+    }
     return 0;
 }

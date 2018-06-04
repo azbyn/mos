@@ -147,6 +147,7 @@ class AstNode {
     struct StructDef {
         tsstring name;
         tsstring base;
+        tsstring[] captures;
         AstNode[tsstring] members;
         Lambda[tsstring] methods;
         Lambda[tsstring] getters;
@@ -303,17 +304,17 @@ class AstNode {
             (StructDef v) {
                 void foo(ref string res, AstNode[tsstring] arr) {
                     foreach (n, a; arr) {
-                        res ~= "\n" ~indent ~ format!"[%s]"(n) ~ (a is null ? "null" : a.toString(level+1));
+                        res ~= "\n" ~indent ~ format!"  [%s]: "(n) ~ (a is null ? "null" : a.toString(0/*level+1*/));
                     }
                 }
                 void fool(ref string res, Lambda[tsstring] arr) {
                     foreach (n, l; arr) {
-                        res ~= "\n" ~ indent ~ format!"[%s]: lambda (%s) [%s]:%s"(
+                        res ~= "\n" ~ indent ~ format!"  [%s]: lambda (%s) [%s]:%s"(
                             n, l.params.joiner(","), l.captures.joiner(","), str(l.body_));
                     }
                 }
                 ++level;
-                auto res = format!"struct %s (%s):"(v.name, v.base);
+                auto res = format!"struct %s (%s)[%s]:"(v.name, v.base, v.captures.joiner(","));
                 res ~= "\n"~indent ~ "| > members:";
                 foo(res, v.members);
                 res ~= "\n"~indent ~ "| > methods:";

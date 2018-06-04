@@ -330,15 +330,18 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             TypeMaker tm;
             tm.name = v.name;
             tm.base = v.base;
+            import com.log;
             Block getBlock(AstNode.Lambda l) {
                 return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures), l.params);
             }
+            tm.captures = bl.getCaptures(pos, v.captures);
             foreach (name, m; v.members) {
-                tm.members[name] = generateIR(m, bl, [], []);
+                tm.members[name] = generateIR(m, bl, tm.captures, []);
             }
 
             foreach (name, m; v.methods) {
                 tm.methods[name] = getBlock(m);
+                tslog!">>m.caps %s"(tm.methods[name].captures);
             }
             foreach (name, m; v.getters) {
                 tm.getters[name] = getBlock(m);
@@ -348,13 +351,6 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             }
             bl.addConst(pos, objTypeMeta(v.name));
             bl.addAssign(pos, v.name);
-            /*
-        AstNode[tsstring] members;
-        AstNode[tsstring] methods;
-        AstNode[tsstring] getters;
-        AstNode[tsstring] setters;
-
-             */
             bl.addType(pos, tm);
         },
     )();

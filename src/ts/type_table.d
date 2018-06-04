@@ -55,9 +55,7 @@ class TypeTable {
     void add(tsstring name, Type t) {
         data[name] = t;
     }
-    import com.log;
     Obj construct(tsstring name, Pos p, Env e, Obj[] args...) {
-        tslog!"construct %s "(name);
         return data[name].callCtor(p, e, args);
     }
 
