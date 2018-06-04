@@ -3,7 +3,6 @@ module ts.objects.obj;
 import ts.objects;
 
 import ts.misc;
-import ts.type_table;
 import ts.ir.block;
 import stdd.format;
 
@@ -11,6 +10,7 @@ public import ts.ast.token;
 public import ts.runtime.env;
 public import ts.builtin;
 public import ts.misc : FuncType;
+public import ts.objects.type_meta;
 import ts.stdlib;
 
 public import stdd.variant;
@@ -76,9 +76,6 @@ class Obj {
             return *a;
         }
     }
-    private T unsafeMemberCall(T)(tsstring s, Obj[] args...) {
-        return member(Pos(-1), null, s).call(Pos(-1), null, args).get!T(Pos(-1));
-    }
     private T memberCallCast(T)(tsstring s, Pos p, Env e, Obj[] args...) {
         return member(p, e, s).call(p, e, args).get!T(p);
     }
@@ -86,31 +83,24 @@ class Obj {
     override string toString() {
         throw new Exception("please use toStr", __FILE__, __LINE__);
     }
-    tsstring toStr_unsafe() {
-        return unsafeMemberCall!tsstring("toString", this);
-    }
     tsstring toStr(Pos p, Env e) {
         return memberCallCast!tsstring("toString", p, e, this);
     }
 
-    bool toBool() {
-        return unsafeMemberCall!bool("toBool", this);
-    }
-    bool equals_unsafe(Obj o) {
-        return unsafeMemberCall!bool("opEquals", this, o);
+    bool toBool(Pos p, Env e) {
+        return memberCallCast!bool("toBool", p, e, this);
     }
     bool equals(Pos p, Env e, Obj other) {
-        //this must exist
         return memberCallCast!bool("opEquals", p, e, this, other);
     }
     tsint cmp(Pos p, Env e, Obj other) {
-        auto f = typeTable.tryMember(type(), "opCmp");
+        auto f = e.tryMember(p, this, "opCmp");
         if (f !is null) {
             auto r = f.call(p, e, this, other);
             if (!r.isNil())
                 return r.get!tsint(p);
         }
-        f = typeTable.tryMember(other.type(), "opCmpR");
+        f = e.tryMember(p, other, "opCmpR");
         if (f !is null) {
             auto r = f.call(p, e, other, this);
             if (!r.isNil())
@@ -118,20 +108,20 @@ class Obj {
         }
         throw new TypeException(p, format!"Binary 'opCmp', not overloaded for type %s"(type()));
     }
-    Obj binary(Pos pos, Env env, tsstring op, Obj other) {
-        auto f = typeTable.tryMember(type(), op);
+    Obj binary(Pos p, Env e, tsstring op, Obj other) {
+        auto f = e.tryMember(p, this, op);
         if (f !is null) {
-            auto r = f.call(pos, env, this, other);
+            auto r = f.call(p, e, this, other);
             if (!r.isNil())
                 return r;
         }
-        f = typeTable.tryMember(other.type(), op~"R");
+        f = e.tryMember(p, other, op~"R");
         if (f !is null) {
-            auto r = f.call(pos, env, other, this);
+            auto r = f.call(p, e, other, this);
             if (!r.isNil())
                 return r;
         }
-        throw new TypeException(pos, format!"Binary '%s', not overloaded for type %s"(op, type()));
+        throw new TypeException(p, format!"Binary '%s', not overloaded for type %s"(op, type()));
     }
     Obj binary(tsstring op)(Pos pos, Env env, Obj other) {
         enum name = symbolicToTT(op).binaryFunctionName;
@@ -139,38 +129,21 @@ class Obj {
         return binary(pos, env, name, other);
     }
 
-    Obj call(Pos p, Env e, Obj a, Obj b, string file =__FILE__, size_t line = __LINE__) {
-        return call(p,e, [a, b], file, line);
-    }
-    Obj call(Pos p, Env e, Obj a, Obj b, Obj c, string file =__FILE__, size_t line = __LINE__) {
-        return call(p,e, [a, b, c], file, line);
-    }
-
-    Obj call(Pos p, Env e, Obj a, string file =__FILE__, size_t line = __LINE__) {
-        return call(p,e, [a], file, line);
-    }
-    Obj call(Pos p, Env e, string file =__FILE__, size_t line = __LINE__) {
-        return call(p,e, [], file, line);
-    }
-
-
-
-
-    Obj call(Pos p, Env e, Obj[] args/*...*/, string file =__FILE__, size_t line = __LINE__) {
+    Obj call(Pos p, Env e, Obj[] args...) {
         //dfmt off
         return val.tryVisit!(
-            (Function f) => f(p, e, args, file, line),
+            (Function f) => f(p, e, args),
             (Closure f) => f(p, e, args),
             (BIFunction f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
-            (TypeMeta f) => f.callCtor(p, e, args),
+            (TypeMeta t) => t.construct(p, e, args),
             //() => member(p, "opCall").call(p, e, args)
             () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
         )();
         //dfmt on
     }
     Obj member(Pos p, Env e, tsstring m) {
-        return typeTable.getMember(p, e, this /* type*/, m);
+        return e.getMember(p, this /* type*/, m);
     }
     @property tsstring type() {
         string gen() {

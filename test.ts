@@ -11,16 +11,21 @@ struct Foo[capture](dict):
 
 	fun doSmth(this):
 		println("do smth", this.Val)
+	fun static(): 4
+	fun static2(): static() +2
 	fun toString(this):
 		return this.Val.toString()
 
-	staticThing = 56
+	staticThing = 1#static2()
 	k = capture
+
 
 foo = Foo(5)
 println(foo)
 Foo.doSmth(foo)
 println(Foo.staticThing)
+println(Foo.static())
+println(Foo.static2())
 println(Foo.k)
 
 #dict = { }

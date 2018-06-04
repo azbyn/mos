@@ -11,10 +11,6 @@ struct Property {
         this.get = get;
         this.set = set;
     }
-    string toString() {
-        return format!"(get: %s, set: %s)"(get is null? "null":get.toStr_unsafe,
-                                           set is null? "null":set.toStr_unsafe);
-    }
     Obj callGet(Pos p, Env e) {
         if (!get)
             throw new RuntimeException(p, "property doesn't have a getter");
@@ -38,8 +34,9 @@ struct Property {
         return set.call(p, e, self, val);
     }
 
-
-    static tsstring type() { return "property"; }
+static:
+    TypeMeta typeMeta;
+    tsstring type() { return "property"; }
 }
 
 Obj assignSetter(Obj[] arr, size_t index, Obj val) {

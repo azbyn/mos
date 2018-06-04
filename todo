@@ -15,7 +15,7 @@ qml:
 add () elif prop
 
 dlang:
-nested classes
+nested structs
 (a, b) = (1, 2)
 modules (like namespaces)
 ?pass

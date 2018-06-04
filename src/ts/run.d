@@ -9,6 +9,7 @@ import ts.builtin;
 import ts.ir.lib;
 import ts.ir.compiler;
 import ts.runtime.interpreter;
+import ts.runtime.env;
 
 /*
 import ts.ast.lexer;
@@ -39,16 +40,13 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
         return 1;
     }
     try {
-        resetTypeTable();
         tslog("\nIR");
         Lib lib = stdlib();
         auto man = generateIR(p.nodes, lib);
-        tslog(man.toStr_unsafe());
-
-        tslog("\nOutput:");
-        auto res = man.eval();
-        tslog!"res = '%s'"(res.toStr_unsafe);
-    }
+        Env e;
+        auto res = man.evalDbg(e);
+        tslog!"res = '%s'"(res.toStr(Pos(-1), e));
+        }
     catch (TSException e) {
         tsputsln(visualizeError(toks, e.pos, "Error: " ~ e.msg));
     }

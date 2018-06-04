@@ -22,3 +22,13 @@ else {
 }
 alias tschar = wchar;
 alias tsstring = immutable(tschar)[];
+
+class TSException : Exception {
+    import ts.ast.token : Pos;
+
+    Pos pos;
+    this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
+        this.pos = pos;
+        super(msg, file, line);
+    }
+}

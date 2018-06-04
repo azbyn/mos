@@ -26,6 +26,8 @@ struct Dict {
         }
     }
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "dict"; }
 
     void ctor(Dict v) { v.val = []; }
     tsstring toString(Pos p, Env e, Dict v) {
@@ -34,8 +36,6 @@ static:
             res ~= tsformat!"%s: %s, "(x.key.toStr(p, e), x.val.toStr(p, e));
         return res ~ "}";
     }
-
-    tsstring type() { return "dict"; }
 
     tsint size(Dict v) { return v.val.length; }
     Obj opIndex(Pos pos, Env env, Dict* v, Obj index) {
@@ -88,7 +88,9 @@ struct DictIter {
         end = beg + m.val.length;
     }
 static:
+    TypeMeta typeMeta;
     tsstring type() { return "list_iterator"; }
+
     auto Iter(DictIter v) { return v; }
     Obj  Val(DictIter v) { return v.ptr.val; }
     Obj  Index(DictIter v) { return v.ptr.key; }

@@ -4,7 +4,6 @@ import ts.ast.token;
 import ts.ir.block;
 import ts.ir.block_manager;
 import ts.ir.compiler;
-import ts.type_table;
 import ts.builtin;
 import ts.runtime.env;
 import ts.objects.obj;
@@ -19,16 +18,22 @@ import stdd.range;
 import com.log;
 
 public Obj eval(BlockManager man) {
-    //auto len = man.finish();
     return eval(man.mainBlock, Pos(-1), new Env(man.mainBlock.st), null, null);
 }
-private Obj checkGetter(Obj x, Pos pos, Env env) {
+public Obj evalDbg(BlockManager man, out Env e) {
+    e = new Env(man.mainBlock.st);
+    tslog(man.toStr(Pos(-1), e));
+    tslog("\nOutput:");
+    return eval(man.mainBlock, Pos(-1), e, null, null);
+}
+
+Obj checkGetter(Obj x, Pos pos, Env env) {
     return x.val.tryVisit!(
         (Property p) => p.callGet(pos, env),
         () => x);
 }
 
-public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null,
+public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null,
                 string file =__FILE__, size_t line = __LINE__) {
     if (env !is null)
         env = new Env(env, bl.st, captures);
@@ -43,9 +48,9 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
     }
     void jmp(ref size_t pc, size_t pos) {pc = bl.man.jumpTable[pos]-1;}
     if (bl.args.length != length)
-        throw new RuntimeException(pos, format!"Expected %s args, got %s"(bl.args.length, length), file, line);
+        throw new RuntimeException(initPos, format!"Expected %s args, got %s"(bl.args.length, length), file, line);
     foreach (i, a; bl.args) {
-        env.set(pos, env, a, argv[i]);
+        env.set(initPos, a, argv[i]);
     }
 
 
@@ -56,6 +61,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         auto len = stack.length;
         //writefln("pc=%d l=%s, %-20s ", pc, stack.length, op.code);
         auto msg = "";
+        auto pos = op.pos;
 
         //writefln("%d %s l=%s", pc, op, len);
         //dfmt off
@@ -88,7 +94,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
                 args = args[1..$];
             }
             //tslog!"msg='%s' type = %s l=%s"(str, o.type, args.length);
-            stack ~= typeTable.getMember(pos, env, o/*.type()*/, str).call(pos, env, args);
+            stack ~= env.getMember(pos, o/*.type()*/, str).call(pos, env, args);
         } break;
         case OPCode.Binary: {
             assert(len >= 2);
@@ -118,7 +124,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             Obj setterErr(Obj o) {
                 throw new RuntimeException(pos, format!"%s doesn't have a setter"(val));
             }
-            stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%s"(val), "opFwdSet",
+            stack ~= env.getMember2(pos, a, val, "opFwdSet",
                                  (Obj f) => f.val.tryVisit!(
                                      (Property p) => p.callSetMember(pos, env, a, b),
                                      () => setterErr(f)),
@@ -128,7 +134,8 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             assert(len >= 1);
             auto a = pop();
             auto val = bl.getStr(op.val);
-            stack ~= typeTable.getMember2(pos, a.type(), tsformat!"%s"(val), "opFwd",
+            tslog!"member get '%s'"(val);
+            stack ~= env.getMember2(pos, a, val, "opFwd",
                                 (Obj f) =>f.val.tryVisit!(
                                      (Property p) => p.callGetMember(pos, env, a),
                                      () => f),
@@ -138,7 +145,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
-            stack ~= typeTable.getMember_(pos, a.type(), "opIndex")
+            stack ~= env.getMember_(pos, a, "opIndex")
                 .call(pos, env, a, b);
         } break;
         case OPCode.SubscriptSet: {
@@ -146,7 +153,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             auto c = pop();
             auto b = pop();
             auto a = pop();
-            stack ~= typeTable.getMember_(pos, a.type(), "opIndexSet")
+            stack ~= env.getMember_(pos, a, "opIndexSet")
                 .call(pos, env, a, b, c);
         } break;
         case OPCode.Return: {
@@ -157,7 +164,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             stack ~= bl.getConst(op.val).checkGetter(pos, env);//check prop probably not needed
         } break;
         case OPCode.LoadVal: {
-            stack ~= env.get(pos, env, op);//.checkGetter(pos, env);
+            stack ~= env.get(pos, op);//.checkGetter(pos, env);
         } break;
         case OPCode.LoadLib: {
             stack ~= bl.lib.get(op.val).checkGetter(pos, env);
@@ -188,7 +195,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         case OPCode.Assign: {
             assert(len >= 1);
             auto a = pop();
-            stack ~= env.set(pos, env, op, a);
+            stack ~= env.set(pos, op, a);
         } break;
         case OPCode.SetterDef: {
             assert(len >= 1);
@@ -207,7 +214,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         case OPCode.JmpIfTrueOrPop: {
             assert(len >= 1);
             auto a = stack.back();
-            if (a.toBool())
+            if (a.toBool(pos, env))
                 jmp(pc, op.val);
             else
                 stack.popBack();
@@ -215,13 +222,13 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         case OPCode.JmpIfTruePop: {
             assert(len >= 1);
             auto a = pop();
-            if (a.toBool())
+            if (a.toBool(pos, env))
                 jmp(pc, op.val);
         } break;
         case OPCode.JmpIfFalseOrPop: {
             assert(len >= 1);
             auto a = stack.back();
-            if (!a.toBool())
+            if (!a.toBool(pos, env))
                 jmp(pc, op.val);
             else
                 stack.popBack();
@@ -229,22 +236,19 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
         case OPCode.JmpIfFalsePop: {
             assert(len >= 1);
             auto a = pop();
-            if (!a.toBool())
+            if (!a.toBool(pos, env))
                 jmp(pc, op.val);
         } break;
         case OPCode.MakeType: {
-            auto tm = bl.man.types[op.val];
-            Type t;
-            t.creator = (p,e) =>objUserDefined(tm.name, typeTable.construct(tm.base, pos, env, []));
-            t.members["toString"] = defaultToString();
-            t.members["toBool"] = defaultToBool;
-            t.members["opEquals"] = defaultOpEquals;
+            auto tmk = bl.man.types[op.val];
+            TypeMeta t = TypeMeta(tmk.name,
+                                  (Pos p, Env e) => objUserDefined(tmk.name, env.construct(pos, tmk.base, [])));
             Obj*[OffsetVal] caps;
-            foreach (c; tm.captures) {
+            foreach (c; tmk.captures) {
                 caps[c] = env.getPtr(c);
             }
 
-            foreach (name, b; tm.members) {
+            foreach (name, b; tmk.members) {
                 t.members[name] = b.eval(pos, env, [], caps);
             }
             Obj funcOrClosure(Block b) {
@@ -256,7 +260,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
 
                 return objClosure(b, caps);
             }
-            foreach (name, b; tm.methods) {
+            foreach (name, b; tmk.methods) {
                 if (name == "ctor") {
                     t.ctor = funcOrClosure(b);
                 } else {
@@ -267,13 +271,13 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             t.members["base"] = objProperty(
                 objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
                 objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
-            foreach (name, b; tm.getters) {
+            foreach (name, b; tmk.getters) {
                 assignFuncType!(FuncType.Getter)(t.members, name, objFunction(b));
             }
-            foreach (name, b; tm.setters) {
+            foreach (name, b; tmk.setters) {
                 assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
             }
-            typeTable.add(tm.name, t);
+            env.addTypeMeta(pos, tmk.ov, t);
         }
 
         }

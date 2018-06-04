@@ -6,6 +6,8 @@ struct UserDefined {
     tsstring name;
     Obj base;
 
-    static tsstring type() { return "__user_defined__"; }
-    static Obj Base(UserDefined* v) { return v.base; }
+static:
+    TypeMeta typeMeta;
+    tsstring type() { return "__user_defined__"; }
+    Obj Base(UserDefined* v) { return v.base; }
 }

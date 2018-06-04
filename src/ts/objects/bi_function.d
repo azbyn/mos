@@ -11,7 +11,10 @@ struct BIFunction {
     }
 
     Obj opCall(Pos pos, Env env, Obj[] a) { return val(pos, env, a); }
-    static tsstring toString(BIFunction f) { return "function_bi"; }
-    static tsstring type() { return "function_bi"; }
+static:
+    TypeMeta typeMeta;
+    tsstring type() { return "function_bi"; }
+
+    tsstring toString(BIFunction f) { return "function_bi"; }
 }
 

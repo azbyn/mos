@@ -35,8 +35,8 @@ Obj invalidArgcRange(Pos p, tsint min, tsint max, tsint got) {
     throw new RuntimeException(p, format!"Expected between %d and %s args, got %s"(min, max, got));
 }
 
-void assert_(Pos p, Obj v, Obj[] args) {
-    if (v.toBool())
+void assert_(Pos p, Env e, Obj v, Obj[] args) {
+    if (v.toBool(p, e))
         return;
     if (args.length == 0) {
         throw new RuntimeException(p, format!"assertion failed with value '%s'"(v.toString));

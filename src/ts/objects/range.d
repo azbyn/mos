@@ -9,6 +9,9 @@ struct Range {
     Obj step;
     bool neg;
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "range"; }
+
     void ctor(Pos p, Env e, Range* v, Obj[] args) {
         void init(Obj val, Obj end, Obj step) {
             v.val = val;
@@ -31,7 +34,6 @@ static:
             break;
         }
     }
-    tsstring type() { return "range"; }
     Range Iter(Range v) { return v; }
     Obj  Val(Range v) { return v.val; }
     Obj Index(Range v) { return nil; }

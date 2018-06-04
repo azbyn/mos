@@ -330,9 +330,10 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             TypeMaker tm;
             tm.name = v.name;
             tm.base = v.base;
+            tm.ov = bl.addOV(pos, v.name);
             import com.log;
             Block getBlock(AstNode.Lambda l) {
-                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures), l.params);
+                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures ~ v.name), l.params);
             }
             tm.captures = bl.getCaptures(pos, v.captures);
             foreach (name, m; v.members) {
@@ -349,8 +350,6 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             foreach (name, m; v.setters) {
                 tm.setters[name] = getBlock(m);
             }
-            bl.addConst(pos, objTypeMeta(v.name));
-            bl.addAssign(pos, v.name);
             bl.addType(pos, tm);
         },
     )();

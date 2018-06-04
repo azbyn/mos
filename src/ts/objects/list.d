@@ -12,6 +12,8 @@ struct List {
         this.val = val;
     }
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "list"; }
     void ctor(List v) { v.val = []; }
     tsstring toString(Pos p, Env e, List v) {
         tsstring res = "[";
@@ -19,7 +21,6 @@ static:
             res ~= o.toStr(p,e) ~", ";
         return res ~ "]";
     }
-    tsstring type() { return "list"; }
 
     tsint Size(List v) { return v.val.length; }
     void add(List* v, Obj a) { v.val ~= a; }
@@ -63,6 +64,7 @@ struct ListIter {
         end = beg + l.val.length;
     }
 static:
+    TypeMeta typeMeta;
     tsstring type() { return "list_iterator"; }
     ListIter Iter(ListIter v) { return v; }
     Obj  Val(ListIter v) { return *v.ptr; }

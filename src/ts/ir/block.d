@@ -49,7 +49,7 @@ class Block {
         OffsetVal[] res = uninitializedArray!(OffsetVal[])(caps.length);
         OffsetVal val;
         foreach (i, c; caps) {
-            if (st.getName(man, c, val)) {
+            if (st.getName(c, val)) {
                 res[i] = val;
             }
             else
@@ -126,8 +126,8 @@ class Block {
         if (var == "_")
             throw new IRException(pos, "Invalid name '_'");
         OffsetVal res;
-        ulong lres;
-        if (st.getName(man, var, res)) {
+        size_t lres;
+        if (st.getName(var, res)) {
             addVal(pos, OPCode.LoadVal, res);
         }
         else if (lib.get(var, lres)) {
@@ -135,6 +135,11 @@ class Block {
         }
         else
             throw new IRException(pos, format!"'%s' not defined"(var));
+    }
+    OffsetVal addOV(Pos pos, tsstring var) {
+        if (var == "_")
+            throw new IRException(pos, "Invalid name '_'");
+        return st.get(pos, var);
     }
 
     void addConst(Pos pos, Obj val) {
@@ -153,20 +158,18 @@ class Block {
     void addAssign(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.Assign, st.get(pos, man, var));
+        addVal(pos, OPCode.Assign, st.get(pos,var));
     }
     void addSetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.SetterDef, st.get(pos, man, var));
+        addVal(pos, OPCode.SetterDef, st.get(pos, var));
     }
     void addGetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.GetterDef, st.get(pos, man, var));
+        addVal(pos, OPCode.GetterDef, st.get(pos, var));
     }
-
-
 
     tsstring getStr(size_t i) {
         assert(i < man.strs.length, format!"str %s out of range (%s)"(i, man.strs.length));
@@ -174,7 +177,7 @@ class Block {
     }
     private int tempCounter = -1;
     auto addAssignTemp(Pos pos) {
-        auto v = st.get(pos, man, tsformat!"_t%d"(++tempCounter));
+        auto v = st.get(pos, tsformat!"_t%d"(++tempCounter));
         addVal(pos, OPCode.Assign, v);
         return v;
     }
@@ -207,20 +210,15 @@ class Block {
     }
 
     override string toString() {
-        import com.log;
-        import stdd.conv;
-        tslog("!!!!!please use toStr");
-        return toStr_unsafe().to!string;
+        assert(0, "!!!!!please use toStr");
     }
-    
-    tsstring toStr_unsafe() { return toStr(Pos(-1), null);}
     tsstring toStr(Pos p, Env e) {
         tsstring r = "";
         r ~= tsformat!"\noffset = %d"(st.offset);
         if (args !is null) {
             r ~= "\nargs: ";
             foreach (a; args) {
-                r ~= tsformat!"\no:%s, %s: %s"(a.offset, a.val, st.getStr(man, a));
+                r ~= tsformat!"\no:%s, %s: %s"(a.offset, a.val, st.getStr(a));
             }
         }
         if (captures !is null) {
@@ -263,7 +261,7 @@ class Block {
             case OPCode.LoadVal:
             case OPCode.Assign:
             case OPCode.SetterDef:
-                r ~= tsformat!"(%s)"(st.getStr(man, o));
+                r ~= tsformat!"(%s)"(st.getStr(o));
                 break;
             case OPCode.LoadLib:
                 r ~= tsformat!"(%s)"(lib.getName(o.val));

@@ -4,7 +4,6 @@ import ts.objects;
 import ts.ast.token;
 import ts.runtime.env;
 import ts.ir.lib;
-import ts.type_table;
 import ts.stdlib;
 import com.log;
 import stdd.format;
@@ -23,20 +22,11 @@ Prop()        - propertyGetter, shown as Prop (Starts with a capital letter)
  */
 
 __gshared private {
-    TypeTable _typeTable;
-    TypeTable _typeTableDefault;
     Lib _stdlib;
     Obj _nil;
 }
 Obj nil() {
     return _nil;
-}
-
-TypeTable typeTable() {
-    return _typeTable;
-}
-void resetTypeTable(){
-    _typeTable = new TypeTable(_typeTableDefault);
 }
 
 Lib stdlib() {
@@ -179,39 +169,22 @@ auto getFuncData(string f)() {
     return Res(name.to!tsstring, ft);
 }
 
-__gshared public {
-    Obj defaultToBool;
-    Obj defaultOpEquals;
-}
-public Obj defaultToString(T)() {
-    return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()));
-}
-public Obj defaultToString() {
-    return objBIFunction((Pos p, Env e, Obj[] a) => objString(a[0].type()));
-}
 static this() {
     _nil = new Obj(Nil());
-
-    defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true));
-    defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false));
+    TypeMeta.__init();
 
 
-    _typeTable = new TypeTable();
     Obj[tsstring] objs;
 
     static foreach (t; ts.objects.obj.types) {{
         mixin(format!"alias T = %s;"(t));
-        Type type = Type();
-        type.members["toString"] = defaultToString!T();
-        type.members["toBool"] = defaultToBool;
-        type.members["opEquals"] = defaultOpEquals;
-        type.creator = (p,e) => new Obj(T());
+        TypeMeta type = TypeMeta.__mk!T;
         //pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
                 type.ctor = getFun!(T, m);
             }
-            else static if (m != "type") {{
+            else static if (m != "type"&& m != "typeMeta" && m != "__ctor") {{
                 enum data = getFuncData!m;
                 assignFuncType!(data.ft)(type.members, data.name, getFun!(T, m));
             }}
@@ -220,20 +193,9 @@ static this() {
                 type.members[m] = getFun!(T, m);
             }*/
         }
+        T.typeMeta = type;
         if (!is(T == TypeMeta))
-            objs[T.type()] = objTypeMeta(T.type());
-/* = objBIFunction(
-                    (Pos p, Env e, Obj[] a) {
-                        import stdd.array;
-                        auto v = new Obj(T());
-                        Obj[] args = uninitializedArray!(Obj[])(a.length + 1);
-                        args[0] = v;
-                        args[1..$] = a[];
-                        typeTable.tryCtor!T.call(p, e, args);
-                        return v;
-                        });*/
-
-        _typeTable.add!T(type);
+            objs[T.type()] = new Obj(type);
     }}
     //_typeTable.print();
     static foreach (mod; modulesInStdlib) {
@@ -249,6 +211,5 @@ static this() {
         }
     }
     _stdlib = new Lib(objs);
-    _typeTableDefault = new TypeTable(_typeTable);
     __init();
 }

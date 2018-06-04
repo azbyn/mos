@@ -21,7 +21,8 @@ struct BIOverloads {
         throw new RuntimeException(pos, format!"no overload takes %s args"(a.length));
     }
 static:
-    tsstring toString(BIOverloads f) { return "function_ol"; }
+    TypeMeta typeMeta;
     tsstring type() { return "function_ol"; }
+    tsstring toString(BIOverloads f) { return "function_ol"; }
 }
 

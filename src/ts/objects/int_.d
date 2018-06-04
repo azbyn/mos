@@ -10,6 +10,9 @@ import stdd.variant;
 struct Int {
     tsint val;
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "int"; }
+
     void ctor(Int v) { v.val = 0; }
     void ctor(Pos p, Int v, Obj o) {
         o.val.tryVisit!(
@@ -24,7 +27,6 @@ static:
         )();
     }
 
-    tsstring type() { return "int"; }
     tsstring toString(tsint i) { return i.to!tsstring; }
     Obj opAdd(Pos p, tsint a, Obj b) {
         return b.val.tryVisit!(
@@ -107,4 +109,6 @@ static:
     tsint opDec(tsint i) { return i - 1; }
 
     bool toBool(tsint i) { return i != 0; }
+
+
 }

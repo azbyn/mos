@@ -9,6 +9,9 @@ import stdd.format;
 struct String {
     tsstring val;
 static:
+    TypeMeta typeMeta;
+    tsstring toString(String v) { return v.val; }
+
     void ctor(String v) { v.val = ""; }
     void ctor(Pos p, Env e, String v, Obj obj) {
         obj.val.tryVisit!(
@@ -17,7 +20,6 @@ static:
         )();
     }
 
-    tsstring toString(String v) { return v.val; }
     tsstring type() { return "string"; }
     tsstring opCat (Pos p, Env e, String v, Obj obj) { return v.val ~ obj.toStr(p,e); }
     tsstring opCatR(Pos p, Env e, String v, Obj obj) { return obj.toStr(p, e) ~ v.val; }

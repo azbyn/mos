@@ -17,7 +17,7 @@ class Lib {
         }
     }
 
-    bool get(tsstring name, out ulong res) {
+    bool get(tsstring name, out size_t res) {
         foreach (i, n; names) {
             if (n == name) {
                 res = i;

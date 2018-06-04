@@ -14,6 +14,9 @@ struct Tuple_ {
         this.val = val;
     }
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "tuple"; }
+
     void ctor(Tuple* v) { v.val = []; }
     void ctor(Tuple* v, Tuple o) {
         v.val = o.val;
@@ -24,7 +27,6 @@ static:
             res ~= o.toStr(p, e) ~", ";
         return res ~ ")";
     }
-    tsstring type() { return "tuple"; }
 
     tsint Size(Tuple v) { return v.val.length; }
     Obj opIndex(Pos pos, Tuple v, tsint i) {
@@ -64,6 +66,7 @@ struct TupleIter {
         end = beg + l.val.length;
     }
 static:
+    TypeMeta typeMeta;
     tsstring type() { return "tuple_iterator"; }
     TupleIter Iter(TupleIter v) { return v; }
     Obj  Val(TupleIter v) { return *v.ptr; }

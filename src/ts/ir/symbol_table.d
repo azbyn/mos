@@ -12,6 +12,7 @@ import com.log;
 
 class SymbolTable {
     OffsetVal[] captures;
+    BlockManager man;
     //SymbolTable parent;
     tsstring[] names;
     ushort offset;
@@ -24,6 +25,7 @@ class SymbolTable {
 
     this(BlockManager man, OffsetVal[] captures = null) {
         this.captures = captures;
+        this.man = man;
         offset = man.addST(this);
     }
 
@@ -35,16 +37,15 @@ class SymbolTable {
             outArgs[i] = OffsetVal(offset, i);
         }
     }
-
-    OffsetVal get(Pos pos, BlockManager man, tsstring name) {
+    OffsetVal get(Pos pos, tsstring name) {
         OffsetVal r;
-        if (!getName(man, name, r)) {
+        if (!getName(name, r)) {
             names ~= name;
             return OffsetVal(offset, cast(uint) names.length - 1);
         }
         return r;
     }
-    bool getName(BlockManager man, tsstring name, out OffsetVal res) {
+    bool getName(tsstring name, out OffsetVal res) {
         foreach (i, n; names) {
             if (n == name) {
                 res = OffsetVal(offset, i);
@@ -53,15 +54,11 @@ class SymbolTable {
         }
         if (captures is null) return false;
         foreach (v; captures) {
-            if (getStr(man, v) == name) {
+            if (getStr(v) == name) {
                 res = v;
                 return true;
             }
         }
-        /*
-        if (parent !is null) {
-            return parent.getName(name, res);
-            }*/
         return false;
     }
 /*
@@ -69,7 +66,7 @@ class SymbolTable {
         return new SymbolTable(man, this);
         }*/
 
-    tsstring getStr(T)(BlockManager man, T t) {
+    tsstring getStr(T)(T t) {
         import ts.misc;
         /*
         if (man.tables is null) {

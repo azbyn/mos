@@ -9,6 +9,7 @@ import ts.misc;
 
 struct TypeMaker {
     tsstring name;
+    OffsetVal ov;
     tsstring base;
     OffsetVal[] captures;
     Block[tsstring] members;
@@ -16,7 +17,7 @@ struct TypeMaker {
     Block[tsstring] getters;
     Block[tsstring] setters;
     tsstring toString(Pos p, Env e) {
-        tsstring res = tsformat!"<typeMaker '%s' (%s)>\n"(name, base);
+        tsstring res = tsformat!"<typeMaker '%s'@%s (%s)>\n"(name, ov, base);
         res ~= "\nmembers:";
         foreach (n, m; members) {
             res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));

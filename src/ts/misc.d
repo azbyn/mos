@@ -32,15 +32,6 @@ bool contains(T)(T[] arr, T val) {
     return false;
 }
 
-class TSException : Exception {
-    import ts.ast.token : Pos;
-
-    Pos pos;
-    this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
-        this.pos = pos;
-        super(msg, file, line);
-    }
-}
 
 tsint parseHex(F)(tsstring str, F onFail) {
     tsint r = 0;

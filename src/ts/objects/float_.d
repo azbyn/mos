@@ -10,6 +10,9 @@ struct Float {
     tsfloat val;
 
 static:
+    TypeMeta typeMeta;
+    tsstring type() { return "float"; }
+
     void ctor(Float v) { v.val = 0; }
     void ctor(Pos p, Float v, Obj o) {
         //dfmt off
@@ -27,7 +30,6 @@ static:
     }
 
     tsstring toString(tsfloat f) { return f.to!tsstring; }
-    tsstring type() { return "float"; }
     Obj opAdd(Pos p, tsfloat a, Obj b) {
         return b.val.tryVisit!(
             (Int i) => objFloat(a + i.val),

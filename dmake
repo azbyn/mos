@@ -163,7 +163,7 @@ END
 for my $f (@d_files) {
     print <<"END";
 $f.o: ../$f
-	\$(DC) $ARCH -gc -I../$SRC_DIR -c \$< -of$f.o
+	\$(DC) $ARCH -g -I../$SRC_DIR -c \$< -of$f.o
 END
 #-wi-cpp-args -std=c++14 \${INCLUDES} -c \$< -betterC -of$f.o
 }
