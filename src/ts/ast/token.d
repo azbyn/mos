@@ -55,7 +55,7 @@ private enum typeDatas = [
     TypeData("IntDiv",       "//",        "opIntdiv" ),
     TypeData("Mod",          "%",         "opMod"    ),
     TypeData("Pow",          "**",        "opPow"    ),
-    TypeData("Eq",           "==",        "opEq"     ),
+    TypeData("Eq",           "==",        "opEquals" ),
     TypeData("Ne",           "!=",        ""         ),
     TypeData("Lt",           "<",         ""         ),
     TypeData("Gt",           ">",         ""         ),

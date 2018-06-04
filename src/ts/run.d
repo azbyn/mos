@@ -32,24 +32,25 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
     foreach (n; p.nodes) {
         tslog(n.toString() /*.to!tsstring*/ );
     }
-     if(!r){
+    if(!r){
         foreach (e; p.errors) {
             tsputsln(visualizeError(toks, e.pos, "Syntax Error: " ~ e.msg));
         }
         return 1;
     }
-    try {
+    //try {
+        resetTypeTable();
         tslog("\nIR");
         Lib lib = stdlib();
         auto man = generateIR(p.nodes, lib);
-        tslog(man.toStr());
+        tslog(man.toStr_unsafe());
 
         tslog("\nOutput:");
         auto res = man.eval();
-        tslog!"res = '%s'"(res.toStr);
-    }
+        tslog!"res = '%s'"(res.toStr_unsafe);
+        /*}
     catch (TSException e) {
         tsputsln(visualizeError(toks, e.pos, "Error: " ~ e.msg));
-    }
+        }*/
     return 0;
 }

@@ -7,7 +7,7 @@ import stdd.array;
 
 private enum formatChar = '@';
 
-tsstring sprintf(Pos pos, tsstring fmt, Obj[] args) {
+tsstring sprintf(Pos pos, Env env, tsstring fmt, Obj[] args) {
     Obj pop() {
         auto t = args.front();
         args.popFront();
@@ -32,7 +32,7 @@ tsstring sprintf(Pos pos, tsstring fmt, Obj[] args) {
         else {
             ++expectedArgc;
             if (args.length != 0)
-                res ~= pop().toStr;
+                res ~= pop().toStr(pos, env);
         }
     }
     if (argc != expectedArgc)
@@ -40,21 +40,21 @@ tsstring sprintf(Pos pos, tsstring fmt, Obj[] args) {
     return res;
 }
 
-void print(Obj[] args) {
+void print(Pos p, Env e, Obj[] args) {
     foreach (a; args)
-        tsputs(a);
+        tsputs(a.toStr(p, e));
 }
-void printred(Obj[] args) {
+void printred(Pos p, Env e, Obj[] args) {
     foreach (a; args)
-        tsputsred(a.toStr);
+        tsputsred(a.toStr(p, e));
 }
-void println(Obj[] args) {
-    print(args);
+void println(Pos p, Env e,Obj[] args) {
+    print(p, e,args);
     tsputs("\n");
 }
-void printf(Pos p, tsstring fmt, Obj[] args) {
-    tsputs(sprintf(p, fmt, args));
+void printf(Pos p, Env e, tsstring fmt, Obj[] args) {
+    tsputs(sprintf(p, e, fmt, args));
 }
-void printfln(Pos p, tsstring fmt, Obj[] args) {
-    tsputsln(sprintf(p, fmt, args));
+void printfln(Pos p, Env e, tsstring fmt, Obj[] args) {
+    tsputsln(sprintf(p, e, fmt, args));
 }

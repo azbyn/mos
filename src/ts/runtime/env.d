@@ -28,6 +28,11 @@ class Env {
     ushort offset;
     Obj[] objs;
     Obj*[OffsetVal] captures;
+
+    this(SymbolTable st) {
+        offset = st.offset;
+        objs = minimallyInitializedArray!(Obj[])(st.names.length);
+    }
     this(Env parent, SymbolTable st, Obj*[OffsetVal] captures) {
         this(st);
         if (parent !is null)
@@ -37,10 +42,6 @@ class Env {
                 this.captures[k] = o;
             }
         }
-    }
-    this(SymbolTable st) {
-        offset = st.offset;
-        objs = minimallyInitializedArray!(Obj[])(st.names.length);
     }
     Obj get(T)(Pos p, Env e, T val) { return get(p,e,OffsetVal(val.offset, val.val)); }
     Obj get(Pos p, Env e, OffsetVal val){

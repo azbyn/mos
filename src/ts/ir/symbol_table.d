@@ -8,6 +8,8 @@ import ts.ir.block;
 import ts.ast.token;
 import ts.ir.compiler : OffsetVal;
 
+import com.log;
+
 class SymbolTable {
     OffsetVal[] captures;
     //SymbolTable parent;

@@ -26,5 +26,11 @@ static:
     tsstring toString(bool b) { return b ? "true" : "false"; }
     tsstring type() { return "bool"; }
     bool opNot(bool b) { return !b; }
+    bool opEquals(bool v, Obj oth) {
+        return oth.val.tryVisit!(
+            (Bool b) => v == b.val,
+            () => false);
+    }
+
     bool toBool(bool b) { return b; }
 }

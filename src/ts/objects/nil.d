@@ -8,6 +8,6 @@ static:
     tsstring type() { return "nil"; }
     tsstring toString(Nil t) { return "nil"; }
     bool toBool(Nil t) { return false; }
-    bool opEq(Nil a, Obj b) { return b.isNil(); }
-    bool opEqR(Nil a, Obj b) { return b.isNil(); }
+    bool opEquals(Nil a, Obj b) { return b.isNil(); }
+    bool opEqualsR(Nil a, Obj b) { return b.isNil(); }
 }

@@ -13,14 +13,20 @@ static:
     void ctor(Pos p, Env e, String v, Obj obj) {
         obj.val.tryVisit!(
             (String s) => v.val = s.val,
-            () => v.val = obj.toStr,
+            () => v.val = obj.toStr(p, e),
         )();
     }
 
     tsstring toString(String v) { return v.val; }
     tsstring type() { return "string"; }
-    tsstring opCat (Pos p, Env e, String v, Obj obj) { return v.val ~ obj.toStr(); }
-    tsstring opCatR(Pos p, Env e, String v, Obj obj) { return obj.toStr() ~ v.val; }
+    tsstring opCat (Pos p, Env e, String v, Obj obj) { return v.val ~ obj.toStr(p,e); }
+    tsstring opCatR(Pos p, Env e, String v, Obj obj) { return obj.toStr(p, e) ~ v.val; }
+
+    bool opEquals(tsstring v, Obj oth) {
+        return oth.val.tryVisit!(
+            (String s) => v == s.val,
+            () => false);
+    }
 
     bool toBool(String v) { return v.val != ""; }
 }

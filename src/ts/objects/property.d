@@ -12,8 +12,8 @@ struct Property {
         this.set = set;
     }
     string toString() {
-        return format!"(get: %s, set: %s)"(get is null? "null":get.toStr,
-                                           set is null? "null":set.toStr);
+        return format!"(get: %s, set: %s)"(get is null? "null":get.toStr_unsafe,
+                                           set is null? "null":set.toStr_unsafe);
     }
     Obj callGet(Pos p, Env e) {
         if (!get)

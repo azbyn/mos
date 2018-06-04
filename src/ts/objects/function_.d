@@ -13,9 +13,11 @@ struct Function {
         this.val = val;
     }
 
-    Obj opCall(Pos pos, Env env, Obj[] args) {
-        return val.eval(pos, env, args);
+    Obj opCall(Pos pos, Env env, Obj[] args,string file =__FILE__, size_t line = __LINE__) {
+        return val.eval(pos, env, args, null, file,line);
     }
-    static tsstring toString(Function v) { return tsformat!"\n<function>%s\n</function>"(v.val); }
+    static tsstring toString(Pos p, Env e, Function v) {
+        return tsformat!"\n<function>%s\n</function>"(v.val.toStr(p, e));
+    }
     static tsstring type() { return "function"; }
 }

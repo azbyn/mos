@@ -24,6 +24,7 @@ Prop()        - propertyGetter, shown as Prop (Starts with a capital letter)
 
 __gshared private {
     TypeTable _typeTable;
+    TypeTable _typeTableDefault;
     Lib _stdlib;
     Obj _nil;
 }
@@ -33,6 +34,9 @@ Obj nil() {
 
 TypeTable typeTable() {
     return _typeTable;
+}
+void resetTypeTable(){
+    _typeTable = new TypeTable(_typeTableDefault);
 }
 
 Lib stdlib() {
@@ -175,14 +179,22 @@ auto getFuncData(string f)() {
     return Res(name.to!tsstring, ft);
 }
 
+__gshared public {
+    Obj defaultToBool;
+    Obj defaultOpEquals;
+}
+public Obj defaultToString(T)() {
+    return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()));
+}
+public Obj defaultToString() {
+    return objBIFunction((Pos p, Env e, Obj[] a) => objString(a[0].type()));
+}
 static this() {
     _nil = new Obj(Nil());
 
-    Obj defaultToString(T)() {
-        return objBIFunction((Pos p, Env e, Obj[] a) => objString(T.type()));
-    }
-    Obj defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true));
-    Obj defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false));
+    defaultToBool = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(true));
+    defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a)=>objBool(false));
+
 
     _typeTable = new TypeTable();
     Obj[tsstring] objs;
@@ -193,6 +205,7 @@ static this() {
         type.members["toString"] = defaultToString!T();
         type.members["toBool"] = defaultToBool;
         type.members["opEquals"] = defaultOpEquals;
+        type.creator = (p,e) => new Obj(T());
         //pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
@@ -207,8 +220,8 @@ static this() {
                 type.members[m] = getFun!(T, m);
             }*/
         }
-        if (!is(T == Type_))
-            objs[T.type()] = objType(T.type(), () => new Obj(T()));
+        if (!is(T == TypeMeta))
+            objs[T.type()] = objTypeMeta(T.type());
 /* = objBIFunction(
                     (Pos p, Env e, Obj[] a) {
                         import stdd.array;
@@ -236,5 +249,6 @@ static this() {
         }
     }
     _stdlib = new Lib(objs);
+    _typeTableDefault = new TypeTable(_typeTable);
     __init();
 }

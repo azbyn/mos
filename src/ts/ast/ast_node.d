@@ -8,7 +8,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
     "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", 
+    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", "StructDef",
     ];
 
 class AstNode {
@@ -58,21 +58,16 @@ class AstNode {
         tsstring[] captures;
         tsstring[] params;
         AstNode body_;
-        FuncType ft;
-
-        this(tsstring[] params, AstNode body_, FuncType ft) {
+        this(tsstring[] params, AstNode body_) {
             this.params = params;
             this.captures = body_.freeVars(params);
             this.body_ = body_;
-            this.ft = ft;
         }
-        this(tsstring[] captures, tsstring[] params, AstNode body_, FuncType ft) {
+        this(tsstring[] captures, tsstring[] params, AstNode body_) {
             this.params = params;
             this.captures = captures;
             this.body_ = body_;
-            this.ft = ft;
         }
-
     }
 
     struct MethodCall {
@@ -149,6 +144,15 @@ class AstNode {
     struct Dict {
         AstNode[] val;
     }
+    struct StructDef {
+        tsstring name;
+        tsstring base;
+        AstNode[tsstring] members;
+        Lambda[tsstring] methods;
+        Lambda[tsstring] getters;
+        Lambda[tsstring] setters;
+    }
+
 
     private static string genVal() {
         string r = "Algebraic!(";
@@ -173,11 +177,26 @@ class AstNode {
                 n.freeVarsTail(res, bound);
             }
         }
+
         void add(tsstring v) {
             import ts.misc;
             if (res.contains(v) || bound.contains(v)) return;
             res ~= v;
         }
+        void fv_(AstNode[tsstring] members, Lambda[tsstring][] nodes...) {
+            foreach (name, m; members) {
+                add(name);
+                m.freeVarsTail(res, bound);
+            }
+
+            foreach (n; nodes) {
+                foreach (name, m; n) {
+                    add(name);
+                    res ~= m.body_.freeVars(bound ~ m.params);
+                }
+            }
+        }
+
         val.visit!(
             (Cmp v) { fv(v.a, v.b); },
             (Comma v) {fv(v.a, v.b); },
@@ -197,6 +216,7 @@ class AstNode {
             (GetterDef v) { fv(v.val); },
             (Subscript v) { fv(v.val, v.index); },
             (Member v) { fv(v.val); },
+            (StructDef v) { add(v.name); add(v.base); fv_(v.members, v.methods, v.setters, v.getters); },
             (And v) { fv(v.a, v.b); },
             (Or v) { fv(v.a, v.b); },
             (If v) { fv(v.cond, v.body_, v.else_); },
@@ -280,6 +300,30 @@ class AstNode {
             (Dict v) => "dict:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,
+            (StructDef v) {
+                void foo(ref string res, AstNode[tsstring] arr) {
+                    foreach (n, a; arr) {
+                        res ~= "\n" ~indent ~ format!"[%s]"(n) ~ (a is null ? "null" : a.toString(level+1));
+                    }
+                }
+                void fool(ref string res, Lambda[tsstring] arr) {
+                    foreach (n, l; arr) {
+                        res ~= "\n" ~ indent ~ format!"[%s]: lambda (%s) [%s]:%s"(
+                            n, l.params.joiner(","), l.captures.joiner(","), str(l.body_));
+                    }
+                }
+                ++level;
+                auto res = format!"struct %s (%s):"(v.name, v.base);
+                res ~= "\n"~indent ~ "| > members:";
+                foo(res, v.members);
+                res ~= "\n"~indent ~ "| > methods:";
+                fool(res, v.methods);
+                res ~= "\n"~indent ~ "| > getters:";
+                fool(res, v.getters);
+                res ~= "\n"~indent ~ "| > setters:";
+                fool(res, v.setters);
+                return res;
+            },
         )();
         //dfmt on
     }

@@ -86,7 +86,7 @@ static:
             () => nil,
         )();
     }
-    Obj opEq(Pos p, tsint a, Obj b) {
+    Obj opEquals(Pos p, tsint a, Obj b) {
         Obj impl(T)(T o) { return objBool(a == o.val); }
         return b.val.tryVisit!(
             (Int i) => impl(i),
@@ -105,5 +105,6 @@ static:
 
     tsint opInc(tsint i) { return i + 1; }
     tsint opDec(tsint i) { return i - 1; }
+
     bool toBool(tsint i) { return i != 0; }
 }

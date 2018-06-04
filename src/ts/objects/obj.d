@@ -18,7 +18,7 @@ public import stdd.variant;
 enum types = [
     "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
     "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
-    "TupleIter", "Property", "Type_"
+    "TupleIter", "Property", "TypeMeta", "UserDefined"
     ];
 
 
@@ -76,20 +76,32 @@ class Obj {
             return *a;
         }
     }
-    private T trustedMemberCall(T, A...)(tsstring s, A args) {
-        return member(Pos(-1), s).call(Pos(-1), null, args).get!T(Pos(-1));
+    private T unsafeMemberCall(T)(tsstring s, Obj[] args...) {
+        return member(Pos(-1), null, s).call(Pos(-1), null, args).get!T(Pos(-1));
     }
+    private T memberCallCast(T)(tsstring s, Pos p, Env e, Obj[] args...) {
+        return member(p, e, s).call(p, e, args).get!T(p);
+    }
+
     override string toString() {
         throw new Exception("please use toStr", __FILE__, __LINE__);
     }
-    tsstring toStr() {
-        return trustedMemberCall!tsstring("toString", this);
+    tsstring toStr_unsafe() {
+        return unsafeMemberCall!tsstring("toString", this);
     }
+    tsstring toStr(Pos p, Env e) {
+        return memberCallCast!tsstring("toString", p, e, this);
+    }
+
     bool toBool() {
-        return trustedMemberCall!bool("toBool", this);
+        return unsafeMemberCall!bool("toBool", this);
     }
-    bool equals(Obj o) {
-        return trustedMemberCall!bool("opEquals", this);
+    bool equals_unsafe(Obj o) {
+        return unsafeMemberCall!bool("opEquals", this, o);
+    }
+    bool equals(Pos p, Env e, Obj other) {
+        //this must exist
+        return memberCallCast!bool("opEquals", p, e, this, other);
     }
     tsint cmp(Pos p, Env e, Obj other) {
         auto f = typeTable.tryMember(type(), "opCmp");
@@ -127,32 +139,47 @@ class Obj {
         return binary(pos, env, name, other);
     }
 
-    /*
-    Obj call(T...)(Pos pos, Env env, T a) {
-        return call(pos, env, [a]);
-        }*/
+    Obj call(Pos p, Env e, Obj a, Obj b, string file =__FILE__, size_t line = __LINE__) {
+        return call(p,e, [a, b], file, line);
+    }
+    Obj call(Pos p, Env e, Obj a, Obj b, Obj c, string file =__FILE__, size_t line = __LINE__) {
+        return call(p,e, [a, b, c], file, line);
+    }
 
-    Obj call(Pos p, Env e, Obj[] args...) {
+    Obj call(Pos p, Env e, Obj a, string file =__FILE__, size_t line = __LINE__) {
+        return call(p,e, [a], file, line);
+    }
+    Obj call(Pos p, Env e, string file =__FILE__, size_t line = __LINE__) {
+        return call(p,e, [], file, line);
+    }
+
+
+
+
+    Obj call(Pos p, Env e, Obj[] args/*...*/, string file =__FILE__, size_t line = __LINE__) {
         //dfmt off
         return val.tryVisit!(
-            (Function f) => f(p, e, args),
+            (Function f) => f(p, e, args, file, line),
             (Closure f) => f(p, e, args),
             (BIFunction f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
-            (Type_ f) => f.callCtor(p, e, args),
+            (TypeMeta f) => f.callCtor(p, e, args),
             //() => member(p, "opCall").call(p, e, args)
             () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
         )();
         //dfmt on
     }
-    Obj member(Pos p, tsstring m) {
-        return typeTable.getMember(p, type, m);
+    Obj member(Pos p, Env e, tsstring m) {
+        return typeTable.getMember(p, e, this /* type*/, m);
     }
     @property tsstring type() {
         string gen() {
             auto r = "val.visit!(";
             static foreach (t; types) {
-                r ~= format!"(%s v) => %s.type(),"(t,t);
+                static if (t == "UserDefined")
+                    r ~= format!"(UserDefined v) => v.name,";
+                else
+                    r ~= format!"(%s v) => %s.type(),"(t,t);
             }
             return r ~ ")";
         }

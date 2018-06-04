@@ -1,18 +1,25 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
-#struct Foo(dict):
-#	fun ctor(this, val):
-#		this.Base["whatever"] = val
-#	prop Val(this): this.Base["whatever"]
-#	prop Val=(this, v): this.Base["whatever"] = val
+struct Foo(dict):
+	fun ctor(this, val):
+		println("ctor w ", type(this))
+		this.base["whatever"] = val
 
-#	fun doSmth(this):
-#		println("do smth")
+	prop Val(this): return this.base["whatever"]
+	prop Val=(this, val): this.base["whatever"] = val
 
-#	staticThing = 56
+	fun doSmth(this):
+		println("do smth", this.Val)
+	fun toString(this):
+		return this.Val.toString()
 
-#foo = Foo(5)
-#Foo.doSmth(foo)
-#Foo.staticThing
+	staticThing = 56
+foo = Foo(5)
+println(foo)
+Foo.doSmth(foo)
+println(Foo.staticThing)
+#dict = { }
+#dict["ja"] = 1
+#println(dict["ja"])
 
 #Tuple.
 
@@ -32,8 +39,8 @@
 #prop X=(v):
 #	println("setting x to:", v)
 
-for i in (1,5,56,98):
-	println(i);
+#for i in (1,5,56,98):
+#	println(i);
 #prop x=(v): thing = v
 #tpl = (1, 3, 4)
 #println("asin(1)", cos(Pi))

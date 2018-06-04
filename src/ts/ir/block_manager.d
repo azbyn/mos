@@ -10,14 +10,43 @@ import ts.misc;
 struct ClosureMaker {
     size_t blockIndex;
     OffsetVal[] captures;
-    tsstring toString(BlockManager man) {
+    tsstring toString(Pos p, Env e, BlockManager man) {
         tsstring res = "<closureMaker>\ncaps: \n";
         foreach (c; captures) {
             res ~= tsformat!"%s, %s (%s)\n"(c.offset, c.val, man.tables[0].getStr(man, c));
         }
-        res ~= "block:" ~ man.getCMBlock(this).toStr;
+        res ~= "block:" ~ man.getCMBlock(this).toStr(p, e);
 
         return res ~ "\n</closureMaker>";
+    }
+}
+struct TypeMaker {
+    tsstring name;
+    tsstring base;
+    Block[tsstring] members;
+    Block[tsstring] methods;
+    Block[tsstring] getters;
+    Block[tsstring] setters;
+    tsstring toString(Pos p, Env e) {
+        tsstring res = tsformat!"<typeMaker '%s' (%s)>\n"(name, base);
+        res ~= "\nmembers:";
+        foreach (n, m; members) {
+            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
+        }
+
+        res ~= "\nmethods:";
+        foreach (n, m; methods) {
+            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
+        }
+        res ~= "\n>getters:";
+        foreach (n, m; getters) {
+            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
+        }
+        res ~= "\n>setters:";
+        foreach (n, m; setters) {
+            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p,e));
+        }
+        return res ~ "\n</typeMaker>";
     }
 }
 class BlockManager {
@@ -27,6 +56,7 @@ class BlockManager {
     tsstring[] strs;
     Block[] blocks;
     ClosureMaker[] closures;
+    TypeMaker[] types;
     size_t[] jumpTable;
 
     @property Block mainBlock() { return blocks[0]; }
@@ -55,8 +85,10 @@ class BlockManager {
     }
     override string toString() {
         import stdd.format;
-        assert(0, format!"please use toStr %s, %s"(__FILE__, __LINE__)); }
-    tsstring toStr() {
-        return mainBlock.toStr();
+        assert(0, format!"please use toStr %s, %s"(__FILE__, __LINE__));
+    }
+    tsstring toStr_unsafe() { return toStr(Pos(-1), null); }
+    tsstring toStr(Pos p, Env e) {
+        return mainBlock.toStr(p, e);
     }
 }

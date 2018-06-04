@@ -16,21 +16,30 @@ class TypeException : TSException {
 struct Type {
     Obj ctor;
     Obj[tsstring] members;
+    Obj delegate(Pos p, Env e) creator;
+    Obj callCtor(Pos p, Env e, Obj[] a) {
+        assert(ctor);
+        assert(creator);
+        import stdd.array;
+        Obj obj = creator(p, e);
+        Obj[] args = uninitializedArray!(Obj[])(a.length + 1);
+        args[0] = obj;
+        args[1..$] = a[];
+        ctor.call(p, e, args);
+        return obj;
+    }
 }
 
 class TypeTable {
     Type[tsstring] data;
-    /*void print() {
-        import com.log;
-        ("<TypeTable>");
-        foreach(n, t; data) {
-            writefln("  <%s>", n);
-            foreach (m, v; t.members) {
-                writefln("    %s: %s", m, v);
-            }
-        }
-        writeln("</TypeTable>");
-        }*/
+
+    this(TypeTable tt) {
+        this.data = tt.data.dup();
+    }
+    this() {
+        
+    }
+
     tsstring getName(T)() {
         return T.type();
     }
@@ -43,6 +52,15 @@ class TypeTable {
     void add(T)(Type t) {
         data[getName!T] = t;
     }
+    void add(tsstring name, Type t) {
+        data[name] = t;
+    }
+    import com.log;
+    Obj construct(tsstring name, Pos p, Env e, Obj[] args...) {
+        tslog!"construct %s "(name);
+        return data[name].callCtor(p, e, args);
+    }
+
     Obj getCtor(T)(Pos p) {
         if(auto ctor = get!T.ctor) return ctor;
         throw new TypeException(p, format!"Type '%s' doesn't have a ctor"(getName!T));
@@ -53,13 +71,21 @@ class TypeTable {
     }
 
     Obj tryCtor(T)() { return get!T.ctor; }
-    Obj getMember(Pos pos, tsstring type, tsstring s) {
+    Obj getMember(Pos p, Env e, Obj a, tsstring val) {
+        import ts.objects.property;
+        return getMember2(p, a.type(), tsformat!"%s"(val), "opFwd",
+                          (Obj f) =>f.val.tryVisit!(
+                              (Property pr) => pr.callGetMember(p, e, a),
+                              () => f),
+                          (Obj f) => f.call(p, e, a, objString(val)));
+    }
+    Obj getMember_(Pos pos, tsstring type, tsstring s) {
         if (type !in data)
             throw new TypeException(pos, format!"type '%s' not defined"(type));
         auto m = data[type].members.get(s, null);
         if (m is null)
             throw new TypeException(pos, format!"Type '%s' doesn't have member '%s'"(type, s));
-        return m;
+            return m;
     }
     auto getMember2(F1, F2)(Pos pos, tsstring type, tsstring s1, tsstring s2, F1 f1, F2 f2) {
         if (auto m = tryMember(type, s1)) {

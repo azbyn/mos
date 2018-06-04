@@ -15,8 +15,9 @@ qml:
 add () elif prop
 
 dlang:
+(a, b) = (1, 2)
+modules (like namespaces)
 ?pass
-test elif
 spacing in dlang output
 load stdlib at compile time
 enums

@@ -117,6 +117,7 @@ QColor Token::color(TT prevType, F nextType) const {
     case TT::Nil:
         return colors::Constants;
     case TT::Fun:
+    case TT::Struct:
     case TT::Prop:
     case TT::If:
     case TT::Elif:

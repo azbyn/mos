@@ -89,7 +89,7 @@ static:
             () => nil,
         )();
     }
-    Obj opEq(Pos p, tsfloat a, Obj b) {
+    Obj opEquals(Pos p, tsfloat a, Obj b) {
         Obj impl(T)(T o) { return objBool(a == o.val); }
         return b.val.tryVisit!(
             (Int i) => impl(i),
@@ -99,8 +99,6 @@ static:
     }
     tsfloat opPlus (tsfloat a) { return a; }
     tsfloat opMinus(tsfloat a) { return -a; }
-
-
 
     bool toBool(tsfloat f) { return f != 0; }
 }

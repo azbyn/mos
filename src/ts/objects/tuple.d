@@ -18,10 +18,10 @@ static:
     void ctor(Tuple* v, Tuple o) {
         v.val = o.val;
     }
-    tsstring toString(Tuple v) {
+    tsstring toString(Pos p, Env e, Tuple v) {
         tsstring res = "(";
         foreach (o; v.val)
-            res ~= o.toStr() ~", ";
+            res ~= o.toStr(p, e) ~", ";
         return res ~ ")";
     }
     tsstring type() { return "tuple"; }
@@ -35,6 +35,24 @@ static:
     Tuple Tail(Tuple t) { return Tuple(t.val[1..$]); }
 
     bool toBool(Tuple v) { return v.val.length != 0; }
+    Tuple dup(Tuple v) { return Tuple(v.val.dup()); }
+    bool opEquals(Pos p, Env e, Tuple v, Obj oth) {
+        return oth.val.tryVisit!(
+            (Tuple o) {
+                if (o.val.length != v.val.length) return false;
+                Obj* i1 = v.val.ptr;
+                Obj* i2 = o.val.ptr;
+                Obj* end = v.val.ptr + v.val.length;
+                while (i1 != end) {
+                    if (!i1.equals(p,e, *i2)) return false;
+                    ++i1;
+                    ++i2;
+                }
+                return true;
+            },
+            () => false);
+    }
+
     TupleIter Iter(Tuple v) { return TupleIter(v); }
 }
 struct TupleIter {

@@ -28,8 +28,8 @@ private Obj checkGetter(Obj x, Pos pos, Env env) {
         () => x);
 }
 
-public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null) {
-    //writefln("eval @%d", bl.st.offset);
+public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null,
+                string file =__FILE__, size_t line = __LINE__) {
     if (env !is null)
         env = new Env(env, bl.st, captures);
     auto length = argv is null ? 0 : argv.length;
@@ -43,7 +43,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
     }
     void jmp(ref size_t pc, size_t pos) {pc = bl.man.jumpTable[pos]-1;}
     if (bl.args.length != length)
-        throw new RuntimeException(pos, format!"Expected %s args, got %s"(bl.args.length, length));
+        throw new RuntimeException(pos, format!"Expected %s args, got %s"(bl.args.length, length), file, line);
     foreach (i, a; bl.args) {
         env.set(pos, env, a, argv[i]);
     }
@@ -78,13 +78,17 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             stack ~= f.call(op.pos, env, args);
         } break;
         case OPCode.MethodCall: {
+            import ts.objects.type_meta;
             assert(len >= op.argc + 1);
             auto args = popN(op.argc+1);
             auto str = bl.getStr(op.val);
             auto o = args.front();
-            msg = format!"%s"(str);
-            //writefln("msg='%s' type = %s l=%s", str, o.type, args.length);
-            stack ~= typeTable.getMember(pos, o.type(), str).call(pos, env, args);
+            if (o.peek!TypeMeta) {
+                //we don't pass this
+                args = args[1..$];
+            }
+            //tslog!"msg='%s' type = %s l=%s"(str, o.type, args.length);
+            stack ~= typeTable.getMember(pos, env, o/*.type()*/, str).call(pos, env, args);
         } break;
         case OPCode.Binary: {
             assert(len >= 2);
@@ -134,7 +138,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
-            stack ~= typeTable.getMember(pos, a.type(), "opIndex")
+            stack ~= typeTable.getMember_(pos, a.type(), "opIndex")
                 .call(pos, env, a, b);
         } break;
         case OPCode.SubscriptSet: {
@@ -142,7 +146,7 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             auto c = pop();
             auto b = pop();
             auto a = pop();
-            stack ~= typeTable.getMember(pos, a.type(), "opIndexSet")
+            stack ~= typeTable.getMember_(pos, a.type(), "opIndexSet")
                 .call(pos, env, a, b, c);
         } break;
         case OPCode.Return: {
@@ -228,6 +232,37 @@ public Obj eval(Block bl, Pos pos, Env env, Obj[] argv, Obj*[OffsetVal] captures
             if (!a.toBool())
                 jmp(pc, op.val);
         } break;
+        case OPCode.MakeType: {
+            auto tm = bl.man.types[op.val];
+            Type t;
+            t.creator = (p,e) =>objUserDefined(tm.name, typeTable.construct(tm.base, pos, env, []));
+            t.members["toString"] = defaultToString();
+            t.members["toBool"] = defaultToBool;
+            t.members["opEquals"] = defaultOpEquals;
+
+            foreach (name, b; tm.members) {
+                t.members[name] = b.eval(pos, env, []);
+            }
+
+            foreach (name, b; tm.methods) {
+                if (name == "ctor") {
+                    t.ctor = objFunction(b);
+                } else {
+                    t.members[name] = objFunction(b);
+                }
+            }
+            import ts.objects.user_defined;
+            t.members["base"] = objProperty(
+                objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
+                objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
+            foreach (name, b; tm.getters) {
+                assignFuncType!(FuncType.Getter)(t.members, name, objFunction(b));
+            }
+            foreach (name, b; tm.setters) {
+                assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
+            }
+            typeTable.add(tm.name, t);
+        }
 
         }
         //if (msg.length > 0)

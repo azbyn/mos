@@ -35,41 +35,15 @@ class Block {
 
     this(BlockManager man) {
         this.man = man;
-        man.blocks ~= this;
+        //man.blocks ~= this;
         _st = new SymbolTable(man);
     }
 
-    this(Block parent, tsstring[] argNames, OffsetVal[] captures) {
-        this.man = parent.man;
-        assert(man);
-        assert(man.lib);
-        man.blocks ~= this;
+    this(BlockManager man, tsstring[] argNames, OffsetVal[] captures) {
+        this.man = man;
+        //man.blocks ~= this;
         _st = new SymbolTable(man, captures, argNames, /*out*/ args);
     }
-    /*
-    OffsetVal[] freeVars() {
-        return _freeVars(st.offset);
-    }
-
-    private OffsetVal[] _freeVars(ushort offset) {
-        OffsetVal[] res;
-        foreach (o; ops) {
-            switch (o.code) {
-            case OPCode.assign:
-            case OPCode.loadVal:
-                if (o.offset < offset)
-                    res ~= OffsetVal(o.offset, o.val);
-                break;
-            case OPCode.makeClosure: {
-                    res ~= man.getCMBlock(o.val)._freeVars(offset);
-                }
-                break;
-            default:
-                break;
-            }
-        }
-        return res;
-        }*/
 
     OffsetVal[] getCaptures(Pos pos, tsstring[] caps) {
         OffsetVal[] res = uninitializedArray!(OffsetVal[])(caps.length);
@@ -100,7 +74,7 @@ class Block {
     private void add(Pos pos, OPCode code, ushort argc, OffsetVal val) {
         ops ~= OP(pos, code, val.offset, argc, val.val);
     }
-    void addClosureOrFunc(Pos pos, Block block, FuncType ft) {
+    void addClosureOrFunc(Pos pos, Block block) {
         if (block.captures.length == 0)
             addConst(pos, objFunction(block));
         else
@@ -110,7 +84,11 @@ class Block {
     void addClosure(Pos pos, Block bl, OffsetVal[] captures) {
         man.blocks ~= bl;
         man.closures ~= ClosureMaker(man.blocks.length - 1, captures);
-        addVal(pos, cast(OPCode)(OPCode.MakeClosure), man.closures.length - 1);
+        addVal(pos, OPCode.MakeClosure, man.closures.length - 1);
+    }
+    void addType(Pos pos, TypeMaker tm) {
+        man.types ~= tm;
+        addVal(pos, OPCode.MakeType, man.types.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -233,9 +211,11 @@ class Block {
         import com.log;
         import stdd.conv;
         tslog("!!!!!please use toStr");
-        return toStr().to!string;
+        return toStr_unsafe().to!string;
     }
-    tsstring toStr() {
+    
+    tsstring toStr_unsafe() { return toStr(Pos(-1), null);}
+    tsstring toStr(Pos p, Env e) {
         tsstring r = "";
         r ~= tsformat!"\noffset = %d"(st.offset);
 
@@ -255,11 +235,14 @@ class Block {
         foreach (i, o; ops) {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
+            case OPCode.MakeType:
+                r ~= tsformat!"(%s)"(man.types[o.val].toString(p, e));
+                break;
             case OPCode.MakeClosure:
-                r ~= tsformat!"(%s)"(man.closures[o.val].toString(man));
+                r ~= tsformat!"(%s)"(man.closures[o.val].toString(p, e, man));
                 break;
             case OPCode.LoadConst:
-                r ~= tsformat!"(%s)"(man.consts[o.val].toStr);
+                r ~= tsformat!"(%s)"(man.consts[o.val].toStr(p, e));
                 break;
             case OPCode.Cmp:
                 r ~= tsformat!"(%s)"(symbolicStr(cast(TT) o.val));

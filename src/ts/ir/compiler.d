@@ -39,11 +39,12 @@ enum OPCode {
     MakeTuple,
     MakeDict,
     MakeClosure,
+    MakeType,
     Jmp,
     Cmp,
     Binary,
     JmpIfTrueOrPop, // if (prev) { jmp } else { pop }
-    JmpIfFalseOrPop, // if (!prev){ jmp } else { pop }
+    JmpIfFalseOrPop, // if (!prev) { jmp } else { pop }
     JmpIfTruePop, // if (prev) { jmp }  pop
     JmpIfFalsePop, // if (!prev) { jmp } pop
 }
@@ -87,7 +88,11 @@ struct OffsetVal {
 }
 
 Block generateIR(AstNode n, Block parent, OffsetVal[] captures, tsstring[] args) {
-    Block bl = new Block(parent, args, captures);
+    assert(parent);
+    assert(parent.man);
+    assert(parent.man.tables);
+    //assert(parent.man);
+    Block bl = new Block(parent.man, args, captures);
     if (auto body_ = n.val.peek!(AstNode.Body)){
         foreach (node; body_.val) {
             nodeIR(node, bl);
@@ -171,7 +176,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         },
         (AstNode.Lambda v) {
             auto block = generateIR(v.body_, bl, bl.getCaptures(pos, v.captures), v.params);
-            bl.addClosureOrFunc(pos, block, v.ft);
+            bl.addClosureOrFunc(pos, block);
         },
         (AstNode.Assign v) {
             v.rvalue.val.tryVisit!(
@@ -320,6 +325,37 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             auto j = v.type == TT.Break ? loopEnd : loopBeg;
             tslog!"jmp from %d-%d: %d"(loopBeg, loopEnd, j);
             bl.addVal(pos, OPCode.Jmp, j);
+        },
+        (AstNode.StructDef v) {
+            TypeMaker tm;
+            tm.name = v.name;
+            tm.base = v.base;
+            Block getBlock(AstNode.Lambda l) {
+                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures), l.params);
+            }
+            foreach (name, m; v.members) {
+                tm.members[name] = generateIR(m, bl, [], []);
+            }
+
+            foreach (name, m; v.methods) {
+                tm.methods[name] = getBlock(m);
+            }
+            foreach (name, m; v.getters) {
+                tm.getters[name] = getBlock(m);
+            }
+            foreach (name, m; v.setters) {
+                tm.setters[name] = getBlock(m);
+            }
+            bl.addConst(pos, objTypeMeta(v.name));
+            bl.addAssign(pos, v.name);
+            /*
+        AstNode[tsstring] members;
+        AstNode[tsstring] methods;
+        AstNode[tsstring] getters;
+        AstNode[tsstring] setters;
+
+             */
+            bl.addType(pos, tm);
         },
     )();
     //dfmt on
