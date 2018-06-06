@@ -275,7 +275,7 @@ private:
         if (while_(n)) return n;
         if (for_(n)) return n;
         if (ctrlFlow(n)) return n;
-        if (struct_(n)) return n;
+        if (module_(n)) return n;
         //dfmt on
         n = expression();
         require(TT.NewLine);
@@ -481,11 +481,12 @@ private:
         res = astFor(getPos(t), index, val, col, body_);
         return true;
     }
-    // struct_: "struct" Identifier captures [ "(" [Identifier] ")" ] ":" "\n" Indent { {"\n"} structData} Dedent
-    // structData: funcDef | prop | memberAssign
+    // module_: ("struct" | "module") Identifier captures :" "\n" Indent { {"\n"} structData} Dedent
+    // moduleData: funcDef | prop | memberAssign
     // memberAssign: Identifier "=" cont ternary
-    bool struct_(out AstNode res) {
-        if (!consume(TT.Struct)) return false;
+    bool module_(out AstNode res) {
+        const(Token)* t;
+        if (!consume(t, TT.Struct, TT.Module)) return false;
         AstNode[tsstring] members;
         AstNode.Lambda[tsstring] methods;
         AstNode.Lambda[tsstring] setters;
@@ -526,18 +527,10 @@ private:
             return memberFuncDef() || memberProp() || memberAssign();
         }
 
-        const(Token)* t;
-        require(t, TT.Identifier);
-        tsstring base = "nil";
+        const(Token)* n;
+        require(n, TT.Identifier);
         tsstring[] caps = captures();
 
-        if (consume(TT.LParen)) {
-            const(Token)* b;
-            if (consume(b, TT.Identifier)){
-                base = b.tsstr;
-            }
-            require(TT.RParen);
-        }
         require(TT.Colon);
         require(TT.NewLine);
         require(TT.Indent);
@@ -549,7 +542,7 @@ private:
             if (!structData()) break;
         }
         require(TT.Dedent);
-        res = astStructDef(getPos(t), t.tsstr, base, caps, members, methods, getters, setters);
+        res = astModule(getPos(n), t.type == TT.Struct, n.tsstr, caps, members, methods, getters, setters);
         return true;
     }
 
@@ -750,10 +743,11 @@ private:
             while (!is_(TT.Eof, terminator)) {
                 args ~= expression();
                 require(TT.Colon);
+                cont();
+                args ~= expression();
                 if (!consume(TT.Comma))
                     break;
                 cont();
-                args ~= expression();
             }
             require(terminator);
             return astDict(getPos(t), args);

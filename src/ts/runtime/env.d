@@ -49,7 +49,7 @@ class Env {
             }
         }
     }
-    Obj get(T)(Pos p, T val) { return get(p,OffsetVal(val.offset, val.val)); }
+    Obj get(T)(Pos p, T val) { return get(p, OffsetVal(val.offset, val.val)); }
     Obj get(Pos p, OffsetVal val){
         if (val.offset == offset)
             return objs[val.val].checkGetter(p, this);
@@ -99,15 +99,16 @@ class Env {
         }
         assert(0);
     }
-
+    /*
     Obj construct(Pos p, tsstring name, Obj[] args...){
         return getTypeMeta(p, name).construct(p, this, args);
-    }
+        }*/
     import com.log;
+    /*
     Obj addTypeMeta(Pos p, OffsetVal val, TypeMeta tm) {
         tslog!"<<added@%d [%s] : %s"(offset, val, tm.name);
         return set(p, val, new Obj(tm));
-    }
+        }*/
     TypeMeta getTypeMeta(Pos p, tsstring name,  string file =__FILE__, size_t line = __LINE__) {
         OffsetVal ov;
         tslog!"src@%d %s"(offset, name);
@@ -122,7 +123,7 @@ class Env {
         }
         throw new RuntimeException(p, format!"'%s' not defined"(name), file, line);
     }
-    TypeMeta getTypeMeta(Pos p, Obj o,  string file =__FILE__, size_t line = __LINE__) {
+    TypeMeta getTypeMeta(Pos p, Obj o, string file =__FILE__, size_t line = __LINE__) {
         import ts.objects;
         string gen() {
             auto r = "o.val.visit!(";
@@ -141,7 +142,6 @@ class Env {
             )();*/
         return mixin(gen());
     }
-
     Obj getMember(Pos p, Obj a, tsstring val, string file =__FILE__, size_t line = __LINE__) {
         import ts.objects.property;
         //dfmt off

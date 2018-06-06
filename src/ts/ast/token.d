@@ -23,6 +23,7 @@ private enum typeDatas = [
     TypeData("False",        "false",     ""         ),
     TypeData("Nil",          "nil",       ""         ),
     TypeData("Struct",       "struct",    ""         ),
+    TypeData("Module",       "module",    ""         ),
     TypeData("Fun",          "fun",       ""         ),
     TypeData("Prop",         "prop",      ""         ),
     TypeData("If",           "if",        ""         ),
@@ -130,6 +131,7 @@ tsstring toStr(const Token* t) {
     case TT.False: return "false";
     case TT.Nil: return "nil";
     case TT.Struct: return "struct ";
+    case TT.Module: return "module ";
     case TT.Fun: return "fun ";
     case TT.Prop: return "prop ";
     case TT.If: return "if ";

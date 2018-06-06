@@ -8,15 +8,13 @@ OutText* OutText::Instance = nullptr;
 std::vector<OutText::Data> OutText::vec;
 
 OutText::Data::Data()
-    : Data(A_DEFAULT, Color::Default, Color::Background) {}
-OutText::Data::Data(Attributes flags)
-    : Data(flags, Color::Default, Color::Background) {}
-OutText::Data::Data(Attributes flags, QRgb fg, QRgb bg)
+    : Data(A_DEFAULT) {}
+OutText::Data::Data(Attr flags)
+    : Data(flags, colors::Base05_rgb, colors::Base00_rgb) {}
+OutText::Data::Data(Attr flags, QRgb fg, QRgb bg)
     : str(""), flags(flags), fg(fg), bg(bg) {}
-OutText::Data::Data(Attributes flags, Color fg, Color bg)
-    : Data(flags, getColor(fg), getColor(bg)) {}
-OutText::Data::Data(const QString& str, const Data& d, Attributes flags)
-    : str(str), flags((Attributes)(d.flags | flags)), fg(d.fg), bg(d.bg) {}
+OutText::Data::Data(const QString& str, const Data& d, Attr flags)
+    : str(str), flags((Attr)(d.flags | flags)), fg(d.fg), bg(d.bg) {}
 
 constexpr bool OutText::Data::operator==(const Data& rhs) const {
     return flags == rhs.flags && fg == rhs.fg && bg == rhs.bg;
@@ -61,7 +59,14 @@ void OutText::append(const QString& s) {
 
 void OutText::setAttribute(Data&& data) {
     if (data == vec.back()) return;
-    vec.emplace_back(data);
+    if (data.str.size() == 0) {
+        auto prevNL = vec.back().flags & A_NEWLINE;
+        data.flags = (Attr) (data.flags | prevNL);
+        vec.back() = data;
+    }
+    else {
+        vec.emplace_back(data);
+    }
 }
 constexpr int leftMargin = 2;
 void OutText::paint(QPainter* p) {
@@ -96,10 +101,7 @@ void tsattr() {
     OutText::setAttribute(OutText::Data());
 }
 void tsattr(uint8_t flags, uint32_t fg, uint32_t bg) {
-    OutText::setAttribute(OutText::Data((Attributes) flags, fg, bg));
-}
-void tsattr(uint8_t flags, Color fg, Color bg) {
-    OutText::setAttribute(OutText::Data((Attributes) flags, fg, bg));
+    OutText::setAttribute(OutText::Data((Attr) flags, fg, bg));
 }
 
 void tsputnl() {
@@ -111,4 +113,25 @@ void tsputs(const ushort* sh, size_t len) {
 }
 void tsclear() {
     OutText::clear();
+}
+uint8_t tsGetFlags() {
+    return OutText::vec.back().flags;
+}
+void tsSetFlags(uint8_t v) {
+    if (v == tsGetFlags()) return;
+    tsattr(v, tsGetFg(), tsGetBg());
+}
+uint32_t tsGetBg() {
+    return OutText::vec.back().bg;
+}
+void tsSetBg(uint32_t v) {
+    if (v == tsGetBg()) return;
+    tsattr(tsGetFlags(), tsGetFg(), v);
+}
+uint32_t tsGetFg() {
+    return OutText::vec.back().fg;
+}
+void tsSetFg(uint32_t v) {
+    if (v == tsGetFg()) return;
+    tsattr(tsGetFlags(), v, tsGetBg());
 }

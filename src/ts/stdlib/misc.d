@@ -15,7 +15,7 @@ __gshared Mt19937_64 gen;
 
 public:
 
-void __init() {
+void init() {
     gen.seed(unpredictableSeed);
 }
 

@@ -7,17 +7,23 @@ import ts.ir.lib;
 import ts.ir.compiler;
 import ts.misc;
 
-struct TypeMaker {
+struct ModuleMaker {
+    bool isType;
     tsstring name;
     OffsetVal ov;
-    tsstring base;
     OffsetVal[] captures;
     Block[tsstring] members;
     Block[tsstring] methods;
     Block[tsstring] getters;
     Block[tsstring] setters;
+
+    this(bool isType, tsstring name, OffsetVal ov) {
+        this.isType = isType;
+        this.name = name;
+        this.ov = ov;
+    }
     tsstring toString(Pos p, Env e) {
-        tsstring res = tsformat!"<typeMaker '%s'@%s (%s)>\n"(name, ov, base);
+        tsstring res = tsformat!"<typeMaker '%s'@%s>\n"(name, ov);
         res ~= "\nmembers:";
         foreach (n, m; members) {
             res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
@@ -44,7 +50,7 @@ class BlockManager {
     SymbolTable[] tables;
     tsstring[] strs;
     Block[] blocks;
-    TypeMaker[] types;
+    ModuleMaker[] modules;
     size_t[] jumpTable;
 
     @property Block mainBlock() { return blocks[0]; }

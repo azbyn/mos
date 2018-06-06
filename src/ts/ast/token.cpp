@@ -27,6 +27,7 @@ QString Token::toString() const {
     case Type::False: return "false";
     case Type::Nil: return "nil";
     case Type::Struct: return "struct";
+    case Type::Module: return "module";
     case Type::Fun: return "fun";
     case Type::Prop: return "prop";
     case Type::If: return "if";
@@ -113,6 +114,7 @@ bool isSpaceBetween(TT t1, TT t2) {
     case TT::Dedent:
         return false;
     case TT::Struct:
+    case TT::Module:
     case TT::Fun:
     case TT::Prop:
     case TT::If:

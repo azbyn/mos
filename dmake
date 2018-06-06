@@ -37,12 +37,18 @@ android:
 clean: desktop_clean
 dclean: desktop_dclean
 stdddclean: desktop_stddclean
+stdlibclean: desktop_stdlibclean
 
 
 desktop_dclean:
 	@make -C build dclean
 android_dclean:
 	@make -C build_android dclean
+
+desktop_stdlibclean:
+	@make -C build stdlibclean
+android_stdlibclean:
+	@make -C build_android stdlibclean
 
 desktop_stddclean:
 	@make -C build stddclean
@@ -108,12 +114,15 @@ QMAKE_EXTRA_TARGETS += d
 PRE_TARGETDEPS += d
 d.commands = make -f dlang.mk
 
+
 QMAKE_EXTRA_TARGETS += dclean
-#CLEAN_DEPS += dclean
 dclean.commands = make -f dlang.mk clean
 
 QMAKE_EXTRA_TARGETS += stddclean
 stddclean.commands = make -f dlang.mk stddclean
+
+QMAKE_EXTRA_TARGETS += stdlibclean
+stdlibclean.commands = make -f dlang.mk stdlibclean
 
 qnx: target.path = /tmp/\$\${TARGET}/bin
 else: unix:!android: target.path = /opt/\$\${TARGET}/bin
@@ -127,6 +136,7 @@ select DLANG_MK;
 
 $d_objs =~ s/$BUILD_DIR\/(.+\.d)/$1/g;
 my $stdd_objs = "";
+my $stdlib_objs = "";
 my $rest_objs = "";
 sub begins_with {
     return substr($_[0], 0, length($_[1])) eq $_[1];
@@ -134,15 +144,20 @@ sub begins_with {
 foreach my $f (@d_files) {
     if (begins_with($f, "src/stdd")) {
         $stdd_objs .= "$f.o \\\n";
+    } elsif (begins_with($f, "src/ts/stdlib") or
+             $f eq "src/ts/builtin.d") {
+        #print STDOUT "got $f\n";
+        $stdlib_objs .= "$f.o \\\n";
     } else {
-        $rest_objs .= "$f.o \\\n"
+        $rest_objs .= "$f.o \\\n";
     }
 }
 
 print <<"END";
 SRC_DIR := ../src
 OBJS    := $d_objs
-STDD_OBJS := $rest_objs
+STDD_OBJS := $stdd_objs
+STDLIB_OBJS := $stdlib_objs
 REST_OBJS := $rest_objs
 NDK     := ~/Android/dlang/android-ndk-r16b
 CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
@@ -172,6 +187,8 @@ print <<"END";
 .PHONY: clean
 clean:
 	\@rm -vf \$(REST_OBJS)
+stdlibclean:
+	\@rm -vf \$(STDLIB_OBJS)
 stddclean:
 	\@rm -vf \$(STDD_OBJS)
 END

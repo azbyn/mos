@@ -8,7 +8,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
     "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", "StructDef",
+    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", "Module",
     ];
 
 class AstNode {
@@ -144,16 +144,15 @@ class AstNode {
     struct Dict {
         AstNode[] val;
     }
-    struct StructDef {
+    struct Module {
+        bool isType;
         tsstring name;
-        tsstring base;
         tsstring[] captures;
         AstNode[tsstring] members;
         Lambda[tsstring] methods;
         Lambda[tsstring] getters;
         Lambda[tsstring] setters;
     }
-
 
     private static string genVal() {
         string r = "Algebraic!(";
@@ -217,7 +216,7 @@ class AstNode {
             (GetterDef v) { fv(v.val); },
             (Subscript v) { fv(v.val, v.index); },
             (Member v) { fv(v.val); },
-            (StructDef v) { add(v.name); add(v.base); fv_(v.members, v.methods, v.setters, v.getters); },
+            (Module v) { add(v.name); fv_(v.members, v.methods, v.setters, v.getters); },
             (And v) { fv(v.a, v.b); },
             (Or v) { fv(v.a, v.b); },
             (If v) { fv(v.cond, v.body_, v.else_); },
@@ -301,7 +300,7 @@ class AstNode {
             (Dict v) => "dict:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,
-            (StructDef v) {
+            (Module v) {
                 void foo(ref string res, AstNode[tsstring] arr) {
                     foreach (n, a; arr) {
                         res ~= "\n" ~indent ~ format!"  [%s]: "(n) ~ (a is null ? "null" : a.toString(0/*level+1*/));
@@ -314,7 +313,7 @@ class AstNode {
                     }
                 }
                 ++level;
-                auto res = format!"struct %s (%s)[%s]:"(v.name, v.base, v.captures.joiner(","));
+                auto res = format!"module(isType:%s) %s [%s]:"(v.isType, v.name, v.captures.joiner(","));
                 res ~= "\n"~indent ~ "| > members:";
                 foo(res, v.members);
                 res ~= "\n"~indent ~ "| > methods:";

@@ -69,7 +69,25 @@ tsint parseBinary(F)(tsstring str, F onFail) {
     }
     return r;
 }
-
+extern (C++, colors) {
+    alias QRgb = uint;
+    QRgb base00();
+    QRgb base01();
+    QRgb base02();
+    QRgb base03();
+    QRgb base04();
+    QRgb base05();
+    QRgb base06();
+    QRgb base07();
+    QRgb base08();
+    QRgb base09();
+    QRgb base0A();
+    QRgb base0B();
+    QRgb base0C();
+    QRgb base0D();
+    QRgb base0E();
+    QRgb base0F();
+}
 extern (C++) {
 
     enum Attr : ubyte {
@@ -81,56 +99,22 @@ extern (C++) {
         Newline = 1 << 7,
     }
 
-    enum Color {
-        Base00 = 0,
-        Base01 = 1,
-        Base02 = 2,
-        Base03 = 3,
-        Base04 = 4,
-        Base05 = 5,
-        Base06 = 6,
-        Base07 = 7,
-        Base08 = 8,
-        Base09 = 9,
-        Base0A = 10,
-        Base0B = 11,
-        Base0C = 12,
-        Base0D = 13,
-        Base0E = 14,
-        Base0F = 15,
-
-        Black = 0,
-        Background = 0,
-        Default = 5,
-        DarkGrey = 1,
-        LightGrey = 3,
-        White = 7,
-        Red = 8,
-        Orange = 9,
-        Yellow = 10,
-        Green = 11,
-        Cyan = 12,
-        Blue = 13,
-        Purple = 14,
-        Brown = 15,
-    }
-
     void tsattr();
     void tsattr(ubyte flags, uint fg, uint bg);
-    void tsattr(ubyte flags, Color fg, Color bg);
     void tsputs(const ushort* sh, size_t len);
     void tsputnl();
     void tsclear();
+
+    ubyte tsGetFlags();
+    void tsSetFlags(ubyte v);
+    uint tsGetBg();
+    void tsSetBg(uint v);
+    uint tsGetFg();
+    void tsSetFg(uint v);
 }
 void tsputs(tsstring s) {
     tsputs(cast(ushort*) s.ptr, s.length);
 }
-void tsputsred(tsstring s) {
-    tsattr(Attr.Bold | Attr.Underline, Color.Red, Color.Blue);
-    tsputs(s);
-    tsattr();
-}
-
 void tsputs(A...)(A a) {
     static foreach (k; a) {
         static if (is(k == tsstring))

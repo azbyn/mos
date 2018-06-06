@@ -1,22 +1,32 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
 capture = "k"
 kp = "kp"
-module Foo[capture]:
+struct Foo[capture]:
+	fun ctor[kp](this, val):
+		println("ctor w ", type(this))
+		this.base = {"whatever": kp}
+
+	prop Val(this): return this.base["whatever"]
+	prop Val=(this, val): this.base["whatever"] = val
+
+	fun doSmth(this):
+		println("do smth", this.Val)
 	fun static(): 4
 	fun static2(): Foo.static() +2
+	fun toString(this):
+		return this.Val.toString()
+
 	staticThing = Foo.static2()
 	k = capture
 
 
-println(color)
-println(color.Base00)
+foo = Foo(5)
+println(foo)
+Foo.doSmth(foo)
+println(Foo.staticThing)
 println(Foo.static())
 println(Foo.static2())
-console.setAttr(Attr.Bold, color.Green)
-console.Fg = color.Orange
 println(Foo.k)
-console.setAttr()
-console.puts("k")
 
 #dict = { "k": 1 }
 #dict["ja"] = 1

@@ -39,7 +39,7 @@ static:
     tsstring type() { return "property"; }
 }
 
-Obj assignSetter(Obj[] arr, size_t index, Obj val) {
+Obj assignSetter(ref Obj[] arr, size_t index, Obj val) {
     Property* p;
     assert(index < arr.length);
     if (arr[index] !is null && (p = arr[index].peek!Property) !is null) {
@@ -47,7 +47,7 @@ Obj assignSetter(Obj[] arr, size_t index, Obj val) {
     }
     return arr[index] = objProperty(null, val);
 }
-Obj assignSetter(Index)(Obj[Index] arr, Index index, Obj val) {
+Obj assignSetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
     Property* p;
     Obj* ptr = index in arr;
     if (ptr !is null && (p = ptr.peek!Property) !is null) {
@@ -56,7 +56,7 @@ Obj assignSetter(Index)(Obj[Index] arr, Index index, Obj val) {
     return arr[index] = objProperty(null, val);
 }
 
-Obj assignGetter(Obj[] arr, size_t index, Obj val) {
+Obj assignGetter(ref Obj[] arr, size_t index, Obj val) {
     assert(index < arr.length);
     //tslog!"getter on [%s] , %s"(index, arr.length);
     if (arr[index] !is null) {
@@ -67,7 +67,7 @@ Obj assignGetter(Obj[] arr, size_t index, Obj val) {
     }
     return arr[index] = objProperty(val, null);
 }
-Obj assignGetter(Index)(Obj[Index] arr, Index index, Obj val) {
+Obj assignGetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
     Property* p;
     Obj* ptr = index in arr;
     if (ptr !is null && (p = ptr.peek!Property) !is null) {
@@ -75,12 +75,14 @@ Obj assignGetter(Index)(Obj[Index] arr, Index index, Obj val) {
     }
     return arr[index] = objProperty(val, null);
 }
-Obj assignFuncType(FuncType ft, Index)(Obj[Index] arr, Index index, Obj val) {
-    static if (ft == FuncType.Default)
-        return arr[index] = val;
+Obj assignFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Obj val) {
+    static if (ft == FuncType.Getter) {
+        return assignGetter(arr, index, val);
+    }
     else static if (ft == FuncType.Setter) {
         return assignSetter(arr, index, val);
     }
-    else
-        return assignGetter(arr, index, val);
+    else {
+        return arr[index] = val;
+    }
 }

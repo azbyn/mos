@@ -19,24 +19,21 @@ fun_()   - in ts shown as fun()
 Prop_fun()    - property getter, shown as Prop
 PropSet_fun() - property setter, shown as Prop
 Prop()        - propertyGetter, shown as Prop (Starts with a capital letter)
- */
+mod_foo - module, show as foo
+*/
 
 __gshared private {
     Lib _stdlib;
     Obj _nil;
 }
-Obj nil() {
-    return _nil;
-}
+Obj nil() { return _nil; }
 
-Lib stdlib() {
-    return _stdlib;
-}
-
+Lib stdlib() { return _stdlib; }
 
 Obj toObj(T)(T t) {
     //dfmt off
     static if (is(T==Obj)) return t;
+    //else static if (is(T==enum)) return objInt(cast(tsint)t);
     else static if (is(T==tsint)) return objInt(t);
     else static if (is(T==bool)) return objBool(t);
     else static if (is(T==tsfloat)) return objFloat(t);
@@ -129,7 +126,7 @@ auto getFunImpl(alias fun)() {
     });
 }
 
-Obj getFun(alias T, string fun)() {
+bool getFun(alias T, string fun)(out Obj res) {
     Obj function(Pos, Env, Obj[])[int] val;
     static foreach (o; __traits(getOverloads, T, fun)) {{
         static if (__traits(getProtection, o) == "public" &&
@@ -141,7 +138,13 @@ Obj getFun(alias T, string fun)() {
             val[f.i] = f.val;
         }
     }}
-    return objBIOverloads(val);
+    if (val.length > 0) {
+        res = objBIOverloads(val);
+        return true;
+    }
+    return false;
+        
+    //return val.length > 0;
 }
 auto getFuncData(string f)() {
     import stdd.algorithm.searching;
@@ -171,27 +174,41 @@ auto getFuncData(string f)() {
 
 static this() {
     _nil = new Obj(Nil());
-    TypeMeta.__init();
-
-
     Obj[tsstring] objs;
-
+    void addModule(tsstring name, alias module_)() {
+        Module res = Module(name);
+        static foreach (m; __traits(derivedMembers, module_)) {
+            static if (m == "init") {
+                T.init();
+            }
+            else static if (m[0..2] != "__") {{
+                enum data = getFuncData!m;
+                Obj o;
+                if (getFun!(module_, m)(o)) {
+                    assignFuncType!(data.ft)(res.members, data.name, o);
+                }
+            }}
+        }
+        objs[name] = new Obj(res);
+    }
     static foreach (t; ts.objects.obj.types) {{
         mixin(format!"alias T = %s;"(t));
         TypeMeta type = TypeMeta.__mk!T;
         //pragma(msg, format!"\t<type %s>"(t));
         static foreach (m; __traits(derivedMembers, T)) {
             static if (m == "ctor") {
-                type.ctor = getFun!(T, m);
+                getFun!(T, m)(type.ctor);
+                //type.ctor = getFun!(T, m);
             }
-            else static if (m != "type"&& m != "typeMeta" && m != "__ctor") {{
+            else static if (m == "init") {
+                T.init();
+            }
+            else static if (m[0..2] != "__" && m != "type" && m != "typeMeta" && m != "__ctor") {{
                 enum data = getFuncData!m;
-                assignFuncType!(data.ft)(type.members, data.name, getFun!(T, m));
+                Obj o;
+                if (getFun!(T, m)(o))
+                    assignFuncType!(data.ft)(type.members, data.name, o);
             }}
-            /*
-            else static if (m == "toString") {
-                type.members[m] = getFun!(T, m);
-            }*/
         }
         T.typeMeta = type;
         if (!is(T == TypeMeta))
@@ -200,16 +217,26 @@ static this() {
     //_typeTable.print();
     static foreach (mod; modulesInStdlib) {
         static foreach (f; __traits(allMembers, mixin(mod))) {
-            static if (f[0..2] != "__") {{
+            static if (f == "init") {
+                mixin(mod~".init();");
+            }
+            else static if (f[0..2] != "__" && f != "types") {{
                 enum data = getFuncData!f;
                 static if (f.back() == '_')
                     enum name = data.name[0..$-1];
                 else
                     enum name = data.name;
-                assignFuncType!(data.ft)(objs, name, getFun!(mixin(mod), f));
+                static if (name.length > 4 && name[0..4] == "mod_"){
+                    addModule!(name[4..$], mixin(f));
+                }
+                else {{
+                    Obj o;
+                    if (getFun!(mixin(mod), f)(o)) {
+                        assignFuncType!(data.ft)(objs, name, o);
+                    }
+                }}
             }}
         }
     }
     _stdlib = new Lib(objs);
-    __init();
 }

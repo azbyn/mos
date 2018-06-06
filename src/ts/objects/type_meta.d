@@ -19,7 +19,7 @@ struct TypeMeta {
     Obj[tsstring] members;
     alias Creator = Obj delegate(Pos p, Env e);
     Creator creator;
-    static void __init() {
+    static void init() {
         defaultToBool = objBIFunction((Pos p, Env e, Obj[] a) => objBool(true));
         defaultOpEquals = objBIFunction((Pos p, Env e, Obj[] a) => objBool(false));
     }
@@ -32,8 +32,9 @@ struct TypeMeta {
         members["opEquals"] = defaultOpEquals;
     }
 
-    this(tsstring name, Creator c) {
-        this(name, c, objBIFunction((Pos p, Env e, Obj[] a) => objString(a[0].type())));
+    this(tsstring name) {
+        this(name, (p, e) => objUserDefined(name, nil),
+             objBIFunction((Pos p, Env e, Obj[] a) => objString(a[0].type())));
     }
     static TypeMeta __mk(tsstring name, Creator c)() {
         return TypeMeta(name, c, objBIFunction((Pos p, Env e, Obj[] a) => objString(name)));

@@ -85,9 +85,9 @@ class Block {
         man.blocks ~= bl;
         addVal(pos, OPCode.MakeClosure, man.blocks.length - 1);
     }
-    void addType(Pos pos, TypeMaker tm) {
-        man.types ~= tm;
-        addVal(pos, OPCode.MakeType, man.types.length - 1);
+    void addModule(Pos pos, ModuleMaker mm) {
+        man.modules ~= mm;
+        addVal(pos, OPCode.MakeModule, man.modules.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -238,8 +238,8 @@ class Block {
         foreach (i, o; ops) {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
-            case OPCode.MakeType:
-                r ~= tsformat!"(%s)"(man.types[o.val].toString(p, e));
+            case OPCode.MakeModule:
+                r ~= tsformat!"(%s)"(man.modules[o.val].toString(p, e));
                 break;
             case OPCode.MakeClosure:
                 r ~= tsformat!"(%s)"(man.blocks[o.val].toStr(p, e));

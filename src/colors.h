@@ -6,6 +6,23 @@
 #include "misc.h"
 namespace colors {
 // clang-format off
+QRgb base00();
+QRgb base01();
+QRgb base02();
+QRgb base03();
+QRgb base04();
+QRgb base05();
+QRgb base06();
+QRgb base07();
+QRgb base08();
+QRgb base09();
+QRgb base0A();
+QRgb base0B();
+QRgb base0C();
+QRgb base0D();
+QRgb base0E();
+QRgb base0F();
+
 constexpr QRgb Base00_rgb = 0xff1D1F21;
 constexpr QRgb Base01_rgb = 0xff282A2E;
 constexpr QRgb Base02_rgb = 0xff373B41;
@@ -79,73 +96,6 @@ public:
     Q_PROP_RO(QColor, Base0E, colors::Base0E);
     Q_PROP_RO(QColor, Base0F, colors::Base0F);
 };
-
-enum class Color {
-    Base00 = 0,
-    Base01 = 1,
-    Base02 = 2,
-    Base03 = 3,
-    Base04 = 4,
-    Base05 = 5,
-    Base06 = 6,
-    Base07 = 7,
-    Base08 = 8,
-    Base09 = 9,
-    Base0A = 10,
-    Base0B = 11,
-    Base0C = 12,
-    Base0D = 13,
-    Base0E = 14,
-    Base0F = 15,
-
-    Black = 0,
-    Background = 0,
-    Default = 5,
-    DarkGrey = 1,
-    LightGrey = 3,
-    White = 7,
-    Red = 8,
-    Orange = 9,
-    Yellow = 10,
-    Green = 11,
-    Cyan = 12,
-    Blue = 13,
-    Purple = 14,
-    Brown = 15,
-};
-constexpr QRgb getColor(Color color) {
-    switch (color) {
-    case Color::Base00: return colors::Base00_rgb;
-    case Color::Base01: return colors::Base01_rgb;
-    case Color::Base02: return colors::Base02_rgb;
-    case Color::Base03: return colors::Base03_rgb;
-    case Color::Base04: return colors::Base04_rgb;
-    case Color::Base05: return colors::Base05_rgb;
-    case Color::Base06: return colors::Base06_rgb;
-    case Color::Base07: return colors::Base07_rgb;
-    case Color::Base08: return colors::Base08_rgb;
-    case Color::Base09: return colors::Base09_rgb;
-    case Color::Base0A: return colors::Base0A_rgb;
-    case Color::Base0B: return colors::Base0B_rgb;
-    case Color::Base0C: return colors::Base0C_rgb;
-    case Color::Base0D: return colors::Base0D_rgb;
-    case Color::Base0E: return colors::Base0E_rgb;
-    case Color::Base0F: return colors::Base0F_rgb;
-    }
-    return 0;// Q_ASSERT(0);
-    //return
-}
-
-enum Attributes : uint8_t {
-    A_DEFAULT = 0,
-    A_BOLD = 1 << 1,
-    A_ITALIC = 1 << 2,
-    A_UNDERLINE = 1 << 3,
-
-    A_NEWLINE = 1 << 7,
-    //A_REVERSE = 1 << 4,
-};
-
 
 
 #endif

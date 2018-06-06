@@ -11,15 +11,15 @@ public import ts.runtime.env;
 public import ts.builtin;
 public import ts.misc : FuncType;
 public import ts.objects.type_meta;
-import ts.stdlib;
+public import ts.stdlib;
 
 public import stdd.variant;
 
 enum types = [
     "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
     "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
-    "TupleIter", "Property", "TypeMeta", "UserDefined"
-    ];
+    "TupleIter", "Property", "TypeMeta", "UserDefined", "Module",
+    ] ~ ts.stdlib.types;
 
 
 class RuntimeException : TSException {
@@ -130,6 +130,10 @@ class Obj {
     }
 
     Obj call(Pos p, Env e, Obj[] args...) {
+        foreach (ref a; args) {
+            Property* prop = a.val.peek!Property;
+            if (prop !is null) a = prop.callGet(p, e);
+        }
         //dfmt off
         return val.tryVisit!(
             (Function f) => f(p, e, args),

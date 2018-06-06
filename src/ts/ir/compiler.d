@@ -39,7 +39,7 @@ enum OPCode {
     MakeTuple,
     MakeDict,
     MakeClosure,
-    MakeType,
+    MakeModule,
     Jmp,
     Cmp,
     Binary,
@@ -326,23 +326,20 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             tslog!"jmp from %d-%d: %d"(loopBeg, loopEnd, j);
             bl.addVal(pos, OPCode.Jmp, j);
         },
-        (AstNode.StructDef v) {
-            TypeMaker tm;
-            tm.name = v.name;
-            tm.base = v.base;
-            tm.ov = bl.addOV(pos, v.name);
-            import com.log;
+        (AstNode.Module v) {
+            ModuleMaker tm = ModuleMaker(v.isType, v.name, bl.addOV(pos, v.name));
+            OffsetVal struct_= bl.getCaptures(pos, [v.name])[0];
+
             Block getBlock(AstNode.Lambda l) {
-                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures ~ v.name), l.params);
+                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures) ~ struct_, l.params);
             }
-            tm.captures = bl.getCaptures(pos, v.captures);
+            tm.captures = bl.getCaptures(pos, v.captures) ~ struct_;
             foreach (name, m; v.members) {
                 tm.members[name] = generateIR(m, bl, tm.captures, []);
             }
 
             foreach (name, m; v.methods) {
                 tm.methods[name] = getBlock(m);
-                tslog!">>m.caps %s"(tm.methods[name].captures);
             }
             foreach (name, m; v.getters) {
                 tm.getters[name] = getBlock(m);
@@ -350,7 +347,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             foreach (name, m; v.setters) {
                 tm.setters[name] = getBlock(m);
             }
-            bl.addType(pos, tm);
+            bl.addModule(pos, tm);
         },
     )();
     //dfmt on

@@ -16,4 +16,5 @@ public import ts.objects.dict;
 public import ts.objects.property;
 public import ts.objects.range;
 public import ts.objects.type_meta;
+public import ts.objects.module_;
 public import ts.objects.user_defined;

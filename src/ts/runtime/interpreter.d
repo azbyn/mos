@@ -15,6 +15,8 @@ import stdd.variant;
 import stdd.range;
 
 
+import ts.objects.type_meta;
+import ts.objects.module_;
 import com.log;
 
 public Obj eval(BlockManager man) {
@@ -79,17 +81,15 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
         case OPCode.Call: {
             assert(len >= op.argc + 1);
             auto args = popN(op.argc);
-
             auto f = pop();
             stack ~= f.call(op.pos, env, args);
         } break;
         case OPCode.MethodCall: {
-            import ts.objects.type_meta;
             assert(len >= op.argc + 1);
             auto args = popN(op.argc+1);
             auto str = bl.getStr(op.val);
             auto o = args.front();
-            if (o.peek!TypeMeta) {
+            if (o.peek!TypeMeta|| o.peek!Module) {
                 //we don't pass this
                 args = args[1..$];
             }
@@ -164,6 +164,7 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
             stack ~= bl.getConst(op.val).checkGetter(pos, env);//check prop probably not needed
         } break;
         case OPCode.LoadVal: {
+            tslog!"loadval %s"(op);
             stack ~= env.get(pos, op);//.checkGetter(pos, env);
         } break;
         case OPCode.LoadLib: {
@@ -239,45 +240,60 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
             if (!a.toBool(pos, env))
                 jmp(pc, op.val);
         } break;
-        case OPCode.MakeType: {
-            auto tmk = bl.man.types[op.val];
-            TypeMeta t = TypeMeta(tmk.name,
-                                  (Pos p, Env e) => objUserDefined(tmk.name, env.construct(pos, tmk.base, [])));
-            Obj*[OffsetVal] caps;
-            foreach (c; tmk.captures) {
-                caps[c] = env.getPtr(c);
-            }
-
-            foreach (name, b; tmk.members) {
-                t.members[name] = b.eval(pos, env, [], caps);
-            }
-            Obj funcOrClosure(Block b) {
-                if (b.captures.length == 0) return objFunction(b);
+        case OPCode.MakeModule: {
+            auto tmk = bl.man.modules[op.val];
+            void impl(bool isType, T)() {
+                Obj obj = new Obj(T(tmk.name));
+                T* t = obj.peek!T;
+                Obj funcOrClosure(Block b) {
+                    if (b.captures.length == 0) return objFunction(b);
+                    Obj*[OffsetVal] caps;
+                    foreach (c; b.captures) {
+                        caps[c] = env.getPtr(c);
+                    }
+                    
+                    return objClosure(b, caps);
+                }
+                foreach (name, b; tmk.methods) {
+                    static if (isType) {
+                        if (name == "ctor") {
+                            t.ctor = funcOrClosure(b);
+                        } else {
+                            t.members[name] = funcOrClosure(b);
+                        }
+                    }
+                    else {
+                        t.members[name] = funcOrClosure(b);
+                    }
+                }
+                static if (isType) {
+                    import ts.objects.user_defined;
+                    t.members["base"] = objProperty(
+                        objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
+                        objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
+                }
+                foreach (name, b; tmk.getters) {
+                    assignFuncType!(FuncType.Getter)(t.members, name, objFunction(b));
+                }
+                foreach (name, b; tmk.setters) {
+                    assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
+                }
+                // this must be done now because members might be self-referential
+                env.set(pos, tmk.ov, obj);
                 Obj*[OffsetVal] caps;
-                foreach (c; b.captures) {
+                foreach (c; tmk.captures) {
+                    tslog!"capturing[%s]"(c);
                     caps[c] = env.getPtr(c);
                 }
 
-                return objClosure(b, caps);
-            }
-            foreach (name, b; tmk.methods) {
-                if (name == "ctor") {
-                    t.ctor = funcOrClosure(b);
-                } else {
-                    t.members[name] = funcOrClosure(b);
+                foreach (name, b; tmk.members) {
+                    t.members[name] = b.eval(pos, env, [], caps);
                 }
             }
-            import ts.objects.user_defined;
-            t.members["base"] = objProperty(
-                objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
-                objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
-            foreach (name, b; tmk.getters) {
-                assignFuncType!(FuncType.Getter)(t.members, name, objFunction(b));
-            }
-            foreach (name, b; tmk.setters) {
-                assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
-            }
-            env.addTypeMeta(pos, tmk.ov, t);
+            if (tmk.isType)
+                impl!(true, TypeMeta);
+            else
+                impl!(false, Module);
         }
 
         }
