@@ -2,6 +2,7 @@ module ts.objects.type_meta;
 
 import ts.objects;
 import ts.misc : tsformat;
+import stdd.format : format;
 
 class TypeException : TSException {
     this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
@@ -46,7 +47,6 @@ struct TypeMeta {
 
     Obj construct(Pos p, Env e, Obj[] a...) {
         import stdd.array;
-        import stdd.format;
 
         if (ctor is null)
             throw new TypeException(p, format!"Type '%s' doesn't have a constructor"(name));
@@ -73,10 +73,21 @@ static:
         return t.callCtor(p,e,args);
         }*/
     Obj opFwd(Pos p, Env e, TypeMeta* t, tsstring m) {
-        return t.members[m];
+        Obj* x = m in t.members;
+        if (x is null)
+            throw new RuntimeException(p, format!"type '%s' doesn't contain '%s'"(t.name, m));
+        return *x;
     }
 
     Obj opFwdSet(Pos p, Env e, TypeMeta* t, tsstring m, Obj val) {
-        return t.members[m] = val;
+        import ts.objects.property;
+        Obj* x = m in t.members;
+        if (x is null)
+            throw new RuntimeException(p, format!"module '%s' doesn't contain '%s'"(t.name, m));
+        Property* prop = x.val.peek!Property;
+        if (prop !is null)
+            return prop.callSet(p, e, val);
+        return *x = val;
+        //return t.members[m] = val;
     }
 }

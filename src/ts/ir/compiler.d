@@ -25,7 +25,7 @@ enum OPCode {
     MemberSet,
     MemberGet,
     //MemberSetterDef,
-    MethodCall,
+    //MethodCall,
     SubscriptGet,
     SubscriptSet,
     Return,
@@ -52,45 +52,21 @@ enum OPCode {
 struct OP {
     Pos pos;
     OPCode code;
-    ushort offset;
-    ushort argc;
+    //ushort argc;
     uint val;
     tsstring toString() {
-        if (offset)
-            return tsformat!"%-20s o:%d a:%d v:%d"(code, offset, argc, val);
-        else
-            return tsformat!"%-20s a:%d v:%d"(code, argc, val);
-    }
-}
-struct OffsetVal {
-    ushort offset;
-    uint val;
-    this(ushort offset, uint val) {
-        this.offset = offset;
-        this.val = val;
-    }
-    this(ushort offset, ulong val) {
-        this(offset, cast(uint) val);
-    }
-    size_t toHash() const @safe nothrow {
-        return cast(size_t) offset << (4 * 6/*8*/) | val;
-    }
-    bool opEquals(const OP o) const {
-        return o.offset == offset && o.val == val;
-    }
-
-    bool opEquals(const OffsetVal o) const {
-        return o.offset == offset && o.val == val;
-    }
-    tsstring toString() {
-        return tsformat!"%d-%d"(offset, val);
+        return tsformat!"%-20s v:%d"(code, val);
+        //return tsformat!"%-20s a:%d v:%d"(code, argc, val);
     }
 }
 
-Block generateIR(AstNode n, Block parent, OffsetVal[] captures, tsstring[] args) {
+Block generateIR(AstNode n, Block parent, tsstring[] captures, tsstring[] args) {
+    return generateIR(n, parent, parent.man.getBulk(captures), parent.man.addBulk(args));
+}
+
+Block generateIR(AstNode n, Block parent, uint[] captures, uint[] args) {
     assert(parent);
     assert(parent.man);
-    assert(parent.man.tables);
     //assert(parent.man);
     Block bl = new Block(parent.man, args, captures);
     if (auto body_ = n.val.peek!(AstNode.Body)){
@@ -155,19 +131,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             foreach (n; v.args) {
                 ir(n);
             }
-            bl.addArgc(pos, OPCode.Call, v.args.length);
-        },
-        (AstNode.MethodCall v) {
-            ir(v.obj);
-            if (v.args !is null) {
-                foreach (n; v.args) {
-                    ir(n);
-                }
-                bl.addStr(pos, OPCode.MethodCall, v.args.length, v.name);
-            }
-            else {
-                bl.addStr(pos, OPCode.MethodCall, 0, v.name);
-            }
+            bl.addVal(pos, OPCode.Call, v.args.length);
         },
         (AstNode.Binary v) {
             ir(v.a);
@@ -175,7 +139,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.addStr(pos, OPCode.Binary, v.name);
         },
         (AstNode.Lambda v) {
-            auto block = generateIR(v.body_, bl, bl.getCaptures(pos, v.captures), v.params);
+            auto block = generateIR(v.body_, bl, v.captures, v.params);
             bl.addClosureOrFunc(pos, block);
         },
         (AstNode.Assign v) {
@@ -258,7 +222,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             end:
              */
             ir(v.collection);
-            bl.addStr(pos, OPCode.MemberGet, 0, "Iter");
+            bl.addStr(pos, OPCode.MemberGet, "Iter");
             auto iter = bl.addAssignTemp(pos);
             bl.add(pos, OPCode.Pop);
             auto beg = bl.here();
@@ -266,19 +230,20 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             auto end = bl.reserveJmp();
 
             bl.addVal(pos, OPCode.LoadVal, iter);
-            bl.addStr(pos, OPCode.MemberGet, 0, "Index");
+            bl.addStr(pos, OPCode.MemberGet, "Index");
             bl.addAssign(pos, v.index);
             bl.add(pos, OPCode.Pop);
 
             bl.addVal(pos, OPCode.LoadVal, iter);
-            bl.addStr(pos, OPCode.MemberGet, 0, "Val");
+            bl.addStr(pos, OPCode.MemberGet, "Val");
             bl.addAssign(pos, v.val);
             bl.add(pos, OPCode.Pop);
             ir(v.body_, beg, end);
 
             bl.setJmpHere(next);
             bl.addVal(pos, OPCode.LoadVal, iter);
-            bl.addStr(pos, OPCode.MethodCall, 0, "next");
+            bl.addStr(pos, OPCode.MemberGet, "next");
+            bl.addVal(pos, OPCode.Call, 0);
             bl.addVal(pos, OPCode.JmpIfTruePop, beg);
             bl.setJmpHere(end);
         },
@@ -327,17 +292,16 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.addVal(pos, OPCode.Jmp, j);
         },
         (AstNode.Module v) {
-            ModuleMaker tm = ModuleMaker(v.isType, v.name, bl.addOV(pos, v.name));
-            OffsetVal struct_= bl.getCaptures(pos, [v.name])[0];
+            ModuleMaker tm = ModuleMaker(v.isType, v.name);
+            uint struct_ = bl.st.addStr(v.name);
 
             Block getBlock(AstNode.Lambda l) {
-                return generateIR(l.body_, bl, bl.getCaptures(pos, l.captures) ~ struct_, l.params);
+                return generateIR(l.body_, bl, bl.man.getBulk(l.captures) ~ struct_, bl.man.addBulk(l.params));
             }
-            tm.captures = bl.getCaptures(pos, v.captures) ~ struct_;
+            tm.captures = bl.man.getBulk(v.captures) ~ struct_;
             foreach (name, m; v.members) {
                 tm.members[name] = generateIR(m, bl, tm.captures, []);
             }
-
             foreach (name, m; v.methods) {
                 tm.methods[name] = getBlock(m);
             }
@@ -348,6 +312,10 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
                 tm.setters[name] = getBlock(m);
             }
             bl.addModule(pos, tm);
+        },
+        (AstNode.Import v) {
+            assert(0, "NIE");
+            //bl.addImport(pos, v);
         },
     )();
     //dfmt on

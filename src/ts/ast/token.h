@@ -13,6 +13,7 @@ enum class TT {
     Nil,
     Struct,
     Module,
+    Import,
     Fun,
     Prop,
     If,
@@ -83,7 +84,7 @@ struct Token {
     using Type = TT;
     Type type;
     QString val;
-    explicit Token(TT type) :type(type), val("") {}
+    explicit Token(TT type) : type(type), val("") {}
     Token(Type type, const QString& val)
         : type(type), val(val) {}
     Token(Type type, QString&& val)
@@ -119,6 +120,7 @@ QColor Token::color(TT prevType, F nextType) const {
         return colors::Constants;
     case TT::Fun:
     case TT::Struct:
+    case TT::Import:
     case TT::Module:
     case TT::Prop:
     case TT::If:

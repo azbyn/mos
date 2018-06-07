@@ -5,13 +5,12 @@ import ts.ir.block;
 import ts.ast.token;
 import ts.runtime.env;
 import ts.runtime.interpreter;
-import ts.ir.compiler : OffsetVal;
 import ts.misc;
 
 struct Closure {
     Block val;
-    Obj*[OffsetVal] captures;
-    this(Block val, Obj*[OffsetVal] captures) {
+    Obj*[uint] captures;
+    this(Block val, Obj*[uint] captures) {
         this.val = val;
         this.captures = captures;
     }

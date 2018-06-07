@@ -6,9 +6,9 @@ import ts.ast.token;
 
 private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
-    "FuncCall", "MethodCall", "Binary", "Lambda", "Assign", "Subscript",
-    "Member", "And", "Or", "If", "While", "For", "Body", "Cmp", "Return", "List",
-    "CtrlFlow", "Dict", "Tuple", "SetterDef", "GetterDef", "Module",
+    "FuncCall", "Binary", "Lambda", "Assign", "Subscript", "Member", "And", "Or",
+    "If", "While", "For", "Body", "Cmp", "Return", "List", "CtrlFlow", "Dict",
+    "Tuple", "SetterDef", "GetterDef", "Module", "Import"
     ];
 
 class AstNode {
@@ -68,12 +68,6 @@ class AstNode {
             this.captures = captures;
             this.body_ = body_;
         }
-    }
-
-    struct MethodCall {
-        tsstring name;
-        AstNode obj;
-        AstNode[] args;
     }
 
     struct Assign {
@@ -153,6 +147,10 @@ class AstNode {
         Lambda[tsstring] getters;
         Lambda[tsstring] setters;
     }
+    struct Import {
+        tsstring[] module_;
+        tsstring[] symbols;
+    }
 
     private static string genVal() {
         string r = "Algebraic!(";
@@ -209,7 +207,6 @@ class AstNode {
             (Variable v) { add(v.name); },
             (FuncCall v) { fv(v.func); fv(v.args); },
             (Binary v) { fv(v.a, v.b); },
-            (MethodCall v) {fv(v.obj); fv(v.args); },
             (Lambda v) { res ~= v.body_.freeVars(bound ~ v.params); },
             (Assign v) { fv(v.rvalue, v.lvalue); },
             (SetterDef v) { fv(v.val); },
@@ -228,6 +225,7 @@ class AstNode {
             (Tuple v) { fv(v.val);},
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
+            (Import v) {},
         )();
 
     }
@@ -282,7 +280,6 @@ class AstNode {
             (Variable v) => format!"variable '%s'"(v.name),
             (FuncCall v) => format!"funcCall:%s%s"(str(v.func), str(v.args)),
             (Binary v) => format!"binary '%s':%s"(v.name, str(v.a, v.b)),
-            (MethodCall v) => format!"methodCall '%s':%s%s"(v.name, str(v.obj), str(v.args)),
             (Lambda v) => format!"lambda (%s) [%s]:%s"(v.params.joiner(","), v.captures.joiner(","), str(v.body_)),
             (Assign v) => format!"assign:%s"(str(v.rvalue, v.lvalue)),
             (SetterDef v) => format!"setterDef %s:%s"(v.name, str(v.val)),
@@ -294,6 +291,7 @@ class AstNode {
             (If v) => format!"if:%s"(str(v.cond, v.body_, v.else_)),
             (While v) => format!"while:%s"(str(v.cond, v.body_)),
             (For v) => format!"for %s, %s:%s"(v.index, v.val, str(v.collection, v.body_)),
+            (Import v) => format!"import %s : %s"(v.module_.joiner("."), v.symbols.joiner(", ") ),
             (Body v) => "body:" ~ str(v.val),
             (List v) => "list:" ~ str(v.val),
             (Tuple v) => "tuple:" ~ str(v.val),
@@ -309,7 +307,7 @@ class AstNode {
                 void fool(ref string res, Lambda[tsstring] arr) {
                     foreach (n, l; arr) {
                         res ~= "\n" ~ indent ~ format!"  [%s]: lambda (%s) [%s]:%s"(
-                            n, l.params.joiner(","), l.captures.joiner(","), str(l.body_));
+                            n, l.params.joiner(", "), l.captures.joiner(", "), str(l.body_));
                     }
                 }
                 ++level;

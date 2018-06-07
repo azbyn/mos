@@ -157,8 +157,8 @@ private:
         return unary(getPos(t), t.type, a);
     }
 
-    AstNode unary(Pos pos, TT type, AstNode a) {
-        return astMethodCall(pos, type.unaryFunctionName, a, null);
+    AstNode unary(Pos p, TT type, AstNode a) {
+        return astFuncCall(pos, astMember(pos, a, type.unaryFunctionName), null);
     }
 
     AstNode leftRecursive(A...)(AstNode function(Parser*) next, A args) {
@@ -234,14 +234,7 @@ private:
             contStackPush(true);
         }
         else {
-            /*if (levelStackIsEmpty) {
-                //throw error
-                require(TT.indent);
-                tslog("this shoud have failed");
-            }
-            else {*/
             contStackPush(false);
-            //}
         }
         while(!isEof()) {
             if (!consume(TT.NewLine)) break;
@@ -263,7 +256,7 @@ private:
     }
 
     // statement: funcDef | prop | return_ | if_ | while_
-    //          | for_ | ctrlFlow | struct_
+    //          | for_ | ctrlFlow | struct_ | import_
     //          | expression '\n'
     AstNode stmt() {
         AstNode n;
@@ -276,6 +269,7 @@ private:
         if (for_(n)) return n;
         if (ctrlFlow(n)) return n;
         if (module_(n)) return n;
+        if (import_(n)) return n;
         //dfmt on
         n = expression();
         require(TT.NewLine);
@@ -286,12 +280,33 @@ private:
         return n;
     }
 
-    // return: "return" expression
+    // return_: "return" expression
     bool return_(out AstNode res) {
         const(Token)* t;
         if (!consume(t, TT.Return))
             return false;
         res = astReturn(getPos(t), expression());
+        return true;
+    }
+    // import_: "import" Identifier { "." Identifier } ":" Identifier { "," Identifier }
+    bool import_(out AstNode res) {
+        const(Token)* t;
+        if (!consume(t, TT.Import))
+            return false;
+        tsstring[] module_;
+        tsstring[] symbols;
+
+        module_ ~= requireIdentifier();
+        const(Token)* i;
+        while (consume(TT.Dot)) {
+            module_ ~= requireIdentifier();
+        }
+        require(TT.Colon);
+        symbols ~= requireIdentifier();
+        while (consume(TT.Comma)) {
+            module_ ~= requireIdentifier();
+        }
+        res = astImport(getPos(t), module_, symbols);
         return true;
     }
     // ctrlFlow: "break" | "continue"
@@ -481,10 +496,16 @@ private:
         res = astFor(getPos(t), index, val, col, body_);
         return true;
     }
-    // module_: ("struct" | "module") Identifier captures :" "\n" Indent { {"\n"} structData} Dedent
-    // moduleData: funcDef | prop | memberAssign
+    // module_: ("struct" | "module") Identifier captures ":" "\n" Indent { {"\n"} structData} Dedent
+    // moduleData: funcDef | prop | memberAssign | module_
     // memberAssign: Identifier "=" cont ternary
+
     bool module_(out AstNode res) {
+        tsstring _;
+        return module_(res, _);
+    }
+
+    bool module_(out AstNode res, out tsstring name) {
         const(Token)* t;
         if (!consume(t, TT.Struct, TT.Module)) return false;
         AstNode[tsstring] members;
@@ -498,6 +519,14 @@ private:
             require(TT.Assign);
             cont();
             members[t.tsstr] = ternary();
+            return true;
+        }
+
+        bool submodule() {
+            AstNode m;
+            tsstring s;
+            if (!module_(m, s)) return false;
+            members[s] = m;
             return true;
         }
         bool memberFuncDef() {
@@ -524,11 +553,12 @@ private:
             return true;
         }
         bool structData() {
-            return memberFuncDef() || memberProp() || memberAssign();
+            return memberFuncDef() || memberProp() || memberAssign() || submodule();
         }
 
         const(Token)* n;
         require(n, TT.Identifier);
+        name = n.tsstr;
         tsstring[] caps = captures();
 
         require(TT.Colon);
@@ -542,7 +572,7 @@ private:
             if (!structData()) break;
         }
         require(TT.Dedent);
-        res = astModule(getPos(n), t.type == TT.Struct, n.tsstr, caps, members, methods, getters, setters);
+        res = astModule(getPos(n), t.type == TT.Struct, name, caps, members, methods, getters, setters);
         return true;
     }
 
@@ -671,8 +701,9 @@ private:
                 const(Token)* id;
                 require(id, TT.Identifier);
                 if (consume(TT.LParen)) {
+                    auto p = getPos(id);
                     expressionSeq(TT.RParen,
-                            (AstNode[] args) => a = astMethodCall(getPos(id), id.tsstr, a, args));
+                                  (AstNode[] args) => a = astFuncCall(p, astMember(p, a, id.tsstr),  args));
                 }
                 else {
                     a = astMember(getPos(id), a, id.tsstr);

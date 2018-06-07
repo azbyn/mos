@@ -56,6 +56,7 @@ struct Lexer {
                         if (str == "return") return Token(TT::Return);
                         if (str == "struct") return Token(TT::Struct);
                         if (str == "module") return Token(TT::Module);
+                        if (str == "import") return Token(TT::Import);
                         if (str == "fun") return Token(TT::Fun);
                         if (str == "prop") return Token(TT::Prop);
                         if (str == "if") return Token(TT::If);

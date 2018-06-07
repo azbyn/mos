@@ -4,7 +4,7 @@ import ts.objects.obj;
 import ts.objects.property;
 import ts.objects.type_meta;
 import ts.ir.symbol_table;
-import ts.ir.compiler : OffsetVal;
+import ts.ir.block_manager;
 import stdd.array;
 import stdd.format : format;
 import ts.misc : tsformat;
@@ -29,17 +29,18 @@ private Obj checkSetter(Obj* x, Pos pos, Env env, Obj val) {
 }
 
 class Env {
-    ushort offset;
-    Obj[] objs;
-    SymbolTable st;
-    Obj*[OffsetVal] captures;
+    Obj[uint] objs;
+    BlockManager man;
+    Obj*[uint] captures;
 
     this(SymbolTable st) {
-        offset = st.offset;
-        this.st = st;
-        objs = minimallyInitializedArray!(Obj[])(st.names.length);
+        this.man = st.man;
+        foreach (n; st.symbols) {
+            objs[n] = nil;
+        }
+        // objs = minimallyInitializedArray!(Obj[])(st.names.length);
     }
-    this(Env parent, SymbolTable st, Obj*[OffsetVal] captures) {
+    this(Env parent, SymbolTable st, Obj*[uint] captures) {
         this(st);
         if (parent !is null)
             this.captures = parent.captures;
@@ -49,78 +50,60 @@ class Env {
             }
         }
     }
-    Obj get(T)(Pos p, T val) { return get(p, OffsetVal(val.offset, val.val)); }
-    Obj get(Pos p, OffsetVal val){
-        if (val.offset == offset)
-            return objs[val.val].checkGetter(p, this);
+    Obj get(Pos p, tsstring val) { return get(p, man.getIndex(val)); }
+    Obj get(Pos p, uint val){
+        if (auto ptr = objs.get(val, null))
+            return ptr.checkGetter(p, this);
         if (auto o = captures.get(val, null))
             return o.checkGetter(p, this);
         import stdd.format;
         assert(0, format!"get %s"(val));
     }
-    Obj* getPtr(OffsetVal val) {
-        if (val.offset == offset)
-            return &objs[val.val];
+    Obj* getPtr(uint val) {
+        if (auto ptr = val in objs)
+            return ptr;
         if (auto o = captures.get(val, null))
             return o;
         assert(0);
 
     }
-    Obj set(T)(Pos p, T val, Obj o) { return set(p, OffsetVal(val.offset, val.val), o); }
-    Obj set(Pos p, OffsetVal val, Obj o) {
-        if (val.offset == offset) {
-            return checkSetter(&objs[val.val], p, this, o);
-        }
-        auto ptr = val in captures;
-        if (ptr !is null) {
-            return checkSetter(*ptr, p, this, o);
-        }
-        assert(0);
+
+    Obj set(Pos p, tsstring val, Obj o) { return set(p, man.getIndex(val), o); }
+    Obj set(Pos p, uint val, Obj o) {
+        tslog!"<<<set %s"(man.getStr(val));
+        if (auto ptr = captures.get(val, null))
+            return checkSetter(ptr, p, this, o);
+
+        if (auto ptr = val in objs)
+            ptr.val.tryVisit!(
+                (Property prop) => prop.callSet(p, this, o),
+                () => *ptr = o);
+        return objs[val] = o;
     }
 
-    Obj getterDef(T)(Pos p, T val, Obj o) { return getterDef(p, OffsetVal(val.offset, val.val), o); }
-    Obj getterDef(Pos p, OffsetVal val, Obj o) {
-        if (val.offset == offset) {
-            return assignGetter(objs, val.val, o);
-        }
+    Obj getterDef(Pos p, uint val, Obj o) {
         if (val in captures) {
             throw new RuntimeException(p, "can't define getter for captured variable");
         }
-        assert(0);
+        return assignGetter(objs, val, o);
     }
 
-    Obj setterDef(T)(Pos p, T val, Obj o) { return setterDef(p, OffsetVal(val.offset, val.val), o); }
-    Obj setterDef(Pos p, OffsetVal val, Obj o) {
-        if (val.offset == offset) {
-            return assignSetter(objs, val.val, o);
-        }
+    Obj setterDef(Pos p, uint val, Obj o) {
         if (val in captures) {
             throw new RuntimeException(p, "can't define setter for captured variable");
         }
-        assert(0);
+        return assignSetter(objs, val, o);
     }
-    /*
-    Obj construct(Pos p, tsstring name, Obj[] args...){
-        return getTypeMeta(p, name).construct(p, this, args);
-        }*/
     import com.log;
-    /*
-    Obj addTypeMeta(Pos p, OffsetVal val, TypeMeta tm) {
-        tslog!"<<added@%d [%s] : %s"(offset, val, tm.name);
-        return set(p, val, new Obj(tm));
-        }*/
-    TypeMeta getTypeMeta(Pos p, tsstring name,  string file =__FILE__, size_t line = __LINE__) {
-        OffsetVal ov;
-        tslog!"src@%d %s"(offset, name);
-        tslog!"st: %s"(st.names);
-        if (st.getName(name, ov)) {
-            return get(p, ov).get!TypeMeta(p);
-        }
+
+    TypeMeta getTypeMeta(Pos p, tsstring name, string file =__FILE__, size_t line = __LINE__) {
         size_t li;
-        if (st.man.lib.get(name, li)) {
+        if (man.lib.get(name, li)) {
             import ts.runtime.interpreter : checkGetter;
-            return st.man.lib.get(li).checkGetter(p, this).get!TypeMeta(p);
+            return man.lib.get(li).checkGetter(p, this).get!TypeMeta(p);
         }
+        if (auto ptr = objs.get(man.getIndex(name), null))
+            return ptr.get!TypeMeta(p);
         throw new RuntimeException(p, format!"'%s' not defined"(name), file, line);
     }
     TypeMeta getTypeMeta(Pos p, Obj o, string file =__FILE__, size_t line = __LINE__) {
@@ -129,7 +112,7 @@ class Env {
             auto r = "o.val.visit!(";
             static foreach (t; ts.objects.obj.types) {
                 static if (t == "UserDefined")
-                    r ~= "(UserDefined v) => getTypeMeta(p, v.name, file,line),";
+                    r ~= "(UserDefined v) => getTypeMeta(p, v.name, file, line),";
                 else
                     r ~= format!"(%s v) => %s.typeMeta,"(t, t);
             }

@@ -19,7 +19,7 @@ fun_()   - in ts shown as fun()
 Prop_fun()    - property getter, shown as Prop
 PropSet_fun() - property setter, shown as Prop
 Prop()        - propertyGetter, shown as Prop (Starts with a capital letter)
-mod_foo - module, show as foo
+Mod_Foo - module, show as Foo
 */
 
 __gshared private {
@@ -143,7 +143,6 @@ bool getFun(alias T, string fun)(out Obj res) {
         return true;
     }
     return false;
-        
     //return val.length > 0;
 }
 auto getFuncData(string f)() {
@@ -226,7 +225,7 @@ static this() {
                     enum name = data.name[0..$-1];
                 else
                     enum name = data.name;
-                static if (name.length > 4 && name[0..4] == "mod_"){
+                static if (name.length > 4 && name[0..4] == "Mod_"){
                     addModule!(name[4..$], mixin(f));
                 }
                 else {{

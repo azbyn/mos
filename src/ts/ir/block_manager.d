@@ -6,24 +6,23 @@ import ts.ir.symbol_table;
 import ts.ir.lib;
 import ts.ir.compiler;
 import ts.misc;
+import stdd.format : format;
 
 struct ModuleMaker {
     bool isType;
     tsstring name;
-    OffsetVal ov;
-    OffsetVal[] captures;
+    uint[] captures;
     Block[tsstring] members;
     Block[tsstring] methods;
     Block[tsstring] getters;
     Block[tsstring] setters;
 
-    this(bool isType, tsstring name, OffsetVal ov) {
+    this(bool isType, tsstring name) {
         this.isType = isType;
         this.name = name;
-        this.ov = ov;
     }
     tsstring toString(Pos p, Env e) {
-        tsstring res = tsformat!"<typeMaker '%s'@%s>\n"(name, ov);
+        tsstring res = tsformat!"<typeMaker '%s'>\n"(name);
         res ~= "\nmembers:";
         foreach (n, m; members) {
             res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
@@ -47,25 +46,64 @@ struct ModuleMaker {
 class BlockManager {
     Obj[] consts;
     Lib lib;
-    SymbolTable[] tables;
+    //SymbolTable[] tables;
     tsstring[] strs;
     Block[] blocks;
     ModuleMaker[] modules;
     size_t[] jumpTable;
 
     @property Block mainBlock() { return blocks[0]; }
-
     this(Lib lib, out Block mainBlock) {
         this.lib = lib;
         consts ~= nil;
         mainBlock = new Block(this);
         blocks ~= mainBlock;
     }
+    uint[] getBulk(tsstring[] caps) {
+        import stdd.array;
+        auto res = uninitializedArray!(uint[])(caps.length);
+        foreach (i, c; caps) {
+            res[i] = getIndex(c);
+        }
+        return res;
+    }
+    uint[] addBulk(tsstring[] caps) {
+        import stdd.array;
+        auto res = uninitializedArray!(uint[])(caps.length);
+        foreach (i, c; caps) {
+            res[i] = addStr(c);
+        }
+        return res;
+    }
 
+    tsstring getStr(uint t) {
+        return strs[t];
+    }
+    bool tryGetIndex(tsstring str, out uint res) {
+        foreach (i, s; strs){
+            if (s == str) {
+                res =  cast(uint)i;
+                return true;
+            }
+        }
+        return false;
+    }
+    uint getIndex(tsstring str, string file = __FILE__, size_t line = __LINE__) {
+        foreach (i, s; strs)
+            if (s == str) return cast(uint) i;
+        throw new Exception(format!"invalid getIndex %s"(str), file, line);
+    }
+    uint addStr(tsstring str) {
+        foreach (i, s; strs)
+            if (s == str) return cast(uint) i;
+        strs ~= str;
+        return cast(uint) strs.length - 1;
+    }
+/*
     ushort addST(SymbolTable st){
         tables ~= st;
         return cast(ushort) (tables.length - 1);
-    }
+        }*/
 
     size_t addJump(size_t pos = -1) {
         jumpTable ~= pos;

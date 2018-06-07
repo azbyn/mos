@@ -25,12 +25,12 @@ class Block {
     }
 
     BlockManager man;
-    OffsetVal[] args;
+    uint[] args;
     @property Lib lib() {
         return man.lib;
     }
-    @property OffsetVal[] captures() {
-        return st.captures;
+    @property uint[] captures() {
+        return _st.captures;
     }
 
     this(BlockManager man) {
@@ -39,13 +39,14 @@ class Block {
         _st = new SymbolTable(man);
     }
 
-    this(BlockManager man, tsstring[] argNames, OffsetVal[] captures) {
+    this(BlockManager man, uint[] args, uint[] captures) {
         this.man = man;
         //man.blocks ~= this;
-        _st = new SymbolTable(man, captures, argNames, /*out*/ args);
+        this.args = args;
+        _st = new SymbolTable(man, captures, args, []);
     }
-
-    OffsetVal[] getCaptures(Pos pos, tsstring[] caps) {
+    /*
+    tsstring[] getCaptures(Pos pos, tsstring[] caps) {
         OffsetVal[] res = uninitializedArray!(OffsetVal[])(caps.length);
         OffsetVal val;
         foreach (i, c; caps) {
@@ -56,24 +57,15 @@ class Block {
                 throw new IRException(pos, format!"Can't capture '%s'"(c));
         }
         return res;
+        }*/
+
+    void addVal(Pos pos, OPCode code, uint val) {
+        ops ~= OP(pos, code, val);
     }
 
-    uint str(tsstring name) {
-        foreach (i, m; man.strs) {
-            if (m == name)
-                return cast(uint) i;
-        }
-        man.strs ~= name;
-        return cast(uint)(man.strs.length - 1);
-    }
-
-    private void add(Pos pos, OPCode code, ushort argc, uint val) {
+    /*   private void add(Pos pos, OPCode code, ushort argc, uint val) {
         ops ~= OP(pos, code, 0, argc, val);
-    }
-
-    private void add(Pos pos, OPCode code, ushort argc, OffsetVal val) {
-        ops ~= OP(pos, code, val.offset, argc, val.val);
-    }
+        }*/
     void addClosureOrFunc(Pos pos, Block block) {
         if (block.captures.length == 0)
             addConst(pos, objFunction(block));
@@ -91,21 +83,14 @@ class Block {
     }
 
     void add(Pos pos, OPCode op) {
-        add(pos, op, 0, 0);
+        addVal(pos, op, 0);
     }
 
-    void addVal(Pos pos, OPCode op, uint val) {
-        add(pos, op, 0, val);
-    }
 
     void addVal(Pos pos, OPCode op, ulong val) {
         addVal(pos, op, cast(uint) val);
     }
-
-    void addVal(Pos pos, OPCode op, OffsetVal val) {
-        add(pos, op, 0, val);
-    }
-
+/*
     void addArgc(Pos pos, OPCode op, ushort argc) {
         add(pos, op, argc, 0);
     }
@@ -113,34 +98,34 @@ class Block {
     void addArgc(Pos pos, OPCode op, ulong argc) {
         addArgc(pos, op, cast(ushort) argc);
     }
-
+*/
     void addStr(Pos pos, OPCode op, tsstring mem) {
-        add(pos, op, 0, str(mem));
+        addVal(pos, op, man.addStr(mem));
     }
-
+/*
     void addStr(Pos pos, OPCode op, ulong argc, tsstring mem) {
         add(pos, op, cast(ushort) argc, str(mem));
     }
-
-    void addVariable(Pos pos, tsstring var) {
+*/
+    void addVariable(Pos pos, tsstring var, string file = __FILE__, size_t line = __LINE__) {
         if (var == "_")
             throw new IRException(pos, "Invalid name '_'");
-        OffsetVal res;
         size_t lres;
-        if (st.getName(var, res)) {
-            addVal(pos, OPCode.LoadVal, res);
+        if (st.getName(var)) {
+            addVal(pos, OPCode.LoadVal, man.addStr(var));
         }
         else if (lib.get(var, lres)) {
             addVal(pos, OPCode.LoadLib, lres);
         }
         else
-            throw new IRException(pos, format!"'%s' not defined"(var));
+            throw new IRException(pos, format!"'%s' not defined"(var), file, line);
     }
+    /*
     OffsetVal addOV(Pos pos, tsstring var) {
         if (var == "_")
             throw new IRException(pos, "Invalid name '_'");
         return st.get(pos, var);
-    }
+        }*/
 
     void addConst(Pos pos, Obj val) {
         auto getIndex() {
@@ -158,17 +143,17 @@ class Block {
     void addAssign(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.Assign, st.get(pos,var));
+        addVal(pos, OPCode.Assign, st.addStr(var));
     }
     void addSetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.SetterDef, st.get(pos, var));
+        addVal(pos, OPCode.SetterDef, st.addStr(var));
     }
     void addGetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.GetterDef, st.get(pos, var));
+        addVal(pos, OPCode.GetterDef, st.addStr(var));
     }
 
     tsstring getStr(size_t i) {
@@ -177,7 +162,7 @@ class Block {
     }
     private int tempCounter = -1;
     auto addAssignTemp(Pos pos) {
-        auto v = st.get(pos, tsformat!"_t%d"(++tempCounter));
+        auto v = man.addStr(tsformat!"_t%d"(++tempCounter));
         addVal(pos, OPCode.Assign, v);
         return v;
     }
@@ -214,11 +199,10 @@ class Block {
     }
     tsstring toStr(Pos p, Env e) {
         tsstring r = "";
-        r ~= tsformat!"\noffset = %d"(st.offset);
         if (args !is null) {
             r ~= "\nargs: ";
             foreach (a; args) {
-                r ~= tsformat!"\no:%s, %s: %s"(a.offset, a.val, st.getStr(a));
+                r ~= tsformat!"\n%s: %s"(a, man.getStr(a));
             }
         }
         if (captures !is null) {
@@ -251,17 +235,15 @@ class Block {
                 r ~= tsformat!"(%s)"(symbolicStr(cast(TT) o.val));
                 break;
             case OPCode.Binary:
-            case OPCode.MethodCall:
+                //case OPCode.MethodCall:
             case OPCode.MemberGet:
             case OPCode.MemberSet:
-                r ~= tsformat!"(%s)"(man.strs[o.val]);
-                break;
-                //case OPCode.SubscriptGet:
-                //case OPCode.SubscriptSet:
+                /*r ~= tsformat!"(%s)"(man.strs[o.val]);
+                  break;*/
             case OPCode.LoadVal:
             case OPCode.Assign:
             case OPCode.SetterDef:
-                r ~= tsformat!"(%s)"(st.getStr(o));
+                r ~= tsformat!"(%s)"(man.getStr(o.val));
                 break;
             case OPCode.LoadLib:
                 r ~= tsformat!"(%s)"(lib.getName(o.val));

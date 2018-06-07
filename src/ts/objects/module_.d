@@ -31,7 +31,16 @@ static:
     }
 
     Obj opFwdSet(Pos p, Env e, Module* t, tsstring m, Obj val) {
-        return t.members[m] = val;
+        import ts.objects.property;
+        tslog!"setting '%s' "(m);
+        Obj* x = m in t.members;
+        if (x is null)
+            throw new RuntimeException(p, format!"module '%s' doesn't contain '%s'"(t.name, m));
+        Property* prop = x.val.peek!Property;
+        if (prop !is null)
+            return prop.callSet(p, e, val);
+        return *x = val;
+        //return t.members[m] = val;
     }
 }
 
@@ -44,11 +53,9 @@ Module tsenum(tsstring name, tsstring[] names...) {
 }
 import com.log;
 Module tsenum(tsstring name, tsstring[] names, tsint[] values) {
-    tslog("<<<jAAA");
     assert(names.length == values.length);
     Module m = Module(name);
     foreach (i, n; names) {
-        tslog!"<<tsenum [%s] = '%s'"(n, values[i]);
         m.members[n] = objInt(values[i]);
     }
     return m;

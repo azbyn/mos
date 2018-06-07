@@ -185,7 +185,7 @@ END
 
 print <<"END";
 .PHONY: clean
-clean:
+clean: stdlibclean
 	\@rm -vf \$(REST_OBJS)
 stdlibclean:
 	\@rm -vf \$(STDLIB_OBJS)

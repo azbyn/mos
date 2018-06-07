@@ -35,7 +35,7 @@ Obj checkGetter(Obj x, Pos pos, Env env) {
         () => x);
 }
 
-public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] captures = null,
+public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures = null,
                 string file =__FILE__, size_t line = __LINE__) {
     if (env !is null)
         env = new Env(env, bl.st, captures);
@@ -54,7 +54,7 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
     foreach (i, a; bl.args) {
         env.set(initPos, a, argv[i]);
     }
-
+    auto man = bl.man;
 
     //writefln("ja %s", stack.length);
     for (size_t pc = 0; pc < bl.ops.length; ++pc) {
@@ -79,11 +79,12 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
             stack ~= stack.back();
             break;
         case OPCode.Call: {
-            assert(len >= op.argc + 1);
-            auto args = popN(op.argc);
+            assert(len >= op.val + 1);
+            auto args = popN(op.val);
             auto f = pop();
             stack ~= f.call(op.pos, env, args);
         } break;
+/*
         case OPCode.MethodCall: {
             assert(len >= op.argc + 1);
             auto args = popN(op.argc+1);
@@ -94,8 +95,8 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
                 args = args[1..$];
             }
             //tslog!"msg='%s' type = %s l=%s"(str, o.type, args.length);
-            stack ~= env.getMember(pos, o/*.type()*/, str).call(pos, env, args);
-        } break;
+            stack ~= env.getMember(pos, o/*.type()* /, str).call(pos, env, args);
+        } break;*/
         case OPCode.Binary: {
             assert(len >= 2);
             auto b = pop();
@@ -134,7 +135,6 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
             assert(len >= 1);
             auto a = pop();
             auto val = bl.getStr(op.val);
-            tslog!"member get '%s'"(val);
             stack ~= env.getMember2(pos, a, val, "opFwd",
                                 (Obj f) =>f.val.tryVisit!(
                                      (Property p) => p.callGetMember(pos, env, a),
@@ -164,15 +164,14 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
             stack ~= bl.getConst(op.val).checkGetter(pos, env);//check prop probably not needed
         } break;
         case OPCode.LoadVal: {
-            tslog!"loadval %s"(op);
-            stack ~= env.get(pos, op);//.checkGetter(pos, env);
+            stack ~= env.get(pos, op.val);//.checkGetter(pos, env);
         } break;
         case OPCode.LoadLib: {
             stack ~= bl.lib.get(op.val).checkGetter(pos, env);
         } break;
         case OPCode.MakeClosure: {
-            auto b = bl.man.blocks[op.val];
-            Obj*[OffsetVal] caps;
+            auto b = man.blocks[op.val];
+            Obj*[uint] caps;
             foreach (c; b.captures) {
                 caps[c] = env.getPtr(c);
             }
@@ -196,17 +195,17 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
         case OPCode.Assign: {
             assert(len >= 1);
             auto a = pop();
-            stack ~= env.set(pos, op, a);
+            stack ~= env.set(pos, op.val, a);
         } break;
         case OPCode.SetterDef: {
             assert(len >= 1);
             auto a = pop();
-            stack ~= env.setterDef(pos, op, a);
+            stack ~= env.setterDef(pos, op.val, a);
         } break;
         case OPCode.GetterDef: {
             assert(len >= 1);
             auto a = pop();
-            stack ~= env.getterDef(pos, op, a);
+            stack ~= env.getterDef(pos, op.val, a);
         } break;
         case OPCode.Jmp: {
             msg = format!"%d"(op.val);
@@ -247,11 +246,10 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
                 T* t = obj.peek!T;
                 Obj funcOrClosure(Block b) {
                     if (b.captures.length == 0) return objFunction(b);
-                    Obj*[OffsetVal] caps;
+                    Obj*[uint] caps;
                     foreach (c; b.captures) {
                         caps[c] = env.getPtr(c);
                     }
-                    
                     return objClosure(b, caps);
                 }
                 foreach (name, b; tmk.methods) {
@@ -279,16 +277,17 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[OffsetVal] capt
                     assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
                 }
                 // this must be done now because members might be self-referential
-                env.set(pos, tmk.ov, obj);
-                Obj*[OffsetVal] caps;
+                tslog("set MODULE");
+                env.set(pos, tmk.name, obj);
+                Obj*[uint] caps;
                 foreach (c; tmk.captures) {
-                    tslog!"capturing[%s]"(c);
                     caps[c] = env.getPtr(c);
                 }
 
                 foreach (name, b; tmk.members) {
                     t.members[name] = b.eval(pos, env, [], caps);
                 }
+                stack ~= obj;
             }
             if (tmk.isType)
                 impl!(true, TypeMeta);

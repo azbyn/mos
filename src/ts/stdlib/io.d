@@ -5,34 +5,29 @@ import ts.stdlib.misc : invalidType, invalidArgc, invalidArgcRange;
 import ts.misc;
 import stdd.array;
 
+import com.log;
 //enum types = ["Output"];
 private enum formatChar = '@';
 __gshared private{
     Module attrEnum;
 }
-public:
 void init() {
-    import com.log;
-    tslog("<<init_io>>");
     attrEnum = tsenum!("Attr", ts.misc.Attr);
 }
 Module Attr() { return attrEnum; }
 
-abstract class mod_console {
+abstract class Mod_Console {
 static:
-    /*TypeMeta typeMeta;
-      tsstring type() { return "Output"; }*/
     void setAttr() {
         tsattr();
     }
     void setAttr(tsint flags, tsint fg) {
-        PropSet_Flags(flags);
-        PropSet_Fg(fg);
+        tsattr(cast(ubyte)flags, cast(uint)fg, tsGetBg());
     }
-
     void setAttr(tsint flags, tsint fg, tsint bg) {
         tsattr(cast(ubyte)flags, cast(uint)fg, cast(uint) bg);
     }
+
     tsint Prop_Flags() { return tsGetFlags(); }
     tsint PropSet_Flags(tsint flags) { tsSetFlags(cast(ubyte) flags); return flags; }
 
@@ -45,7 +40,7 @@ static:
     void puts(tsstring s) { tsputs(s); }
     void putnl() { tsputnl(); }
 }
-abstract class mod_color {
+abstract class Mod_Color {
 static:
     tsint Base00() { return colors.base00; }
     tsint Base01() { return colors.base01; }
