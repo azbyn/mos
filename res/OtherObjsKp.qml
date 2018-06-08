@@ -17,8 +17,8 @@ Keypad {
     ]
     quickPerc: 0.1
 
-    sizeX: 3
-    sizeY: 2
+    sizeX: 4
+    sizeY: 3
     perc: 0.108 * sizeY
     btnData: [
         ["λ", function(){
@@ -29,9 +29,50 @@ Keypad {
         }],
         ["[]", function(){ editor.addSquarePair(); back(); }],
         ["{}", function(){ editor.addCurlyPair(); back(); }],
+        ["()", function(){ editor.addParenPair(); back(); }],
 
         ["true",  function(){ editor.addTrue(); back(); }],
         ["false", function(){ editor.addFalse(); back(); }],
         ["nil",   function(){ editor.addNil(); back(); }],
+        ["...",   function(){ editor.addVariadic(); back(); }],
+
+        ["fun", function(){
+            /* fun [](|):
+            */
+            editor.addFun();
+            editor.addLSquare();
+            editor.addRSquare();
+            editor.addLParen();
+            var c = editor.getCursor();
+            editor.addRParen();
+            editor.addColon();
+            editor.setCursorUnsafe(c);
+            back();
+        }],
+        ["prop", function(){
+            /* prop [](|):
+            */
+            editor.addProp();
+            editor.addLSquare();
+            editor.addRSquare();
+            editor.addLParen();
+            var c = editor.getCursor();
+            editor.addRParen();
+            editor.addColon();
+            editor.setCursorUnsafe(c);
+            back();
+        }],
+        ["struct", function(){
+            editor.addStruct();
+            editor.addColon();
+            editor.cursorLeft();
+            back();
+        }],
+        ["module", function(){
+            editor.addModule();
+            editor.addColon();
+            editor.cursorLeft();
+            back();
+        }],
     ]
 }

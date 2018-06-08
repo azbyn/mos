@@ -48,6 +48,12 @@ public slots:
 
     // clang-format off
     void addComma()                      { addToken(TT::Comma); }
+    void addProp()                       { addToken(TT::Prop); }
+    void addElif()                       { addToken(TT::Elif); }
+    void addStruct()                     { addToken(TT::Struct); }
+    void addModule()                     { addToken(TT::Module); }
+    void addImport()                     { addToken(TT::Import); }
+
     void addTrue()                       { addToken(TT::True); }
     void addFalse()                      { addToken(TT::False); }
     void addNil()                        { addToken(TT::Nil); }

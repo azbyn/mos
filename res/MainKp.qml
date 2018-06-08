@@ -20,7 +20,7 @@ Keypad {
     btnData: [
         ["123",            function(){ ep.setCurr(KeypadType.Number); }],
         ['"str"',          function(){ ep.setCurr(KeypadType.String); }],
-        ["true λ\n{} nil", function(){ ep.setCurr(KeypadType.OtherObjs) }],
+        ["true λ\nfun {}", function(){ ep.setCurr(KeypadType.OtherObjs) }],
         ["> + -\n % =",    function(){ ep.setCurr(KeypadType.Operators); }],
 
         ["vars",    function(){ ep.setCurr(KeypadType.Vars); }],
