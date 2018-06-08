@@ -209,9 +209,10 @@ private:
             }
         }
     }
-
+    // statement: stmt | import
     void tryStatement(ref AstNode[] nodes) {
         try {
+            if (import_(nodes)) return;
             nodes ~= stmt();
             while(!contStackIsEmpty) {
                 if (consume(TT.NewLine)) continue;
@@ -256,7 +257,7 @@ private:
     }
 
     // statement: funcDef | prop | return_ | if_ | while_
-    //          | for_ | ctrlFlow | struct_ | import_
+    //          | for_ | ctrlFlow | struct_
     //          | expression '\n'
     AstNode stmt() {
         AstNode n;
@@ -269,7 +270,6 @@ private:
         if (for_(n)) return n;
         if (ctrlFlow(n)) return n;
         if (module_(n)) return n;
-        if (import_(n)) return n;
         //dfmt on
         n = expression();
         require(TT.NewLine);
@@ -289,24 +289,35 @@ private:
         return true;
     }
     // import_: "import" Identifier { "." Identifier } ":" Identifier { "," Identifier }
-    bool import_(out AstNode res) {
+    bool import_(ref AstNode[] nodes) {
         const(Token)* t;
         if (!consume(t, TT.Import))
             return false;
-        tsstring[] module_;
-        tsstring[] symbols;
-
-        module_ ~= requireIdentifier();
+        const(Token)* m;
+        require(m, TT.Identifier);
+        AstNode module_ = astVariable(getPos(m), m.tsstr);
         const(Token)* i;
         while (consume(TT.Dot)) {
-            module_ ~= requireIdentifier();
+            require(m, TT.Identifier);
+            module_ = astMember(getPos(m), module_, m.tsstr);
         }
         require(TT.Colon);
-        symbols ~= requireIdentifier();
-        while (consume(TT.Comma)) {
-            module_ ~= requireIdentifier();
+        void afterColon() {
+            require(m, TT.Identifier);
+            auto pos = getPos(m);
+            auto str =m.tsstr;
+            tsstring x = "x";
+            //prop str(): module_.str
+            //prop str=(x): module_.str = x
+            nodes ~= astPropDef(pos, str,
+                                AstNode.Lambda([], astMember(pos, module_, str)),
+                                AstNode.Lambda([x], astAssign(pos, astVariable(pos, x), astMember(pos, module_, str)))
+                );
         }
-        res = astImport(getPos(t), module_, symbols);
+        afterColon();
+        while (consume(TT.Comma)) {
+            afterColon();
+        }
         return true;
     }
     // ctrlFlow: "break" | "continue"

@@ -13,22 +13,19 @@ class SymbolTable {
     uint[] captures;
     BlockManager man;
     uint[] symbols;
-    //only use uints
-
-    //tsstring[] imports;//???
 
     this(uint[] symbols) {
         this.symbols = symbols;
     }
 
-    this(BlockManager man, uint[] captures = null, uint[] imports = null) {
+    this(BlockManager man, uint[] captures = null) {
         this.captures = captures;
         this.man = man;
         //this.imports = imports;
         //offset = man.addST(this);
     }
-    this(BlockManager man, uint[] captures, uint[] args, uint[] imports) {
-        this(man, captures, imports);
+    this(BlockManager man, uint[] captures, uint[] args) {
+        this(man, captures);
         symbols = args;
     }
     private bool contains(uint val) {
@@ -48,6 +45,7 @@ class SymbolTable {
         uint index;
         if (!man.tryGetIndex(name, index))
             return false;
+        //if (index in imports) return true;
         if (contains(index))
             return true;
         foreach (v; captures) {

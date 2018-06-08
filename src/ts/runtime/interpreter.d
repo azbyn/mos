@@ -202,6 +202,12 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             auto a = pop();
             stack ~= env.setterDef(pos, op.val, a);
         } break;
+        case OPCode.PropDef: {
+            assert(len >= 1);
+            auto set = pop();
+            auto get = pop();
+            stack ~= env.propDef(pos, op.val, get, set);
+        } break;
         case OPCode.GetterDef: {
             assert(len >= 1);
             auto a = pop();

@@ -182,9 +182,13 @@ static this() {
             }
             else static if (m[0..2] != "__") {{
                 enum data = getFuncData!m;
+                static if (m.back() == '_')
+                    enum name = data.name[0..$-1];
+                else
+                    enum name = data.name;
                 Obj o;
                 if (getFun!(module_, m)(o)) {
-                    assignFuncType!(data.ft)(res.members, data.name, o);
+                    assignFuncType!(data.ft)(res.members, name, o);
                 }
             }}
         }

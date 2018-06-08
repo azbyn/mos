@@ -8,7 +8,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "Binary", "Lambda", "Assign", "Subscript", "Member", "And", "Or",
     "If", "While", "For", "Body", "Cmp", "Return", "List", "CtrlFlow", "Dict",
-    "Tuple", "SetterDef", "GetterDef", "Module", "Import"
+    "Tuple", "SetterDef", "GetterDef", "PropDef", "Module",
     ];
 
 class AstNode {
@@ -82,6 +82,11 @@ class AstNode {
         tsstring name;
         AstNode val;
     }
+    struct PropDef {
+        tsstring name;
+        AstNode.Lambda get;
+        AstNode.Lambda set;
+    }
     struct Subscript {
         AstNode val;
         AstNode index;
@@ -146,10 +151,6 @@ class AstNode {
         Lambda[tsstring] methods;
         Lambda[tsstring] getters;
         Lambda[tsstring] setters;
-    }
-    struct Import {
-        tsstring[] module_;
-        tsstring[] symbols;
     }
 
     private static string genVal() {
@@ -225,7 +226,8 @@ class AstNode {
             (Tuple v) { fv(v.val);},
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
-            (Import v) {},
+            (PropDef v) { res ~= v.set.body_.freeVars(bound ~ v.set.params);
+                          res ~= v.get.body_.freeVars(bound ~ v.get.params);},
         )();
 
     }
@@ -284,6 +286,7 @@ class AstNode {
             (Assign v) => format!"assign:%s"(str(v.rvalue, v.lvalue)),
             (SetterDef v) => format!"setterDef %s:%s"(v.name, str(v.val)),
             (GetterDef v) => format!"getterDef %s:%s"(v.name, str(v.val)),
+            (PropDef v) => format!"propAlias %s: %s"(v.name, v.get.body_),
             (Subscript v) => format!"subscript:%s"(str(v.val, v.index)),
             (Member v) => format!"member '%s':%s"(v.member, str(v.val)),
             (And v) => format!"and:%s"(str(v.a, v.b)),
@@ -291,7 +294,6 @@ class AstNode {
             (If v) => format!"if:%s"(str(v.cond, v.body_, v.else_)),
             (While v) => format!"while:%s"(str(v.cond, v.body_)),
             (For v) => format!"for %s, %s:%s"(v.index, v.val, str(v.collection, v.body_)),
-            (Import v) => format!"import %s : %s"(v.module_.joiner("."), v.symbols.joiner(", ") ),
             (Body v) => "body:" ~ str(v.val),
             (List v) => "list:" ~ str(v.val),
             (Tuple v) => "tuple:" ~ str(v.val),

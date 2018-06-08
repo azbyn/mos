@@ -84,4 +84,6 @@ Obj randrange(Pos p, Obj[] args) {
     }
     //dfmt on
 }
-
+tsint hash_(Obj o) {
+    return o.toHash();
+}

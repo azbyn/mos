@@ -21,7 +21,7 @@ struct ModuleMaker {
         this.isType = isType;
         this.name = name;
     }
-    tsstring toString(Pos p, Env e) {
+    tsstring toStr(Pos p, Env e) {
         tsstring res = tsformat!"<typeMaker '%s'>\n"(name);
         res ~= "\nmembers:";
         foreach (n, m; members) {
@@ -59,14 +59,23 @@ class BlockManager {
         mainBlock = new Block(this);
         blocks ~= mainBlock;
     }
-    uint[] getBulk(tsstring[] caps) {
+    uint[] getBulk(tsstring[] caps, string file = __FILE__, size_t line = __LINE__) {
         import stdd.array;
         auto res = uninitializedArray!(uint[])(caps.length);
         foreach (i, c; caps) {
-            res[i] = getIndex(c);
+            res[i] = getIndex(c, file, line);
         }
         return res;
     }
+    uint[] tryGetBulk(tsstring[] caps) {
+        uint[] res;
+        foreach (c; caps) {
+            foreach (i, s; strs)
+                if (s == c) res ~= cast(uint) i;
+        }
+        return res;
+    }
+
     uint[] addBulk(tsstring[] caps) {
         import stdd.array;
         auto res = uninitializedArray!(uint[])(caps.length);

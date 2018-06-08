@@ -15,7 +15,7 @@ qml:
 add () elif prop struct module
 
 dlang:
-nested structs
+test calling static with this
 tuple unpacking ie. (a, b) = (1, 2)
 variadics
 use smarter algorithm for dictionary

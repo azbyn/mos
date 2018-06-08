@@ -24,8 +24,6 @@ enum OPCode {
     Call,
     MemberSet,
     MemberGet,
-    //MemberSetterDef,
-    //MethodCall,
     SubscriptGet,
     SubscriptSet,
     Return,
@@ -35,6 +33,7 @@ enum OPCode {
     Assign,
     SetterDef,
     GetterDef,
+    PropDef,
     MakeList,
     MakeTuple,
     MakeDict,
@@ -169,6 +168,12 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         (AstNode.GetterDef v) {
             ir(v.val);
             bl.addGetterDef(pos, v.name);
+        },
+        (AstNode.PropDef v) {
+            uint[] caps = bl.man.tryGetBulk(v.get.captures);
+            bl.addClosureOrFunc(pos, generateIR(v.get.body_, bl, caps, []));
+            bl.addClosureOrFunc(pos, generateIR(v.set.body_, bl, caps, bl.man.addBulk(v.set.params)));
+            bl.addPropDef(pos, v.name);
         },
         (AstNode.Subscript v) {
             ir(v.val);
@@ -312,10 +317,6 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
                 tm.setters[name] = getBlock(m);
             }
             bl.addModule(pos, tm);
-        },
-        (AstNode.Import v) {
-            assert(0, "NIE");
-            //bl.addImport(pos, v);
         },
     )();
     //dfmt on

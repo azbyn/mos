@@ -43,29 +43,12 @@ class Block {
         this.man = man;
         //man.blocks ~= this;
         this.args = args;
-        _st = new SymbolTable(man, captures, args, []);
+        _st = new SymbolTable(man, captures, args);
     }
-    /*
-    tsstring[] getCaptures(Pos pos, tsstring[] caps) {
-        OffsetVal[] res = uninitializedArray!(OffsetVal[])(caps.length);
-        OffsetVal val;
-        foreach (i, c; caps) {
-            if (st.getName(c, val)) {
-                res[i] = val;
-            }
-            else
-                throw new IRException(pos, format!"Can't capture '%s'"(c));
-        }
-        return res;
-        }*/
 
     void addVal(Pos pos, OPCode code, uint val) {
         ops ~= OP(pos, code, val);
     }
-
-    /*   private void add(Pos pos, OPCode code, ushort argc, uint val) {
-        ops ~= OP(pos, code, 0, argc, val);
-        }*/
     void addClosureOrFunc(Pos pos, Block block) {
         if (block.captures.length == 0)
             addConst(pos, objFunction(block));
@@ -90,23 +73,9 @@ class Block {
     void addVal(Pos pos, OPCode op, ulong val) {
         addVal(pos, op, cast(uint) val);
     }
-/*
-    void addArgc(Pos pos, OPCode op, ushort argc) {
-        add(pos, op, argc, 0);
-    }
-
-    void addArgc(Pos pos, OPCode op, ulong argc) {
-        addArgc(pos, op, cast(ushort) argc);
-    }
-*/
     void addStr(Pos pos, OPCode op, tsstring mem) {
         addVal(pos, op, man.addStr(mem));
     }
-/*
-    void addStr(Pos pos, OPCode op, ulong argc, tsstring mem) {
-        add(pos, op, cast(ushort) argc, str(mem));
-    }
-*/
     void addVariable(Pos pos, tsstring var, string file = __FILE__, size_t line = __LINE__) {
         if (var == "_")
             throw new IRException(pos, "Invalid name '_'");
@@ -120,12 +89,6 @@ class Block {
         else
             throw new IRException(pos, format!"'%s' not defined"(var), file, line);
     }
-    /*
-    OffsetVal addOV(Pos pos, tsstring var) {
-        if (var == "_")
-            throw new IRException(pos, "Invalid name '_'");
-        return st.get(pos, var);
-        }*/
 
     void addConst(Pos pos, Obj val) {
         auto getIndex() {
@@ -139,7 +102,6 @@ class Block {
 
         addVal(pos, OPCode.LoadConst, getIndex());
     }
-
     void addAssign(Pos pos, tsstring var) {
         if (var == "_")
             return;
@@ -155,6 +117,12 @@ class Block {
             return;
         addVal(pos, OPCode.GetterDef, st.addStr(var));
     }
+    void addPropDef(Pos pos, tsstring var) {
+        if (var == "_")
+            return;
+        addVal(pos, OPCode.PropDef, st.addStr(var));
+    }
+
 
     tsstring getStr(size_t i) {
         assert(i < man.strs.length, format!"str %s out of range (%s)"(i, man.strs.length));
@@ -223,7 +191,7 @@ class Block {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
             case OPCode.MakeModule:
-                r ~= tsformat!"(%s)"(man.modules[o.val].toString(p, e));
+                r ~= tsformat!"(%s)"(man.modules[o.val].toStr(p, e));
                 break;
             case OPCode.MakeClosure:
                 r ~= tsformat!"(%s)"(man.blocks[o.val].toStr(p, e));
@@ -238,10 +206,10 @@ class Block {
                 //case OPCode.MethodCall:
             case OPCode.MemberGet:
             case OPCode.MemberSet:
-                /*r ~= tsformat!"(%s)"(man.strs[o.val]);
-                  break;*/
             case OPCode.LoadVal:
             case OPCode.Assign:
+            case OPCode.GetterDef:
+            case OPCode.PropDef:
             case OPCode.SetterDef:
                 r ~= tsformat!"(%s)"(man.getStr(o.val));
                 break;

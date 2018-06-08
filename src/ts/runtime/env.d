@@ -94,6 +94,13 @@ class Env {
         }
         return assignSetter(objs, val, o);
     }
+    Obj propDef(Pos p, uint val, Obj get, Obj set) {
+        if (val in captures) {
+            throw new RuntimeException(p, "can't define alias for captured variable");
+        }
+        return objs[val] = objProperty(get, set);
+    }
+
     import com.log;
 
     TypeMeta getTypeMeta(Pos p, tsstring name, string file =__FILE__, size_t line = __LINE__) {
