@@ -39,6 +39,7 @@ private enum typeDatas = [
     TypeData("Identifier",   "id",        ""         ),
     TypeData("Number",       "num",       ""         ),
     TypeData("String",       "str",       ""         ),
+    TypeData("Variadic",     "...",       ""         ),
     TypeData("Lambda",       "λ",         ""         ),
     TypeData("Arrow",        "->",        ""         ),
     TypeData("LParen",       "(",         ""         ),
@@ -71,11 +72,11 @@ private enum typeDatas = [
     TypeData("BOr",          "|",         "opOr"     ),
     TypeData("Lsh",          "<<",        "opLsh"    ),
     TypeData("Rsh",          ">>",        "opRsh"    ),
-    TypeData("Tilde",        "~",         "opCat"    ),
+    TypeData("Tilde",        "~",         ""         ),
     TypeData("Assign",       "=",         ""         ),
     TypeData("Question",     "?",         ""         ),
     TypeData("Colon",        ":",         ""         ),
-    TypeData("CatEq",        "~=",        "opCat"    ),
+    TypeData("CatEq",        "~=",        ""         ),
     TypeData("PlusEq",       "+=",        "opAdd"    ),
     TypeData("MinusEq",      "-=",        "opSub"    ),
     TypeData("MplyEq",       "*=",        "opMply"   ),
@@ -148,6 +149,7 @@ tsstring toStr(const Token* t) {
     case TT.Identifier: return t.tsstr;
     case TT.Number: return t.tsstr;
     case TT.String: return tsformat!`"%s"`(t.tsstr);
+    case TT.Variadic: return "...";
     case TT.Lambda: return "λ";
     case TT.Arrow: return "->";
     case TT.LParen: return "(";

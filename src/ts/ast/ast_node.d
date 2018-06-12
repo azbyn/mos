@@ -8,7 +8,7 @@ private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "Binary", "Lambda", "Assign", "Subscript", "Member", "And", "Or",
     "If", "While", "For", "Body", "Cmp", "Return", "List", "CtrlFlow", "Dict",
-    "Tuple", "SetterDef", "GetterDef", "PropDef", "Module",
+    "Tuple", "SetterDef", "GetterDef", "PropDef", "Module", "Cat"
     ];
 
 class AstNode {
@@ -53,20 +53,34 @@ class AstNode {
         AstNode func;
         AstNode[] args;
     }
+    /*
+    struct MemberCall {
+        AstNode obj;
+        tsstring name;
+        AstNode[] args;
+        }*/
+
+    struct Cat {
+        AstNode a;
+        AstNode b;
+    }
 
     struct Lambda {
         tsstring[] captures;
         tsstring[] params;
+        bool isVariadic;
         AstNode body_;
-        this(tsstring[] params, AstNode body_) {
+        this(tsstring[] params, AstNode body_, bool isVariadic = false) {
             this.params = params;
             this.captures = body_.freeVars(params);
             this.body_ = body_;
+            this.isVariadic = isVariadic;
         }
-        this(tsstring[] captures, tsstring[] params, AstNode body_) {
+        this(tsstring[] captures, tsstring[] params, AstNode body_, bool isVariadic = false) {
             this.params = params;
             this.captures = captures;
             this.body_ = body_;
+            this.isVariadic = isVariadic;
         }
     }
 
@@ -207,6 +221,7 @@ class AstNode {
             (Nil v) {},
             (Variable v) { add(v.name); },
             (FuncCall v) { fv(v.func); fv(v.args); },
+            //(MemberCall v) { fv(v.obj); fv(v.args); },
             (Binary v) { fv(v.a, v.b); },
             (Lambda v) { res ~= v.body_.freeVars(bound ~ v.params); },
             (Assign v) { fv(v.rvalue, v.lvalue); },
@@ -226,6 +241,7 @@ class AstNode {
             (Tuple v) { fv(v.val);},
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
+            (Cat v) { fv(v.a, v.b); },
             (PropDef v) { res ~= v.set.body_.freeVars(bound ~ v.set.params);
                           res ~= v.get.body_.freeVars(bound ~ v.get.params);},
         )();
@@ -271,6 +287,7 @@ class AstNode {
         }
         //dfmt off
         return indent ~ "-" ~ val.visit!(
+            (Cat v) => format!"cat:%s"(str(v.a, v.b)),
             (Cmp v) => format!"cmp '%s':%s"(v.op.symbolicStr, str(v.a, v.b)),
             (Comma v) => format!"comma:%s"(str(v.a, v.b)),
             (ReverseComma v) => format!"reverseComma:%s"(str(v.a, v.b)),
@@ -280,9 +297,10 @@ class AstNode {
             (Bool v) => format!"bool %s"(v),
             (Nil v) => "nil",
             (Variable v) => format!"variable '%s'"(v.name),
+            //(MemberCall v) => format!"memberCall '%s':%s%s"(v.name, str(v.obj), str(v.args)),
             (FuncCall v) => format!"funcCall:%s%s"(str(v.func), str(v.args)),
             (Binary v) => format!"binary '%s':%s"(v.name, str(v.a, v.b)),
-            (Lambda v) => format!"lambda (%s) [%s]:%s"(v.params.joiner(","), v.captures.joiner(","), str(v.body_)),
+            (Lambda v) => format!"lambda (%s%s) [%s]:%s"(v.params.joiner(","), v.isVariadic?"...":"", v.captures.joiner(","), str(v.body_)),
             (Assign v) => format!"assign:%s"(str(v.rvalue, v.lvalue)),
             (SetterDef v) => format!"setterDef %s:%s"(v.name, str(v.val)),
             (GetterDef v) => format!"getterDef %s:%s"(v.name, str(v.val)),

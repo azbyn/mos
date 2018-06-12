@@ -43,6 +43,7 @@ QString Token::toString() const {
     case Type::Identifier: return val;
     case Type::Number: return val;
     case Type::String: return QString("\"%1\"").arg(val);
+    case Type::Variadic: return "...";
     case Type::Lambda: return "λ";
     case Type::Arrow: return "->";
     case Type::LParen: return "(";
@@ -217,6 +218,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::LParen:
         case TT::RParen:
         case TT::LSquare:
+        case TT::Variadic:
         case TT::RSquare:
         case TT::LCurly:
         case TT::RCurly:
@@ -327,7 +329,12 @@ bool isSpaceBetween(TT t1, TT t2) {
             return false;
         default: return true;
         }
-
+    case TT::Variadic:
+        switch (t1) {
+        case TT::Identifier:
+            return false;
+        default: return true;
+        }
     case TT::Lambda:
         switch (t1) {
         case TT::LParen:

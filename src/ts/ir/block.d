@@ -26,6 +26,7 @@ class Block {
 
     BlockManager man;
     uint[] args;
+    bool isVariadic;
     @property Lib lib() {
         return man.lib;
     }
@@ -39,10 +40,11 @@ class Block {
         _st = new SymbolTable(man);
     }
 
-    this(BlockManager man, uint[] args, uint[] captures) {
+    this(BlockManager man, uint[] args, uint[] captures, bool isVariadic) {
         this.man = man;
         //man.blocks ~= this;
         this.args = args;
+        this.isVariadic = isVariadic;
         _st = new SymbolTable(man, captures, args);
     }
 
@@ -168,7 +170,8 @@ class Block {
     tsstring toStr(Pos p, Env e) {
         tsstring r = "";
         if (args !is null) {
-            r ~= "\nargs: ";
+            r ~= "\nargs:";
+            if (isVariadic) r~= "...";
             foreach (a; args) {
                 r ~= tsformat!"\n%s: %s"(a, man.getStr(a));
             }

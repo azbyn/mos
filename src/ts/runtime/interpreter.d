@@ -49,8 +49,16 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
         return res;
     }
     void jmp(ref size_t pc, size_t pos) {pc = bl.man.jumpTable[pos]-1;}
-    if (bl.args.length != length)
+    if (bl.isVariadic) {
+        auto vlen = bl.args.length -1;
+        if (length < vlen)
+            throw new RuntimeException(initPos, format!"Expected at least %s args, got %s"(bl.args.length, length), file, line);
+        argv = argv[0..vlen] ~ objTuple(argv[vlen..$]);
+        //argv =vargs;
+    }
+    else if (bl.args.length != length) {
         throw new RuntimeException(initPos, format!"Expected %s args, got %s"(bl.args.length, length), file, line);
+    }
     foreach (i, a; bl.args) {
         env.set(initPos, a, argv[i]);
     }
@@ -116,6 +124,12 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
                 case TT.Lt: stack ~= objBool(val < 0); break;
             default: assert(0, "invalid op");
             }
+        } break;
+        case OPCode.Cat: {
+            assert(len >= 2);
+            auto b = pop();
+            auto a = pop();
+            stack ~= objString(a.toStr(pos, env) ~ b.toStr(pos, env));
         } break;
         case OPCode.MemberSet: {
             assert(len >= 2);

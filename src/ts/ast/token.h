@@ -28,6 +28,7 @@ enum class TT {
     Identifier,
     Number,
     String,
+    Variadic,
     Lambda,
     Arrow,
     LParen,
@@ -113,6 +114,7 @@ QColor Token::color(TT prevType, F nextType) const {
     case TT::Indent:
     case TT::Dedent:
     case TT::Comma:
+    case TT::Variadic:
         return colors::Delimiters;
     case TT::True:
     case TT::False:

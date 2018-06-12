@@ -1,6 +1,18 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
 #capture = "k"
 #kp = "kp"
+#fun addAll(a, args...):
+#	res = a
+#	println(args)
+#	return res
+#v = addAll(3, 1, 3, 5)
+#v = (3, 1, 3, 5)
+#iter = v.Iter
+#println(iter);
+for i in (1,2): 1
+	#print(i~" ")
+
+#println(v)
 #fun f[capture](var):
 #	module Foo[capture]:
 #		struct X:
@@ -24,8 +36,8 @@
 
 #prop Pi(): Math.Pi
 #prop Pi=(x): Math.Pi = x
-import Math : cos, Pi
-println(cos(Pi))
+#import Math : cos, Pi
+#println(cos(Pi))
 
 #println(hash(5))
 #println(hash(95))

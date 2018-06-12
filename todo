@@ -10,14 +10,14 @@ linewrap
 misc:
 add good on screen keyboard
 try qvector instead of std::vector
+saves, loads
 
 dlang:
-test calling static with this
 tuple unpacking ie. (a, b) = (1, 2)
 variadics
 use smarter algorithm for dictionary
+spacing in dlang output error
+?slices
 ?pass
-spacing in dlang output
-opCat no overloads only string concatenation (like perl5's '.')
-import x : *
+?import x : *
 ?del keyword

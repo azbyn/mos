@@ -13,8 +13,8 @@ struct Function {
         this.val = val;
     }
 
-    Obj opCall(Pos pos, Env env, Obj[] args,string file =__FILE__, size_t line = __LINE__) {
-        return val.eval(pos, env, args, null, file,line);
+    Obj opCall(Pos pos, Env env, Obj[] args, string file =__FILE__, size_t line = __LINE__) {
+        return val.eval(pos, env, args, null, file, line);
     }
 static:
     TypeMeta typeMeta;

@@ -148,6 +148,8 @@ private:
         case TT.Le:
         case TT.Ge: return astCmp(pos, type, a, b);
         case TT.Ne: return unary(pos, TT.Not, binary(pos, TT.Eq, a, b));
+        case TT.Tilde: 
+        case TT.CatEq: return astCat(pos, a, b);
         default: return astBinary(pos, type.binaryFunctionName, a, b);
         }
         //dfmt on
@@ -329,7 +331,7 @@ private:
         return true;
     }
 
-    // funcParams: Identifier [ "," cont [funParams]] Terminator
+    // funcParams: Identifier [ "," cont [funParams]] terminator
     void funcParams(TT terminator, ref tsstring[] args) {
         const(Token)* p;
         while (!is_(TT.Eof, terminator)) {
@@ -342,7 +344,26 @@ private:
         cont();
         require(terminator);
     }
-    // captures: [ "[" cont funcParams cont "]" ]
+    // funcParams: Identifier [ "," cont [funParams]] [terminator2] terminator
+    bool funcParams2(TT terminator, TT terminator2, ref tsstring[] args) {
+        const(Token)* p;
+        bool res = false;
+        while (!is_(TT.Eof, terminator)) {
+            cont();
+            require(p, TT.Identifier);
+            args ~= p.tsstr;
+            if (!consume(TT.Comma)) {
+                res = consume(terminator2);
+                tslog!"fparams %s"(res);
+                break;
+            }
+        }
+        cont();
+        require(terminator);
+        return res;
+    }
+
+    // captures: [ "[" funcParams "]" ]
     tsstring[] captures() {
         tsstring[] res;
         if (consume(TT.LSquare)) {
@@ -409,7 +430,7 @@ private:
         return true;
     }
 
-    // funcDef: "fun" Identifier captures "(" funcParams ")" ":" body_
+    // funcDef: "fun" Identifier captures "(" funcParams ["..."] ")" ":" body_
     bool funcDef(out AstNode res) {
         tsstring name;
         AstNode.Lambda val;
@@ -432,9 +453,12 @@ private:
         cont();
         require(TT.LParen);
         tsstring[] params;
-        funcParams(TT.RParen, params);
+        bool isVariadic = funcParams2(TT.RParen, TT.Variadic, params);
+        if (isVariadic && params.length == 0) {
+            throw new ParserException(p, format!"Cant have variadic function with 0 parameters");
+        }
         require(TT.Colon);
-        res = AstNode.Lambda(caps, params, body_());
+        res = AstNode.Lambda(caps, params, body_(), isVariadic);
         return true;
     }
     // if_: "if" expression ":" body_ {"\n"} {"elif" expression ":" body_ {"\n"} } [ "else" ":" body_ ]
@@ -735,7 +759,7 @@ private:
         }
         return a;
     }
-    // lambda: "λ" { Identifier cont } | Identifier "->" cont expression
+    // lambda: "λ" { Identifier cont } ["..."] "->" cont expression
     //       | term
     AstNode lambda() {
         const(Token)* t;
@@ -743,6 +767,7 @@ private:
             AstNode res;
             return term();
         }
+        auto p = getPos(t);
         tsstring[] params;
         const(Token)* id;
         while (!is_(TT.Arrow, TT.Eof)) {
@@ -750,10 +775,15 @@ private:
             cont();
             params ~= id.tsstr;
         }
+        bool isVariadic = consume(TT.Variadic);
+        if (isVariadic && params.length == 0) {
+            throw new ParserException(p, format!"Cant have variadic lambda with 0 parameters");
+        }
+
         require(TT.Arrow);
         cont();
 
-        return astLambda(getPos(t), params, expression());
+        return astLambda(p, params, expression(), isVariadic);
     }
     // pair: expression ":" cont expressionNoComma
     // term: "(" cont expression cont {"," cont expression} ")"

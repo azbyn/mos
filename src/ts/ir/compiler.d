@@ -41,6 +41,7 @@ enum OPCode {
     MakeModule,
     Jmp,
     Cmp,
+    Cat,
     Binary,
     JmpIfTrueOrPop, // if (prev) { jmp } else { pop }
     JmpIfFalseOrPop, // if (!prev) { jmp } else { pop }
@@ -59,15 +60,15 @@ struct OP {
     }
 }
 
-Block generateIR(AstNode n, Block parent, tsstring[] captures, tsstring[] args) {
-    return generateIR(n, parent, parent.man.getBulk(captures), parent.man.addBulk(args));
+Block generateIR(AstNode n, Block parent, tsstring[] captures, tsstring[] args, bool isVariadic) {
+    return generateIR(n, parent, parent.man.getBulk(captures), parent.man.addBulk(args), isVariadic);
 }
 
-Block generateIR(AstNode n, Block parent, uint[] captures, uint[] args) {
+Block generateIR(AstNode n, Block parent, uint[] captures, uint[] args, bool isVariadic) {
     assert(parent);
     assert(parent.man);
     //assert(parent.man);
-    Block bl = new Block(parent.man, args, captures);
+    Block bl = new Block(parent.man, args, captures, isVariadic);
     if (auto body_ = n.val.peek!(AstNode.Body)){
         foreach (node; body_.val) {
             nodeIR(node, bl);
@@ -138,7 +139,7 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.addStr(pos, OPCode.Binary, v.name);
         },
         (AstNode.Lambda v) {
-            auto block = generateIR(v.body_, bl, v.captures, v.params);
+            auto block = generateIR(v.body_, bl, v.captures, v.params, v.isVariadic);
             bl.addClosureOrFunc(pos, block);
         },
         (AstNode.Assign v) {
@@ -171,8 +172,8 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         },
         (AstNode.PropDef v) {
             uint[] caps = bl.man.tryGetBulk(v.get.captures);
-            bl.addClosureOrFunc(pos, generateIR(v.get.body_, bl, caps, []));
-            bl.addClosureOrFunc(pos, generateIR(v.set.body_, bl, caps, bl.man.addBulk(v.set.params)));
+            bl.addClosureOrFunc(pos, generateIR(v.get.body_, bl, caps, [], false));
+            bl.addClosureOrFunc(pos, generateIR(v.set.body_, bl, caps, bl.man.addBulk(v.set.params), false));
             bl.addPropDef(pos, v.name);
         },
         (AstNode.Subscript v) {
@@ -283,6 +284,12 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             ir(v.b);
             bl.addVal(pos, OPCode.Cmp, cast(int)v.op);
         },
+        (AstNode.Cat v) {
+            ir(v.a);
+            ir(v.b);
+            bl.add(pos, OPCode.Cat);
+        },
+
         (AstNode.Return v) {
             ir(v.val);
             bl.add(pos, OPCode.Return);
@@ -301,11 +308,11 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             uint struct_ = bl.st.addStr(v.name);
 
             Block getBlock(AstNode.Lambda l) {
-                return generateIR(l.body_, bl, bl.man.getBulk(l.captures) ~ struct_, bl.man.addBulk(l.params));
+                return generateIR(l.body_, bl, bl.man.getBulk(l.captures) ~ struct_, bl.man.addBulk(l.params), l.isVariadic);
             }
             tm.captures = bl.man.getBulk(v.captures) ~ struct_;
             foreach (name, m; v.members) {
-                tm.members[name] = generateIR(m, bl, tm.captures, []);
+                tm.members[name] = generateIR(m, bl, tm.captures, [], false);
             }
             foreach (name, m; v.methods) {
                 tm.methods[name] = getBlock(m);

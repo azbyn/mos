@@ -47,6 +47,7 @@ public slots:
     void addNewLine();
 
     // clang-format off
+    void addVariadic()                   { addToken(TT::Variadic); }
     void addComma()                      { addToken(TT::Comma); }
     void addProp()                       { addToken(TT::Prop); }
     void addElif()                       { addToken(TT::Elif); }

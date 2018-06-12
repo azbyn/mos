@@ -48,6 +48,7 @@ struct Lexer {
                     continue;
                 }
                 if (pat(",", TT::Comma)) continue;
+                if (pat("...", TT::Variadic)) continue;
                 if (pat(".", TT::Dot)) continue;
                 if (regex("^0[xbo][0-9A-Fa-f]+", TT::Number)) continue;
                 if (regex("^[0-9]*\\.[0-9]+", TT::Number)) continue;

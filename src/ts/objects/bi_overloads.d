@@ -11,14 +11,16 @@ struct BIOverloads {
         this.val = val;
     }
 
-    Obj opCall(Pos pos, Env env, Obj[] a) {
+    Obj opCall(Pos pos, Env env, Obj[] a, string file = __FILE__, size_t line = __LINE__) {
         if (auto v = val.get(cast(int) a.length, null)) {
             return v(pos, env, a);
         }
         if (auto v = val.get(-1, null)) {
             return v(pos, env, a);
         }
-        throw new RuntimeException(pos, format!"no overload takes %s args"(a.length));
+        string s = "";
+        foreach (a, _; val) s ~= format!"%d, "(a);
+        throw new RuntimeException(pos, format!"no overload takes %s args (only %s)"(a.length, s), file, line);
     }
 static:
     TypeMeta typeMeta;
