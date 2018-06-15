@@ -145,7 +145,7 @@ foreach my $f (@d_files) {
     if (begins_with($f, "src/stdd")) {
         $stdd_objs .= "$f.o \\\n";
     } elsif (begins_with($f, "src/ts/stdlib") or
-             $f eq "src/ts/builtin.d") {
+             $f eq "src/ts/imported.d") {
         #print STDOUT "got $f\n";
         $stdlib_objs .= "$f.o \\\n";
     } else {
@@ -163,7 +163,8 @@ NDK     := ~/Android/dlang/android-ndk-r16b
 CC      := \$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin/clang
 RTDIR   := /home/azbyn/Android/dlang/ldc-build-runtime.tmp
 
-DC := ~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
+DC := ldc2
+#~/Android/dlang/ldc2-1.8.0-linux-x86_64/bin/ldc2
 #~/Git/Calypso/build/bin/ldc2
 #~/Git/ldc/build/bin/ldc2
 
@@ -185,8 +186,8 @@ END
 
 print <<"END";
 .PHONY: clean
-clean: stdlibclean
-	\@rm -vf \$(REST_OBJS)
+clean:
+	\@rm -vr src/ts/
 stdlibclean:
 	\@rm -vf \$(STDLIB_OBJS)
 stddclean:

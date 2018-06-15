@@ -33,4 +33,14 @@ class Lib {
     tsstring getName(size_t i){
         return names[i];
     }
+    void append(Obj[tsstring] map) {
+        foreach (n, o; map) {
+            size_t r;
+            assert(!get(n, r), format!"'%s' already exists in lib"(n));
+
+            names ~= n;
+            objs ~= o;
+        }
+
+    }
 }

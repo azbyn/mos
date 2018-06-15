@@ -3,8 +3,34 @@ module ts.objects.property;
 import ts.objects.obj;
 import stdd.format;
 
+mixin TSModule!(ts.objects.property);
+
 import com.log;
-struct Property {
+private alias Method = Obj delegate(Obj) @system;
+@tsexport struct PropertyMember {
+    Method get = null;
+    Method set = null;
+
+    this (Method get, Method set) {
+        this.get = get;
+        this.set = set;
+    }
+    Obj callGet(Pos p, Env e, Obj this_) {
+        if (!get)
+            throw new RuntimeException(p, "property doesn't have a getter");
+        return get(this_).call(p, e);
+    }
+    Obj callSet(Pos p, Env e, Obj this_, Obj val) {
+        if (!set)
+            throw new RuntimeException(p, "property doesn't have a setter");
+
+        return set(this_).call(p, e, val);
+    }
+static:
+    __gshared TypeMeta typeMeta;
+    enum tsstring type = "property_member";
+}
+@tsexport struct Property {
     Obj get = null;
     Obj set = null;
     this(Obj get, Obj set) {
@@ -22,50 +48,19 @@ struct Property {
 
         return set.call(p, e, val);
     }
-    Obj callGetMember(Pos p, Env e, Obj self) {
-        if (!get)
-            throw new RuntimeException(p, "property doesn't have a getter");
-        return get.call(p, e, self);
-    }
-    Obj callSetMember(Pos p, Env e, Obj self, Obj val) {
-        if (!set)
-            throw new RuntimeException(p, "property doesn't have a setter");
-
-        return set.call(p, e, self, val);
-    }
 
 static:
-    TypeMeta typeMeta;
-    tsstring type() { return "property"; }
+    __gshared TypeMeta typeMeta;
+    enum tsstring type = "property";
 }
 
-Obj assignSetter(ref Obj[] arr, size_t index, Obj val) {
-    Property* p;
-    assert(index < arr.length);
-    if (arr[index] !is null && (p = arr[index].peek!Property) !is null) {
-        return p.set = val;
-    }
-    return arr[index] = objProperty(null, val);
-}
 Obj assignSetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
     Property* p;
     Obj* ptr = index in arr;
     if (ptr !is null && (p = ptr.peek!Property) !is null) {
         return p.set = val;
     }
-    return arr[index] = objProperty(null, val);
-}
-
-Obj assignGetter(ref Obj[] arr, size_t index, Obj val) {
-    assert(index < arr.length);
-    //tslog!"getter on [%s] , %s"(index, arr.length);
-    if (arr[index] !is null) {
-        Property* p = arr[index].peek!Property;
-        if (p !is null) {
-            return p.get = val;
-        }
-    }
-    return arr[index] = objProperty(val, null);
+    return arr[index] = obj!Property(null, val);
 }
 Obj assignGetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
     Property* p;
@@ -73,7 +68,7 @@ Obj assignGetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
     if (ptr !is null && (p = ptr.peek!Property) !is null) {
         return p.get = val;
     }
-    return arr[index] = objProperty(val, null);
+    return arr[index] = obj!Property(val, null);
 }
 Obj assignFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Obj val) {
     static if (ft == FuncType.Getter) {
@@ -86,3 +81,35 @@ Obj assignFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Obj val)
         return arr[index] = val;
     }
 }
+
+
+Obj assignMemberSetter(Index)(ref Obj[Index] arr, Index index, Method val) {
+    PropertyMember* p;
+    Obj* ptr = index in arr;
+    if (ptr !is null && (p = ptr.peek!PropertyMember) !is null) {
+        p.set = val;
+        return nil;
+    }
+    return arr[index] = obj!PropertyMember(null, val);
+}
+Obj assignMemberGetter(Index)(ref Obj[Index] arr, Index index, Method val) {
+    PropertyMember* p;
+    Obj* ptr = index in arr;
+    if (ptr !is null && (p = ptr.peek!PropertyMember) !is null) {
+        p.get = val;
+        return nil;
+    }
+    return arr[index] = obj!PropertyMember(val, null);
+}
+Obj assignMemberFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Method val) {
+    static if (ft == FuncType.Getter) {
+        return assignMemberGetter(arr, index, val);
+    }
+    else static if (ft == FuncType.Setter) {
+        return assignMemberSetter(arr, index, val);
+    }
+    else {
+        return arr[index] = obj!BIMethodMaker(val);
+    }
+}
+

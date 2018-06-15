@@ -109,16 +109,16 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.add(pos, OPCode.Pop);
         },
         (AstNode.String v) {
-            bl.addConst(pos, objString(v.val));
+            bl.addConst(pos, obj!String(v.val));
         },
         (AstNode.Float v) {
-            bl.addConst(pos, objFloat(v));
+            bl.addConst(pos, obj!Float(v));
         },
         (AstNode.Int v) {
-            bl.addConst(pos, objInt(v));
+            bl.addConst(pos, obj!Int(v));
         },
         (AstNode.Bool v) {
-            bl.addConst(pos, objBool(v));
+            bl.addConst(pos, obj!Bool(v));
         },
         (AstNode.Nil v) {
             bl.addNil(pos);

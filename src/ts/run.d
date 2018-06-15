@@ -5,7 +5,7 @@ import ts.ast.ast_node;
 import ts.ast.parser;
 import ts.misc;
 import ts.stdlib;
-import ts.builtin;
+import ts.imported : stdlib;
 import ts.ir.lib;
 import ts.ir.compiler;
 import ts.runtime.interpreter;
@@ -41,7 +41,7 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
     }
     //try {
         tslog("\nIR");
-        Lib lib = stdlib();
+        Lib lib = stdlib;
         auto man = generateIR(p.nodes, lib);
         Env e;
         auto res = man.evalDbg(e);

@@ -1,13 +1,14 @@
 module ts.objects.user_defined;
 import ts.objects.obj;
 
+mixin TSModule!(ts.objects.user_defined);
 
-struct UserDefined {
-    tsstring name;
+@tsexport struct UserDefined {
+    //tsstring name;
     Obj base;
 
 static:
-    TypeMeta typeMeta;
-    tsstring type() { return "__user_defined__"; }
-    Obj Base(UserDefined* v) { return v.base; }
+    //TypeMeta typeMeta;
+    enum tsstring type = "__user_defined__";
+    @tsexport Obj Base(UserDefined* v) { return v.base; }
 }

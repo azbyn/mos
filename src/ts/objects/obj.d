@@ -8,39 +8,60 @@ import stdd.format;
 
 public import ts.ast.token;
 public import ts.runtime.env;
-public import ts.builtin;
+public import ts.imported;
 public import ts.misc : FuncType;
 public import ts.objects.type_meta;
+public import ts.types;
 public import ts.stdlib;
 
-public import stdd.variant;
+//stop the compiler from complaining
+public import stdd.format : format;
+public import stdd.conv : to;
 
-enum types = [
-    "Nil", "Function", "Closure", "BIFunction", "BIOverloads", "Int", "Float",
-    "Bool", "String", "List", "ListIter", "Dict", "DictIter", "Range", "Tuple_",
-    "TupleIter", "Property", "TypeMeta", "UserDefined", "Module",
-    ] ~ ts.stdlib.types;
 
+import stdd.variant : VariantN;
 
 class RuntimeException : TSException {
     this(Pos pos, string msg, string file = __FILE__, size_t line = __LINE__) {
         super(pos, msg, file, line);
     }
 }
+enum objSize = (void*).sizeof * 4;
+/*version (D_LP64) { 
+    enum objSize = 32;
+}
+else {
+    enum objSize = 16;
+    }*/
 
+import com.log;
+Obj obj(T, A...)(A args) {
+    return new Obj(&T.typeMeta, T(args));
+}
+//enum types = 
 class Obj {
+    /*
     private static string genVal() {
         string r = "Algebraic!(";
         static foreach (t; types)
             r ~= t ~ ",";
         return r ~ ") val;";
-    }
-
-    mixin(genVal());
-    this(tsstring s) {
+        }*/
+    TypeMeta* typeMeta;
+    @property tsstring typestr() { return typeMeta.name; }
+    VariantN!objSize val;
+    //mixin(genVal());
+    /*
+    this(tsstring type, tsstring s) {
         this.val = String(s);
+        }*/
+    import stdd.traits : isSomeString, fullyQualifiedName;
+    this(T)(T val) if (!is(T == UserDefined) && !isSomeString!T) {
+         this(&T.typeMeta, val);
     }
-    this(T)(T val) {
+    this(T)(TypeMeta* typeMeta, T val) {
+        this.typeMeta = typeMeta;
+        tslog!"<<NEW '%s' aka %s"(typeMeta.name, typestr);
         this.val = val;
     }
 
@@ -48,14 +69,14 @@ class Obj {
         return val.toHash();
     }
     private static auto getName(T)() {
-        static if ( __traits(compiles, "T.type"))
+        static if (__traits(hasMember, T, "type"))
             return T.type;
-        else return typeid(T);
+        else return fullyQualifiedName!T;
     }
     T* getPtr(T)(Pos pos) {
         auto a = val.peek!T;
         if (a is null)
-            throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, type()));
+            throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, typestr));
         return a;
     }
 
@@ -72,56 +93,69 @@ class Obj {
         else {
             auto a = val.peek!T;
             if (a is null)
-                throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, type()));
+                throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, typestr));
             return *a;
         }
     }
+    bool isNil() {
+        return val.peek!(Nil) !is null;
+    }
+    bool is_(T)() {
+        return val.peek!(T) !is null;
+    }
+    T* peek(T)() {
+        return val.peek!(T);
+    }
+    /*
     private T memberCallCast(T)(tsstring s, Pos p, Env e, Obj[] args...) {
-        return member(p, e, s).call(p, e, args).get!T(p);
+        return member(p, e, s).callThis(p, this).call(p, e, args).get!T(p);
+        }*/
+    private Obj callThis(Pos p, Obj this_) {
+        return get!BIMethodMaker(p).callThis(this_);
     }
 
     override string toString() {
         throw new Exception("please use toStr", __FILE__, __LINE__);
     }
     tsstring toStr(Pos p, Env e) {
-        return memberCallCast!tsstring("toString", p, e, this);
+        return memberCallCast!tsstring("toString", p, e);
     }
 
     bool toBool(Pos p, Env e) {
-        return memberCallCast!bool("toBool", p, e, this);
+        return memberCallCast!bool("toBool", p, e);
     }
     bool equals(Pos p, Env e, Obj other) {
-        return memberCallCast!bool("opEquals", p, e, this, other);
+        return memberCallCast!bool("opEquals", p, e, other);
     }
     tsint cmp(Pos p, Env e, Obj other) {
-        auto f = e.tryMember(p, this, "opCmp");
+        auto f = typeMeta.tryMember("opCmp");
         if (f !is null) {
-            auto r = f.call(p, e, this, other);
+            auto r = f.callThis(p, this).call(p, e, other);
             if (!r.isNil())
                 return r.get!tsint(p);
         }
-        f = e.tryMember(p, other, "opCmpR");
+        f = other.typeMeta.tryMember("opCmpR");
         if (f !is null) {
-            auto r = f.call(p, e, other, this);
+            auto r = f.callThis(p, this).call(p, e, other);
             if (!r.isNil())
                 return -r.get!tsint(p);
         }
-        throw new TypeException(p, format!"Binary 'opCmp', not overloaded for type %s"(type()));
+        throw new TypeException(p, format!"Binary 'opCmp', not overloaded for type %s"(typestr));
     }
     Obj binary(Pos p, Env e, tsstring op, Obj other) {
-        auto f = e.tryMember(p, this, op);
+        auto f = typeMeta.tryMember(op);
         if (f !is null) {
-            auto r = f.call(p, e, this, other);
+            auto r = f.callThis(p, this).call(p, e, other);
             if (!r.isNil())
                 return r;
         }
-        f = e.tryMember(p, other, op~"R");
+        f = other.typeMeta.tryMember(op~"R");
         if (f !is null) {
-            auto r = f.call(p, e, other, this);
+            auto r = f.callThis(p, other).call(p, e, this);
             if (!r.isNil())
                 return r;
         }
-        throw new TypeException(p, format!"Binary '%s', not overloaded for type %s"(op, type()));
+        throw new TypeException(p, format!"Binary '%s', not overloaded for type %s"(op, typestr));
     }
     Obj binary(tsstring op)(Pos pos, Env env, Obj other) {
         enum name = symbolicToTT(op).binaryFunctionName;
@@ -135,49 +169,68 @@ class Obj {
             if (prop !is null) a = prop.callGet(p, e);
         }
         //dfmt off
-        return val.tryVisit!(
+        return this.visitO!(
             (Function f) => f(p, e, args),
             (Closure f) => f(p, e, args),
             (BIFunction f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
+            (BIClosure f) => f(p, e, args),
+            (BIMethodOverloads f) => f(p, e, args),
             (TypeMeta t) => t.construct(p, e, args),
             //() => member(p, "opCall").call(p, e, args)
-            () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(type))
-        )();
+            () => throwRtrn!(Obj, RuntimeException)(p, format!"Expected function, found %s"(typestr))
+        );
         //dfmt on
     }
+    Obj getMember(Pos p, Env e, tsstring m) {
+        return member(p, e, m);
+    }
+
+    Obj setMember(Pos p, Env e, tsstring m, Obj val) {
+        return typeMeta.setMember(p, e, this, m, val);
+    }
     Obj member(Pos p, Env e, tsstring m) {
-        return e.getMember(p, this /* type*/, m);
+        return typeMeta.getMember(p, e, this, m);
+//return e.getMember(p, this /* type*/, m);
     }
-    @property tsstring type() {
-        string gen() {
-            auto r = "val.visit!(";
-            static foreach (t; types) {
-                static if (t == "UserDefined")
-                    r ~= format!"(UserDefined v) => v.name,";
-                else
-                    r ~= format!"(%s v) => %s.type(),"(t,t);
-            }
-            return r ~ ")";
-        }
-        return mixin(gen());
+    Obj memberCall(Pos p, Env e, tsstring m, Obj[] args...) {
+        return member(p,e,m).call(p,e, args);
     }
-    bool isNil() {
-        return val.peek!(Nil) !is null;
-    }
-    bool is_(T)() {
-        return val.peek!(T) !is null;
-    }
-    T* peek(T)() {
-        return val.peek!(T);
+    private T memberCallCast(T)(tsstring m, Pos p, Env e, Obj[] args...) {
+        return memberCall(p, e, m, args).get!T(p);
     }
 
 }
 
-static foreach (t; types)
-    mixin(format!`Obj obj%s(A...)(A args) {
-                      return new Obj(%s(args));
-                  }`(t[$-1] =='_'? t[0..$-1]: t, t));
+auto visitO(Handler...)(Obj o) if (Handler.length > 0) {
+    import stdd.traits;
+    static foreach (h; Handler) {{
+        static assert(isSomeFunction!h);
+
+        alias Params = Parameters!h;
+        static if (Params.length == 0) {
+            return h();
+        }
+        else {
+            static assert(Params.length == 1);
+            alias P = Params[0];
+            static if (isPointer!P) {
+                if (P p = o.val.peek!(PointerTarget!P)) return h(p);
+            } else {
+                if (P* p = o.val.peek!P) return h(*p);
+            }
+        }
+    }}
+    assert(0, "please add a visit with no parameters");
+}
+auto visitO(Handler...)(Obj* o) if (Handler.length > 0) {
+    return visitO!(Handler)(*o);
+}
+/*
+R visitR(R, Handler...)(Obj o) if (Handler.length > 0) {
+    return visitO!(Handler)(o);
+    }*/
+
 unittest {
     import stdd.stdio;
 
@@ -186,3 +239,4 @@ unittest {
     writeln(Nil.toString);
     assert(Nil.toString() == "nil");
 }
+

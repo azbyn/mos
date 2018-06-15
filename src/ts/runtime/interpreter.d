@@ -4,7 +4,6 @@ import ts.ast.token;
 import ts.ir.block;
 import ts.ir.block_manager;
 import ts.ir.compiler;
-import ts.builtin;
 import ts.runtime.env;
 import ts.objects.obj;
 import ts.objects.property;
@@ -30,7 +29,7 @@ public Obj evalDbg(BlockManager man, out Env e) {
 }
 
 Obj checkGetter(Obj x, Pos pos, Env env) {
-    return x.val.tryVisit!(
+    return x.visitO!(
         (Property p) => p.callGet(pos, env),
         () => x);
 }
@@ -53,7 +52,7 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
         auto vlen = bl.args.length -1;
         if (length < vlen)
             throw new RuntimeException(initPos, format!"Expected at least %s args, got %s"(bl.args.length, length), file, line);
-        argv = argv[0..vlen] ~ objTuple(argv[vlen..$]);
+        argv = argv[0..vlen] ~ obj!Tuple(argv[vlen..$]);
         //argv =vargs;
     }
     else if (bl.args.length != length) {
@@ -118,10 +117,10 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             auto a = pop();
             auto val = a.cmp(pos, env, b);
             switch (cast(TT) op.val) {
-                case TT.Ge: stack ~= objBool(val >= 0); break;
-                case TT.Le: stack ~= objBool(val <= 0); break;
-                case TT.Gt: stack ~= objBool(val > 0); break;
-                case TT.Lt: stack ~= objBool(val < 0); break;
+                case TT.Ge: stack ~= obj!Bool(val >= 0); break;
+                case TT.Le: stack ~= obj!Bool(val <= 0); break;
+                case TT.Gt: stack ~= obj!Bool(val > 0); break;
+                case TT.Lt: stack ~= obj!Bool(val < 0); break;
             default: assert(0, "invalid op");
             }
         } break;
@@ -129,46 +128,33 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
-            stack ~= objString(a.toStr(pos, env) ~ b.toStr(pos, env));
+            stack ~= obj!String(a.toStr(pos, env) ~ b.toStr(pos, env));
         } break;
         case OPCode.MemberSet: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
             auto val = bl.getStr(op.val);
-            Obj setterErr(Obj o) {
-                throw new RuntimeException(pos, format!"%s doesn't have a setter"(val));
-            }
-            stack ~= env.getMember2(pos, a, val, "opFwdSet",
-                                 (Obj f) => f.val.tryVisit!(
-                                     (Property p) => p.callSetMember(pos, env, a, b),
-                                     () => setterErr(f)),
-                                 (Obj f) => f.call(pos, env, a, objString(val), b));
+            stack ~= a.setMember(pos, env, val, b);
         } break;
         case OPCode.MemberGet: {
             assert(len >= 1);
             auto a = pop();
             auto val = bl.getStr(op.val);
-            stack ~= env.getMember2(pos, a, val, "opFwd",
-                                (Obj f) =>f.val.tryVisit!(
-                                     (Property p) => p.callGetMember(pos, env, a),
-                                     () => f),
-                                (Obj f) => f.call(pos, env, a, objString(val)));
+            stack ~= a.member(pos, env, val);
         } break;
         case OPCode.SubscriptGet: {
             assert(len >= 2);
             auto b = pop();
             auto a = pop();
-            stack ~= env.getMember_(pos, a, "opIndex")
-                .call(pos, env, a, b);
+            stack ~= a.memberCall(pos, env, "opIndex", b);
         } break;
         case OPCode.SubscriptSet: {
             assert(len >= 3);
             auto c = pop();
             auto b = pop();
             auto a = pop();
-            stack ~= env.getMember_(pos, a, "opIndexSet")
-                .call(pos, env, a, b, c);
+            stack ~= a.memberCall(pos, env, "opIndexSet", b, c);
         } break;
         case OPCode.Return: {
             assert(len >= 1);
@@ -189,22 +175,22 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             foreach (c; b.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= objClosure(b, caps);
+            stack ~= obj!Closure(b, caps);
         } break;
         case OPCode.MakeList: {
             assert(len >= op.val);
             auto args = popN(op.val);
-            stack ~= objList(args);
+            stack ~= obj!List(args);
         } break;
         case OPCode.MakeTuple: {
             assert(len >= op.val);
             auto args = popN(op.val);
-            stack ~= objTuple(args);
+            stack ~= obj!Tuple(args);
         } break;
         case OPCode.MakeDict: {
             assert(len >= op.val);
             auto args = popN(op.val);
-            stack ~= objDict(args);
+            stack ~= obj!Dict(args);
         } break;
         case OPCode.Assign: {
             assert(len >= 1);
@@ -262,15 +248,15 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
         case OPCode.MakeModule: {
             auto tmk = bl.man.modules[op.val];
             void impl(bool isType, T)() {
-                Obj obj = new Obj(T(tmk.name));
-                T* t = obj.peek!T;
+                Obj o = new Obj(T(tmk.name));
+                T* t = o.peek!T;
                 Obj funcOrClosure(Block b) {
-                    if (b.captures.length == 0) return objFunction(b);
+                    if (b.captures.length == 0) return obj!Function(b);
                     Obj*[uint] caps;
                     foreach (c; b.captures) {
                         caps[c] = env.getPtr(c);
                     }
-                    return objClosure(b, caps);
+                    return obj!Closure(b, caps);
                 }
                 foreach (name, b; tmk.methods) {
                     static if (isType) {
@@ -286,19 +272,19 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
                 }
                 static if (isType) {
                     import ts.objects.user_defined;
-                    t.members["base"] = objProperty(
-                        objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
-                        objBIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
+                    t.members["base"] = obj!Property(
+                        obj!BIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
+                        obj!BIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
                 }
                 foreach (name, b; tmk.getters) {
-                    assignFuncType!(FuncType.Getter)(t.members, name, objFunction(b));
+                    assignFuncType!(FuncType.Getter)(t.members, name, obj!Function(b));
                 }
                 foreach (name, b; tmk.setters) {
-                    assignFuncType!(FuncType.Setter)(t.members, name, objFunction(b));
+                    assignFuncType!(FuncType.Setter)(t.members, name, obj!Function(b));
                 }
                 // this must be done now because members might be self-referential
                 tslog("set MODULE");
-                env.set(pos, tmk.name, obj);
+                env.set(pos, tmk.name, o);
                 Obj*[uint] caps;
                 foreach (c; tmk.captures) {
                     caps[c] = env.getPtr(c);
@@ -307,7 +293,7 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
                 foreach (name, b; tmk.members) {
                     t.members[name] = b.eval(pos, env, [], caps);
                 }
-                stack ~= obj;
+                stack ~= o;
             }
             if (tmk.isType)
                 impl!(true, TypeMeta);

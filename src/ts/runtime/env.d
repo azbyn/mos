@@ -10,12 +10,12 @@ import stdd.format : format;
 import ts.misc : tsformat;
 
 private Obj checkGetter(Obj x, Pos pos, Env env) {
-    return x.val.tryVisit!(
+    return x.visitO!(
         (Property p) => p.callGet(pos, env),
         () => x);
 }
 private Obj checkGetter(Obj* x, Pos pos, Env env) {
-    return x.val.tryVisit!(
+    return x.visitO!(
         (Property p) => p.callGet(pos, env),
         () => *x);
 }
@@ -23,7 +23,7 @@ private Obj checkGetter(Obj* x, Pos pos, Env env) {
 private Obj checkSetter(Obj* x, Pos pos, Env env, Obj val) {
     if (*x is null)
         return *x = val;
-    return x.val.tryVisit!(
+    return x.visitO!(
         (Property p) => p.callSet(pos, env, val),
         () => *x = val);
 }
@@ -56,7 +56,6 @@ class Env {
             return ptr.checkGetter(p, this);
         if (auto o = captures.get(val, null))
             return o.checkGetter(p, this);
-        import stdd.format;
         assert(0, format!"get %s"(val));
     }
     Obj* getPtr(uint val) {
@@ -75,7 +74,7 @@ class Env {
             return checkSetter(ptr, p, this, o);
 
         if (auto ptr = val in objs)
-            ptr.val.tryVisit!(
+            ptr.visitO!(
                 (Property prop) => prop.callSet(p, this, o),
                 () => *ptr = o);
         return objs[val] = o;
@@ -98,7 +97,7 @@ class Env {
         if (val in captures) {
             throw new RuntimeException(p, "can't define alias for captured variable");
         }
-        return objs[val] = objProperty(get, set);
+        return objs[val] = obj!Property(get, set);
     }
 
     import com.log;
@@ -113,59 +112,41 @@ class Env {
             return ptr.get!TypeMeta(p);
         throw new RuntimeException(p, format!"'%s' not defined"(name), file, line);
     }
-    TypeMeta getTypeMeta(Pos p, Obj o, string file =__FILE__, size_t line = __LINE__) {
-        import ts.objects;
-        string gen() {
-            auto r = "o.val.visit!(";
-            static foreach (t; ts.objects.obj.types) {
-                static if (t == "UserDefined")
-                    r ~= "(UserDefined v) => getTypeMeta(p, v.name, file, line),";
-                else
-                    r ~= format!"(%s v) => %s.typeMeta,"(t, t);
-            }
-            return r ~ ")";
-        }
-        /*
-        return o.val.tryVisit!(
-            (UserDefined v) => getTypeMeta(p, v.name, file, line),
-            () => mixin(gen())
-            )();*/
-        return mixin(gen());
-    }
+    /+
     Obj getMember(Pos p, Obj a, tsstring val, string file =__FILE__, size_t line = __LINE__) {
         import ts.objects.property;
         //dfmt off
         return getMember2(p, a, val, "opFwd",
-                (Obj f) => f.val.tryVisit!(
-                    (Property pr) => pr.callGetMember(p, this, a),
-                    () => f),
-                (Obj f) => f.call(p, this, a, objString(val)), file ,line);
+                          (Obj f) =>f.visitO!(
+                              (Property pr) => pr.callGetMember(p, this, a),
+                              (BIMethodMaker m) => m.callThis(a),
+                              () => f),
+                          (Obj f) => f.visitO!(
+                              (BIMethodMaker m) => m.callThis(a),
+                              () => f).call(p, this, a, obj!String(val)));
         //dfmt on
     }
 
-    Obj getMember_(Pos p, Obj o, tsstring s, string file =__FILE__, size_t line = __LINE__) {
-        auto m = getTypeMeta(p, o, file, line).members.get(s, null);
+    Obj getMember_(Pos p, Obj o, tsstring s) {
+        auto m = o.typeMeta.members.get(s, null);
         if (m is null)
-            throw new TypeException(p, format!"Type '%s' doesn't have member '%s'"(o.type, s));
+            throw new TypeException(p, format!"Type '%s' doesn't have member '%s'"(o.typestr, s));
         return m;
     }
 
     auto getMember2(F1, F2)(Pos p, Obj o, tsstring s1, tsstring s2, F1 f1, F2 f2,
                             string file =__FILE__, size_t line = __LINE__) {
-        if (auto m = tryMember(p, o, s1, file, line)) {
+        if (auto m = tryMember(o, s1)) {
             return f1(m);
         }
-        if (auto m = tryMember(p, o, s2, file, line)) {
+        if (auto m = tryMember(o, s2)) {
             return f2(m);
         }
         throw new TypeException(p,
-            format!"Type '%s' doesn't have neither '%s', nor '%s'"(o.type, s1, s2));
+                                format!"Type '%s' doesn't have neither '%s', nor '%s'"(o.typestr, s1, s2), file, line);
     }
 
-    Obj tryMember(Pos p, Obj o, tsstring s, string file =__FILE__, size_t line = __LINE__) {
-        auto m = getTypeMeta(p, o, file, line).members.get(s, null);
-        if (m is null)
-            return null;
-        return m;
-    }
+    Obj tryMember(Obj o, tsstring s) {
+        return o.typeMeta.members.get(s, null);
+    }+/
 }

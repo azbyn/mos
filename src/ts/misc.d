@@ -21,8 +21,8 @@ tsstring tsformat(tsstring fmt, A...)(A args) {
     return stdd.format.format!fmt(args);
 }
 
-T throwRtrn(T, Ex, A...)(A args) {
-    throw new Ex(args, __FILE__, __LINE__);
+T throwRtrn(T, Ex, A...)(A args, string file = __FILE__, size_t line = __LINE__) {
+    throw new Ex(args, file, line);
 }
 
 bool contains(T)(T[] arr, T val) {

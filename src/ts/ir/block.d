@@ -53,7 +53,7 @@ class Block {
     }
     void addClosureOrFunc(Pos pos, Block block) {
         if (block.captures.length == 0)
-            addConst(pos, objFunction(block));
+            addConst(pos, obj!Function(block));
         else
             addClosure(pos, block);
     }

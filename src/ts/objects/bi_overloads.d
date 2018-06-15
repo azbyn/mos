@@ -5,7 +5,9 @@ import ts.ast.token;
 import ts.runtime.env;
 import stdd.format;
 
-struct BIOverloads {
+mixin TSModule!(ts.objects.bi_overloads);
+
+@tsexport struct BIOverloads {
     Obj function(Pos, Env, Obj[])[int] val;
     this(Obj function(Pos, Env, Obj[])[int] val) {
         this.val = val;
@@ -23,8 +25,8 @@ struct BIOverloads {
         throw new RuntimeException(pos, format!"no overload takes %s args (only %s)"(a.length, s), file, line);
     }
 static:
-    TypeMeta typeMeta;
-    tsstring type() { return "function_ol"; }
-    tsstring toString(BIOverloads f) { return "function_ol"; }
+    __gshared TypeMeta typeMeta;
+    enum tsstring type = "function_ol";
+    @tsexport tsstring toString(BIOverloads f) { return "function_ol"; }
 }
 

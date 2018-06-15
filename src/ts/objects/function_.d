@@ -7,7 +7,9 @@ import ts.runtime.env;
 import ts.runtime.interpreter;
 import ts.misc;
 
-struct Function {
+mixin TSModule!(ts.objects.function_);
+
+@tsexport struct Function {
     Block val;
     this(Block val) {
         this.val = val;
@@ -17,10 +19,10 @@ struct Function {
         return val.eval(pos, env, args, null, file, line);
     }
 static:
-    TypeMeta typeMeta;
-    tsstring type() { return "function"; }
+    __gshared TypeMeta typeMeta;
+    enum tsstring type = "function";
 
-    tsstring toString(Pos p, Env e, Function v) {
+    @tsexport tsstring toString(Pos p, Env e, Function v) {
         return tsformat!"\n<function>%s\n</function>"(v.val.toStr(p, e));
     }
 }

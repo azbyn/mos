@@ -1,16 +1,18 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
 #capture = "k"
 #kp = "kp"
-#fun addAll(a, args...):
-#	res = a
-#	println(args)
-#	return res
+fun addAll(a, args...):
+	res = a
+	println(args)
+	return res
 #v = addAll(3, 1, 3, 5)
-#v = (3, 1, 3, 5)
+#println(v)
+v = (3, 1, 3, 5)
+#println(v)
 #iter = v.Iter
-#println(iter);
-for i in (1,2): 1
-	#print(i~" ")
+println(v.Iter)
+for i in v:
+	print(i~" ")
 
 #println(v)
 #fun f[capture](var):

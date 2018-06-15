@@ -13,6 +13,7 @@ try qvector instead of std::vector
 saves, loads
 
 dlang:
+check valid types
 tuple unpacking ie. (a, b) = (1, 2)
 variadics
 use smarter algorithm for dictionary
