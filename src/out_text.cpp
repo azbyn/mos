@@ -31,13 +31,15 @@ OutText::OutText(QQuickItem* parent)
     : QQuickPaintedItem(parent), font(config::fontFamMono) {
     if (Instance)
         throw std::runtime_error("EXPECTED ONE INSTANCE OF OutText");
+    Instance = this;
     font.setPointSize(config::fontSizeOutput);
     fsd = FontSizeData(font);
+    //qDebug("<<NEW OUT_TEXT");
 }
 void OutText::clear() {
     vec.clear();
     vec.emplace_back();
-    if (Instance)
+    //if (Instance)
         Instance->update();
 }
 void OutText::append(const QString& s) {
@@ -53,8 +55,10 @@ void OutText::append(const QString& s) {
         vec.emplace_back("", attrs, A_NEWLINE);
         ++it;
     }
-
     vec.back().str += *it;
+    ///qDebug() << "vec. back +=" << *it << "aka: " << vec.back().str;
+    //if (Instance)
+    Instance->update();
 }
 
 void OutText::setAttribute(Data&& data) {
@@ -67,9 +71,12 @@ void OutText::setAttribute(Data&& data) {
     else {
         vec.emplace_back(data);
     }
+    //    Instance->update();
+
 }
 constexpr int leftMargin = 2;
 void OutText::paint(QPainter* p) {
+    //qDebug("<<paint %lu", vec.size());
     QPoint vCursor = {0, 0};
     int maxX = 0;
     for (auto& d : vec) {
@@ -94,8 +101,8 @@ void OutText::paint(QPainter* p) {
         p->drawText(x, y, d.str);
         vCursor.rx() += len;
     }
-    setHeight(vCursor.y() * fsd.height + fsd.ascent);
-    setWidth(leftMargin + maxX * fsd.width);
+    setHeight((vCursor.y() + 1) * fsd.height + fsd.ascent);
+    setWidth(leftMargin + (maxX + 5) * fsd.width);
 }
 void tsattr() {
     OutText::setAttribute(OutText::Data());

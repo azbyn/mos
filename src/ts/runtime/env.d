@@ -69,7 +69,7 @@ class Env {
 
     Obj set(Pos p, tsstring val, Obj o) { return set(p, man.getIndex(val), o); }
     Obj set(Pos p, uint val, Obj o) {
-        tslog!"<<<set %s"(man.getStr(val));
+        //tslog!"<<<set %s"(man.getStr(val));
         if (auto ptr = captures.get(val, null))
             return checkSetter(ptr, p, this, o);
 
@@ -93,12 +93,13 @@ class Env {
         }
         return assignSetter(objs, val, o);
     }
+    /*
     Obj propDef(Pos p, uint val, Obj get, Obj set) {
         if (val in captures) {
             throw new RuntimeException(p, "can't define alias for captured variable");
         }
         return objs[val] = obj!Property(get, set);
-    }
+    }*/
 
     import com.log;
 

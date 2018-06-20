@@ -19,6 +19,7 @@ private enum typeDatas = [
     TypeData("Indent",       "Indent",    ""         ),
     TypeData("Dedent",       "Dedent",    ""         ),
     TypeData("Comma",        ",",         ""         ),
+    TypeData("This",         "this",      ""         ),
     TypeData("True",         "true",      ""         ),
     TypeData("False",        "false",     ""         ),
     TypeData("Nil",          "nil",       ""         ),
@@ -129,6 +130,7 @@ tsstring toStr(const Token* t) {
     case TT.Indent: return "→ ";
     case TT.Dedent: return "←";
     case TT.Comma: return ", ";
+    case TT.This: return "this";
     case TT.True: return "true";
     case TT.False: return "false";
     case TT.Nil: return "nil";

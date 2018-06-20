@@ -9,20 +9,37 @@ import ts.misc;
 
 mixin TSModule!(ts.objects.function_);
 
-@tsexport struct Function {
+@tsexport struct StaticFunction {
     Block val;
     this(Block val) {
         this.val = val;
     }
 
     Obj opCall(Pos pos, Env env, Obj[] args, string file =__FILE__, size_t line = __LINE__) {
-        return val.eval(pos, env, args, null, file, line);
+        return val.eval(null, pos, env, args, null, file, line);
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "function";
+    mixin TSType!"function";
 
-    @tsexport tsstring toString(Pos p, Env e, Function v) {
+    @tsexport tsstring toString(Pos p, Env e, StaticFunction v) {
         return tsformat!"\n<function>%s\n</function>"(v.val.toStr(p, e));
     }
 }
+@tsexport struct MethodFunction {
+    Block val;
+    Obj this_;
+    this(Obj this_, Block val) {
+        this.val = val;
+    }
+
+    Obj opCall(Pos pos, Env env, Obj[] args, string file =__FILE__, size_t line = __LINE__) {
+        return val.eval(this_, pos, env, args, null, file, line);
+    }
+static:
+    mixin TSType!"mthd_function";
+
+    @tsexport tsstring toString(Pos p, Env e, MethodFunction v) {
+        return tsformat!"\n<function>%s\n</function>"(v.val.toStr(p, e));
+    }
+}
+

@@ -39,7 +39,26 @@ struct Lexer {
                 str.remove(0, 1);
             }
             levels->push_back(lvl);
+        end:
             while (str.size()) {
+                if (str.startsWith("<<<")) {
+                    str.remove(0, 3);
+                    while (!in.atEnd()) {
+                        int cnt = 0;
+                        while(str.size()) {
+                            if (str[0] == '>') ++cnt;
+                            else cnt = 0;
+
+                            str.remove(0, 1);
+                            if (cnt == 3) {
+                                goto end;
+                            }
+                        }
+                        str = in.readLine();
+                    }
+                    qCritical() << "expected >>> found EOF";
+                    throw std::runtime_error("expected >>> found EOF");
+                }
                 //qDebug() << "<<" << str;
                 if (regexIgnore("^\\s+")) continue;
                 if (str[0] == '#') break;
@@ -55,6 +74,7 @@ struct Lexer {
                 if (regex("^[0-9]+", TT::Number)) continue;
                 if (regex("^[_a-zA-Z][_a-zA-Z0-9]*", 0, [](const QString& str) {
                         if (str == "return") return Token(TT::Return);
+                        if (str == "this") return Token(TT::This);
                         if (str == "struct") return Token(TT::Struct);
                         if (str == "module") return Token(TT::Module);
                         if (str == "import") return Token(TT::Import);

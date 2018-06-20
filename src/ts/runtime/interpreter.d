@@ -19,13 +19,13 @@ import ts.objects.module_;
 import com.log;
 
 public Obj eval(BlockManager man) {
-    return eval(man.mainBlock, Pos(-1), new Env(man.mainBlock.st), null, null);
+    return eval(man.mainBlock, null, Pos(-1), new Env(man.mainBlock.st), null, null);
 }
 public Obj evalDbg(BlockManager man, out Env e) {
     e = new Env(man.mainBlock.st);
     tslog(man.toStr(Pos(-1), e));
     tslog("\nOutput:");
-    return eval(man.mainBlock, Pos(-1), e, null, null);
+    return eval(man.mainBlock, null, Pos(-1), e, null, null);
 }
 
 Obj checkGetter(Obj x, Pos pos, Env env) {
@@ -33,8 +33,12 @@ Obj checkGetter(Obj x, Pos pos, Env env) {
         (Property p) => p.callGet(pos, env),
         () => x);
 }
-
-public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures = null,
+/*
+public Obj evalStatic(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures = null,
+                string file =__FILE__, size_t line = __LINE__)  {
+    return eval(bl, null, initPos, env, argv, captures, file, line);
+    }*/
+public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures = null,
                 string file =__FILE__, size_t line = __LINE__) {
     if (env !is null)
         env = new Env(env, bl.st, captures);
@@ -72,10 +76,14 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
         auto msg = "";
         auto pos = op.pos;
 
-        //writefln("%d %s l=%s", pc, op, len);
+        tslog!"%d %s l=%s"(pc, op, len);
         //dfmt off
         final switch (op.code) {
         case OPCode.Nop: break;
+        case OPCode.This:
+            assert(this_ !is null);
+            stack ~= this_;
+            break;
         case OPCode.Pop:
             if (len == 0) break;
             //assert (len > 0, "stack underflow");
@@ -161,21 +169,38 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             return pop();
         }
         case OPCode.LoadConst: {
-            stack ~= bl.getConst(op.val).checkGetter(pos, env);//check prop probably not needed
+            stack ~= bl.getConst(op.val).checkGetter(pos, env);
         } break;
         case OPCode.LoadVal: {
-            stack ~= env.get(pos, op.val);//.checkGetter(pos, env);
+            stack ~= env.get(pos, op.val);
         } break;
         case OPCode.LoadLib: {
             stack ~= bl.lib.get(op.val).checkGetter(pos, env);
         } break;
-        case OPCode.MakeClosure: {
+        case OPCode.MakeStaticClosure: {
             auto b = man.blocks[op.val];
             Obj*[uint] caps;
             foreach (c; b.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= obj!Closure(b, caps);
+            stack ~= obj!StaticClosure(b, caps);
+        } break;
+        case OPCode.MakeMethodClosure: {
+            auto b = man.blocks[op.val];
+            Obj*[uint] caps;
+            foreach (c; b.captures) {
+                caps[c] = env.getPtr(c);
+            }
+            stack ~= obj!MethodMaker((Obj o) => obj!MethodClosure(o, b, caps));
+        } break;
+        case OPCode.Property: {
+            assert(len >= 2);
+            auto set = pop();
+            auto get = pop();
+            if (set.isNil()) set = null;
+            if (get.isNil()) get = null;
+            stack ~= obj!Property(get, set);
+
         } break;
         case OPCode.MakeList: {
             assert(len >= op.val);
@@ -201,12 +226,6 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
             assert(len >= 1);
             auto a = pop();
             stack ~= env.setterDef(pos, op.val, a);
-        } break;
-        case OPCode.PropDef: {
-            assert(len >= 1);
-            auto set = pop();
-            auto get = pop();
-            stack ~= env.propDef(pos, op.val, get, set);
         } break;
         case OPCode.GetterDef: {
             assert(len >= 1);
@@ -246,60 +265,40 @@ public Obj eval(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures 
                 jmp(pc, op.val);
         } break;
         case OPCode.MakeModule: {
-            auto tmk = bl.man.modules[op.val];
-            void impl(bool isType, T)() {
-                Obj o = new Obj(T(tmk.name));
-                T* t = o.peek!T;
-                Obj funcOrClosure(Block b) {
-                    if (b.captures.length == 0) return obj!Function(b);
-                    Obj*[uint] caps;
-                    foreach (c; b.captures) {
-                        caps[c] = env.getPtr(c);
-                    }
-                    return obj!Closure(b, caps);
-                }
-                foreach (name, b; tmk.methods) {
-                    static if (isType) {
-                        if (name == "ctor") {
-                            t.ctor = funcOrClosure(b);
-                        } else {
-                            t.members[name] = funcOrClosure(b);
-                        }
-                    }
-                    else {
-                        t.members[name] = funcOrClosure(b);
-                    }
-                }
-                static if (isType) {
-                    import ts.objects.user_defined;
-                    t.members["base"] = obj!Property(
-                        obj!BIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base),
-                        obj!BIFunction((Pos p, Env e, Obj[] a) => a[0].peek!UserDefined.base = a[1]));
-                }
-                foreach (name, b; tmk.getters) {
-                    assignFuncType!(FuncType.Getter)(t.members, name, obj!Function(b));
-                }
-                foreach (name, b; tmk.setters) {
-                    assignFuncType!(FuncType.Setter)(t.members, name, obj!Function(b));
-                }
-                // this must be done now because members might be self-referential
-                tslog("set MODULE");
-                env.set(pos, tmk.name, o);
-                Obj*[uint] caps;
-                foreach (c; tmk.captures) {
-                    caps[c] = env.getPtr(c);
-                }
+            auto val = bl.man.modulesAndStructs[op.val];
+            assert(len >= val.staticNames.length);
+            auto members = popN(val.staticNames.length);
 
-                foreach (name, b; tmk.members) {
-                    t.members[name] = b.eval(pos, env, [], caps);
-                }
-                stack ~= o;
+            Module mod = Module(val.name);
+            foreach (i, m; members) {
+                mod.members[val.staticNames[i]] = m;
             }
-            if (tmk.isType)
-                impl!(true, TypeMeta);
-            else
-                impl!(false, Module);
-        }
+            auto obj = new Obj(mod);
+            env.set(pos, mod.name, obj);
+            stack ~= obj;
+        } break;
+        case OPCode.MakeStruct: {
+            auto val = bl.man.modulesAndStructs[op.val];
+            assert(len >= val.staticNames.length + val.instanceNames.length + 1);
+            auto instance = popN(val.instanceNames.length);
+            auto statics = popN(val.staticNames.length);
+            auto ctor = pop();
+            TypeMeta type = TypeMeta(val.name);
+            if (!ctor.isNil()) {
+                type.ctor = ctor;
+            }
+            foreach (i, m; instance) {
+                type.instance[val.instanceNames[i]] = m;
+            }
+            foreach (i, m; statics) {
+                type.statics[val.staticNames[i]] = m;
+            }
+
+            auto obj = new Obj(type);
+            env.set(pos, type.name, obj);
+            stack ~= obj;
+
+        } break;
 
         }
         //if (msg.length > 0)

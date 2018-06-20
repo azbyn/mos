@@ -25,8 +25,7 @@ mixin TSModule!(ts.objects.bi_overloads);
         throw new RuntimeException(pos, format!"no overload takes %s args (only %s)"(a.length, s), file, line);
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "function_ol";
+    mixin TSType!"function_ol";
     @tsexport tsstring toString(BIOverloads f) { return "function_ol"; }
 }
 

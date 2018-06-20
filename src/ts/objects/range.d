@@ -11,8 +11,7 @@ mixin TSModule!(ts.objects.range);
     Obj step;
     bool neg;
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "range";
+    mixin TSType!"range";
     @tsexport {
         void ctor(Pos p, Env e, Range* v, Obj[] args) {
             void init(Obj val, Obj end, Obj step) {

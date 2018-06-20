@@ -35,7 +35,7 @@ else {
     }*/
 
 import com.log;
-Obj obj(T, A...)(A args) {
+Obj obj(T, A...)(A args, string file = __FILE__, size_t line = __LINE__) {
     return new Obj(&T.typeMeta, T(args));
 }
 //enum types = 
@@ -56,12 +56,17 @@ class Obj {
         this.val = String(s);
         }*/
     import stdd.traits : isSomeString, fullyQualifiedName;
-    this(T)(T val) if (!is(T == UserDefined) && !isSomeString!T) {
+    this(T)(T val) if (!is(T == UserDefined)/* && !isSomeString!T*/) {
          this(&T.typeMeta, val);
     }
-    this(T)(TypeMeta* typeMeta, T val) {
+    /*
+    this(TypeMeta* tm, Obj[tsstring] vars) {
+        this(tm, UserDefined(vars));
+        }*/
+    private this(T)(TypeMeta* typeMeta, T val) {
         this.typeMeta = typeMeta;
-        tslog!"<<NEW '%s' aka %s"(typeMeta.name, typestr);
+        //assert(typeMeta);
+        //tslog!"<<<NEW '%s'"(typeMeta.name);
         this.val = val;
     }
 
@@ -111,7 +116,7 @@ class Obj {
         return member(p, e, s).callThis(p, this).call(p, e, args).get!T(p);
         }*/
     private Obj callThis(Pos p, Obj this_) {
-        return get!BIMethodMaker(p).callThis(this_);
+        return get!MethodMaker(p).callThis(this_);
     }
 
     override string toString() {
@@ -170,9 +175,11 @@ class Obj {
         }
         //dfmt off
         return this.visitO!(
-            (Function f) => f(p, e, args),
-            (Closure f) => f(p, e, args),
+            (StaticFunction f) => f(p, e, args),
+            (MethodFunction f) => f(p, e, args),
             (BIFunction f) => f(p, e, args),
+            (MethodClosure f) => f(p, e, args),
+            (StaticClosure f) => f(p, e, args),
             (BIOverloads f) => f(p, e, args),
             (BIClosure f) => f(p, e, args),
             (BIMethodOverloads f) => f(p, e, args),
@@ -182,19 +189,26 @@ class Obj {
         );
         //dfmt on
     }
+    Obj getStatic(Pos p, Env e, tsstring m) {
+        return typeMeta.getStatic(p, e, m);
+    }
+    Obj setStatic(Pos p, Env e, tsstring m, Obj val) {
+        return typeMeta.setStatic(p, e, m, val);
+    }
+
     Obj getMember(Pos p, Env e, tsstring m) {
         return member(p, e, m);
     }
 
     Obj setMember(Pos p, Env e, tsstring m, Obj val) {
-        return typeMeta.setMember(p, e, this, m, val);
+        return typeMeta.setMember(this, p, e, m, val);
     }
     Obj member(Pos p, Env e, tsstring m) {
-        return typeMeta.getMember(p, e, this, m);
+        return typeMeta.getMember(this, p, e, m);
 //return e.getMember(p, this /* type*/, m);
     }
     Obj memberCall(Pos p, Env e, tsstring m, Obj[] args...) {
-        return member(p,e,m).call(p,e, args);
+        return member(p, e, m).call(p,e, args);
     }
     private T memberCallCast(T)(tsstring m, Pos p, Env e, Obj[] args...) {
         return memberCall(p, e, m, args).get!T(p);

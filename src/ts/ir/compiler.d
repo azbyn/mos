@@ -33,15 +33,18 @@ enum OPCode {
     Assign,
     SetterDef,
     GetterDef,
-    PropDef,
     MakeList,
     MakeTuple,
     MakeDict,
-    MakeClosure,
+    MakeStaticClosure,
+    MakeMethodClosure,
+    Property,
     MakeModule,
+    MakeStruct,
     Jmp,
     Cmp,
     Cat,
+    This,
     Binary,
     JmpIfTrueOrPop, // if (prev) { jmp } else { pop }
     JmpIfFalseOrPop, // if (!prev) { jmp } else { pop }
@@ -60,24 +63,23 @@ struct OP {
     }
 }
 
-Block generateIR(AstNode n, Block parent, tsstring[] captures, tsstring[] args, bool isVariadic) {
-    return generateIR(n, parent, parent.man.getBulk(captures), parent.man.addBulk(args), isVariadic);
+Block generateIR(bool isStatic)(AstNode n, Block parent, tsstring[] captures, tsstring[] args, bool isVariadic) {
+    return generateIR!isStatic(n, parent, parent.man.getBulk(captures), parent.man.addBulk(args), isVariadic);
 }
-
-Block generateIR(AstNode n, Block parent, uint[] captures, uint[] args, bool isVariadic) {
+Block generateIR(bool isStatic)(AstNode n, Block parent, uint[] captures, uint[] args, bool isVariadic) {
     assert(parent);
     assert(parent.man);
     //assert(parent.man);
     Block bl = new Block(parent.man, args, captures, isVariadic);
     if (auto body_ = n.val.peek!(AstNode.Body)){
         foreach (node; body_.val) {
-            nodeIR(node, bl);
+            nodeIR!isStatic(node, bl);
             bl.add(n.pos, OPCode.Pop);
         }
         if (bl.ops.length > 1)
             bl.ops.popBack();
     }
-    else nodeIR(n, bl);
+    else nodeIR!isStatic(n, bl);
     return bl;
 }
 
@@ -85,16 +87,24 @@ BlockManager generateIR(AstNode[] nodes, Lib lib) {
     Block bl;
     BlockManager man = new BlockManager(lib, bl);
     foreach (n; nodes) {
-        nodeIR(n, bl);
+        nodeIR!true(n, bl);
         bl.add(n.pos, OPCode.Pop);
     }
     return man;
 }
-private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1) {
+public void nodeIR(bool isStatic)(AstNode n, Block bl, uint[] captures = null, long loopBeg = -1, long loopEnd = -1) {
     assert(bl);
-    void ir(AstNode node, ulong beg = loopBeg, ulong end = loopEnd) {
-        return node.nodeIR(bl, beg, end);
+    void ir(bool isStatic = true)(AstNode node, long beg = loopBeg, long end = loopEnd) {
+        node.nodeIR!isStatic(bl, null, beg, end);
     }
+    void irStatic(AstNode node, uint[] captures) {
+        node.nodeIR!true(bl, captures, loopBeg, loopEnd);
+    }
+    void irInstance(AstNode node, uint[] captures) {
+        node.nodeIR!false(bl, captures, loopBeg, loopEnd);
+    }
+
+
     auto pos = n.pos;
     //dfmt off
     n.val.visit!(
@@ -123,6 +133,9 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
         (AstNode.Nil v) {
             bl.addNil(pos);
         },
+        (AstNode.This v) {
+            bl.add(pos, OPCode.This);
+        },
         (AstNode.Variable v) {
             bl.addVariable(pos, v.name);
         },
@@ -139,8 +152,9 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.addStr(pos, OPCode.Binary, v.name);
         },
         (AstNode.Lambda v) {
-            auto block = generateIR(v.body_, bl, v.captures, v.params, v.isVariadic);
-            bl.addClosureOrFunc(pos, block);
+            auto block = generateIR!isStatic(v.body_, bl, bl.man.getBulk(v.captures) ~ captures,
+                                             bl.man.addBulk(v.params), v.isVariadic);
+            bl.addClosureOrFunc!isStatic(pos, block);
         },
         (AstNode.Assign v) {
             v.rvalue.val.tryVisit!(
@@ -170,11 +184,10 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             ir(v.val);
             bl.addGetterDef(pos, v.name);
         },
-        (AstNode.PropDef v) {
-            uint[] caps = bl.man.tryGetBulk(v.get.captures);
-            bl.addClosureOrFunc(pos, generateIR(v.get.body_, bl, caps, [], false));
-            bl.addClosureOrFunc(pos, generateIR(v.set.body_, bl, caps, bl.man.addBulk(v.set.params), false));
-            bl.addPropDef(pos, v.name);
+        (AstNode.Property v) {
+            ir(v.get);
+            ir(v.set);
+            bl.add(pos, OPCode.Property);
         },
         (AstNode.Subscript v) {
             ir(v.val);
@@ -304,27 +317,44 @@ private void nodeIR(AstNode n, Block bl, ulong loopBeg = -1, ulong loopEnd = -1)
             bl.addVal(pos, OPCode.Jmp, j);
         },
         (AstNode.Module v) {
-            ModuleMaker tm = ModuleMaker(v.isType, v.name);
-            uint struct_ = bl.st.addStr(v.name);
-
-            Block getBlock(AstNode.Lambda l) {
-                return generateIR(l.body_, bl, bl.man.getBulk(l.captures) ~ struct_, bl.man.addBulk(l.params), l.isVariadic);
+            uint name_ = bl.st.addStr(v.name);
+            auto captures = bl.man.getBulk(v.captures)~ name_;
+            ModuleOrStructMaker val =
+                ModuleOrStructMaker(v.name, captures,
+                                    uninitializedArray!(tsstring[])(v.members.length),
+                                    null);
+            size_t i = 0;//use --?
+            foreach (name, mem; v.members) {
+                val.staticNames[i++] = name;
+                irStatic(mem, captures);
             }
-            tm.captures = bl.man.getBulk(v.captures) ~ struct_;
-            foreach (name, m; v.members) {
-                tm.members[name] = generateIR(m, bl, tm.captures, [], false);
-            }
-            foreach (name, m; v.methods) {
-                tm.methods[name] = getBlock(m);
-            }
-            foreach (name, m; v.getters) {
-                tm.getters[name] = getBlock(m);
-            }
-            foreach (name, m; v.setters) {
-                tm.setters[name] = getBlock(m);
-            }
-            bl.addModule(pos, tm);
+            bl.addModuleOrStruct(pos, OPCode.MakeModule, val);
         },
-    )();
+        (AstNode.Struct v) {
+            tslog!"add struct '%s'"(v.name);
+            uint name_ = bl.st.addStr(v.name);
+            auto captures = bl.man.getBulk(v.captures)~ name_;
+            ModuleOrStructMaker val =
+                ModuleOrStructMaker(v.name, captures,
+                                    uninitializedArray!(tsstring[])(v.statics.length),
+                                    uninitializedArray!(tsstring[])(v.instance.length));
+            size_t i = 0;
+            if (v.ctor is null) {
+                bl.addNil(pos);
+            } else {
+                irInstance(v.ctor, captures);
+            }
+            foreach (name, mem; v.statics) {
+                val.staticNames[i++] = name;
+                irStatic(mem, captures);
+            }
+            i = 0;
+            foreach (name, mem; v.instance) {
+                val.instanceNames[i++] = name;
+                irInstance(mem, captures);
+            }
+            bl.addModuleOrStruct(pos, OPCode.MakeStruct, val);
+        },
+    );
     //dfmt on
 }

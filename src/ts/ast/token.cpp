@@ -23,6 +23,7 @@ QString Token::toString() const {
     case Type::Indent: return "INDENT";
     case Type::Dedent: return "DEDENT";
     case Type::Comma: return ",";
+    case Type::This: return "this";
     case Type::True: return "true";
     case Type::False: return "false";
     case Type::Nil: return "nil";
@@ -201,6 +202,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::False:
         case TT::Nil:
         case TT::Fun:
+        case TT::This:
 
             return false;
         default: return true;
@@ -212,6 +214,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::Number:
         case TT::String:
         case TT::True:
+        case TT::This:
         case TT::False:
         case TT::Nil:
         case TT::Lambda:
@@ -244,6 +247,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::String:
         case TT::Number:
         case TT::Else:
+        case TT::This:
         case TT::True:
         case TT::False:
         case TT::Nil:
@@ -294,6 +298,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::RSquare:
         case TT::LCurly:
         case TT::RCurly:
+        case TT::This:
         case TT::True:
         case TT::False:
         case TT::Nil:
@@ -301,6 +306,7 @@ bool isSpaceBetween(TT t1, TT t2) {
             return false;
         default: return true;
         }
+    case TT::This:
     case TT::True:
     case TT::False:
     case TT::Nil:
@@ -323,6 +329,7 @@ bool isSpaceBetween(TT t1, TT t2) {
         case TT::RCurly:
         case TT::Identifier:
         case TT::Number:
+        case TT::This:
         case TT::True:
         case TT::False:
         case TT::Nil:

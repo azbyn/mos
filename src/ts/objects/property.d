@@ -27,8 +27,7 @@ private alias Method = Obj delegate(Obj) @system;
         return set(this_).call(p, e, val);
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "property_member";
+    mixin TSType!"property_member";
 }
 @tsexport struct Property {
     Obj get = null;
@@ -50,8 +49,7 @@ static:
     }
 
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "property";
+    mixin TSType!"property";
 }
 
 Obj assignSetter(Index)(ref Obj[Index] arr, Index index, Obj val) {
@@ -109,7 +107,7 @@ Obj assignMemberFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Me
         return assignMemberSetter(arr, index, val);
     }
     else {
-        return arr[index] = obj!BIMethodMaker(val);
+        return arr[index] = obj!MethodMaker(val);
     }
 }
 

@@ -7,49 +7,29 @@ import ts.ir.lib;
 import ts.ir.compiler;
 import ts.misc;
 import stdd.format : format;
+import stdd.string : join;
 
-struct ModuleMaker {
-    bool isType;
+struct ModuleOrStructMaker {
     tsstring name;
     uint[] captures;
-    Block[tsstring] members;
-    Block[tsstring] methods;
-    Block[tsstring] getters;
-    Block[tsstring] setters;
-
-    this(bool isType, tsstring name) {
-        this.isType = isType;
-        this.name = name;
-    }
-    tsstring toStr(Pos p, Env e) {
-        tsstring res = tsformat!"<typeMaker '%s'>\n"(name);
-        res ~= "\nmembers:";
-        foreach (n, m; members) {
-            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
-        }
-
-        res ~= "\nmethods:";
-        foreach (n, m; methods) {
-            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
-        }
-        res ~= "\n>getters:";
-        foreach (n, m; getters) {
-            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p, e));
-        }
-        res ~= "\n>setters:";
-        foreach (n, m; setters) {
-            res ~= tsformat!"\n[%s]: %s"(n, m.toStr(p,e));
-        }
-        return res ~ "\n</typeMaker>";
+    tsstring[] staticNames;//use uints?
+    tsstring[] instanceNames;
+    tsstring toStr(bool isStruct)(BlockManager man) {
+        enum tsstring type = isStruct ? "structMaker" : "moduleMaker";
+        tsstring res = tsformat!"<%s '%s'>"(type, name);
+        res ~= "\nstatics:" ~ staticNames.join(", ");
+        res ~= "\ninstance:" ~ instanceNames.join(", ");
+        return res~tsformat!"\n</%s>"(type);
     }
 }
+
 class BlockManager {
     Obj[] consts;
     Lib lib;
     //SymbolTable[] tables;
     tsstring[] strs;
     Block[] blocks;
-    ModuleMaker[] modules;
+    ModuleOrStructMaker[] modulesAndStructs;
     size_t[] jumpTable;
 
     @property Block mainBlock() { return blocks[0]; }

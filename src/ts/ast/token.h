@@ -8,6 +8,7 @@ enum class TT {
     Indent,
     Dedent,
     Comma,
+    This,
     True,
     False,
     Nil,
@@ -136,6 +137,7 @@ QColor Token::color(TT prevType, F nextType) const {
     case TT::Return:
     case TT::Lambda:
     case TT::Arrow:
+    case TT::This:
         return colors::Keywords;
     case TT::Identifier:
         return nextType() == TT::LParen || prevType == TT::Fun || prevType == TT::Prop ?

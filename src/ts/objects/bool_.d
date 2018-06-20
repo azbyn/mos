@@ -13,8 +13,7 @@ mixin TSModule!(ts.objects.bool_);
     bool val;
 
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "bool";
+    mixin TSType!"bool";
     @tsexport {
         void ctor(Bool v) { v.val = false; }
         void ctor(Pos p, Env e, Bool v, Obj val) {

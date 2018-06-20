@@ -11,8 +11,7 @@ mixin TSModule!(ts.objects.int_);
 @tsexport struct Int {
     tsint val;
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "int";
+    mixin TSType!"int";
     @tsexport {
         void ctor(Int v) { v.val = 0; }
         void ctor(Pos p, Int v, Obj o) {

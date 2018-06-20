@@ -12,8 +12,7 @@ mixin TSModule!(ts.objects.float_);
     tsfloat val;
 
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "float";
+    mixin TSType!"float";
     @tsexport {
         void ctor(Float v) { v.val = 0; }
         void ctor(Pos p, Float v, Obj o) {

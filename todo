@@ -13,12 +13,18 @@ try qvector instead of std::vector
 saves, loads
 
 dlang:
-check valid types
+replace cont with a lexer that ignores newlines & indent after certain tokens like +
+
+mobile script
+
+instead of complicated captures use .staticMember
+remove compile time name check
+import x : *
+
 tuple unpacking ie. (a, b) = (1, 2)
 variadics
 use smarter algorithm for dictionary
 spacing in dlang output error
 ?slices
 ?pass
-?import x : *
 ?del keyword

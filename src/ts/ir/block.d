@@ -51,20 +51,28 @@ class Block {
     void addVal(Pos pos, OPCode code, uint val) {
         ops ~= OP(pos, code, val);
     }
-    void addClosureOrFunc(Pos pos, Block block) {
-        if (block.captures.length == 0)
-            addConst(pos, obj!Function(block));
-        else
-            addClosure(pos, block);
+    void addClosureOrFunc(bool isStatic)(Pos pos, Block block) {
+        static if (isStatic) {
+            if (block.captures.length == 0)
+                addConst(pos, obj!StaticFunction(block));
+            else
+                addClosure(pos, OPCode.MakeStaticClosure, block);
+        } else {
+            if (block.captures.length == 0)
+                addConst(pos, obj!MethodMaker((Obj o) => obj!MethodFunction(o, block)));
+            else
+                addClosure(pos, OPCode.MakeMethodClosure, block);
+
+        }
     }
 
-    void addClosure(Pos pos, Block bl) {
+    void addClosure(Pos pos, OPCode op, Block bl) {
         man.blocks ~= bl;
-        addVal(pos, OPCode.MakeClosure, man.blocks.length - 1);
+        addVal(pos, op, man.blocks.length - 1);
     }
-    void addModule(Pos pos, ModuleMaker mm) {
-        man.modules ~= mm;
-        addVal(pos, OPCode.MakeModule, man.modules.length - 1);
+    void addModuleOrStruct(Pos pos, OPCode code, ModuleOrStructMaker mm) {
+        man.modulesAndStructs ~= mm;
+        addVal(pos, code, man.modulesAndStructs.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -119,12 +127,6 @@ class Block {
             return;
         addVal(pos, OPCode.GetterDef, st.addStr(var));
     }
-    void addPropDef(Pos pos, tsstring var) {
-        if (var == "_")
-            return;
-        addVal(pos, OPCode.PropDef, st.addStr(var));
-    }
-
 
     tsstring getStr(size_t i) {
         assert(i < man.strs.length, format!"str %s out of range (%s)"(i, man.strs.length));
@@ -194,9 +196,14 @@ class Block {
             r ~= tsformat!"\n%s %s "(getLabel(i), o);
             switch (o.code) {
             case OPCode.MakeModule:
-                r ~= tsformat!"(%s)"(man.modules[o.val].toStr(p, e));
+                r ~= tsformat!"(%s)"(man.modulesAndStructs[o.val].toStr!false(man));
                 break;
-            case OPCode.MakeClosure:
+            case OPCode.MakeStruct:
+                r ~= tsformat!"(%s)"(man.modulesAndStructs[o.val].toStr!true(man));
+                break;
+
+            case OPCode.MakeStaticClosure:
+            case OPCode.MakeMethodClosure:
                 r ~= tsformat!"(%s)"(man.blocks[o.val].toStr(p, e));
                 break;
             case OPCode.LoadConst:
@@ -212,7 +219,6 @@ class Block {
             case OPCode.LoadVal:
             case OPCode.Assign:
             case OPCode.GetterDef:
-            case OPCode.PropDef:
             case OPCode.SetterDef:
                 r ~= tsformat!"(%s)"(man.getStr(o.val));
                 break;

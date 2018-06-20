@@ -9,7 +9,7 @@ import ts.misc;
 
 mixin TSModule!(ts.objects.closure);
 
-@tsexport struct Closure {
+@tsexport struct StaticClosure {
     Block val;
     Obj*[uint] captures;
     this(Block val, Obj*[uint] captures) {
@@ -18,12 +18,34 @@ mixin TSModule!(ts.objects.closure);
     }
 
     Obj opCall(Pos pos, Env env, Obj[] args) {
-        return val.eval(pos, env, args, captures);
+        return val.eval(null, pos, env, args, captures);
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "closure";
-    @tsexport tsstring toString(Pos p, Env e, Closure v) {
+    mixin TSType!"closure";
+    @tsexport tsstring toString(Pos p, Env e, StaticClosure v) {
+        tsstring res = "<closure>\n";
+        foreach (k, o; v.captures)
+            res ~= tsformat!"@%s:%s\n"(k, o.toStr(p, e));
+        res ~= "Code:\n"~ v.val.toStr(p, e);
+        return res ~ "\n</closure>";
+    }
+}
+@tsexport struct MethodClosure {
+    Block val;
+    Obj*[uint] captures;
+    Obj this_;
+    this(Obj this_, Block val, Obj*[uint] captures) {
+        this.val = val;
+        this.captures = captures;
+        this.this_ = this_;
+    }
+
+    Obj opCall(Pos pos, Env env, Obj[] args) {
+        return val.eval(this_, pos, env, args, captures);
+    }
+static:
+    mixin TSType!"mthd_closure";
+    @tsexport tsstring toString(Pos p, Env e, MethodClosure v) {
         tsstring res = "<closure>\n";
         foreach (k, o; v.captures)
             res ~= tsformat!"@%s:%s\n"(k, o.toStr(p, e));

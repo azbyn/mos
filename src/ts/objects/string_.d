@@ -11,8 +11,7 @@ mixin TSModule!(ts.objects.string_);
 @tsexport struct String {
     tsstring val;
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "string";
+    mixin TSType!"string";
     @tsexport {
         void ctor(String v) { v.val = ""; }
         void ctor(Pos p, Env e, String v, Obj obj) {

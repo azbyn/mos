@@ -71,6 +71,10 @@ enum modules = ts.objects.modules ~ ts.stdlib.modules;
         res ~= mixin(m ~ ".moduleData.types");
     return res;
     }*/
+mixin template TSType(tsstring name) {
+    static __gshared TypeMeta typeMeta;
+    static enum tsstring type = name;
+}
 
 mixin template TSModule(alias Mod) {
     //adding this here stops the compiler from complaining about
@@ -95,29 +99,36 @@ struct _TsModuleHelper(alias Mod) {
 
     struct FuncData {
         FuncType ft;
-        bool isStatic;
         bool isTrace;
     }
     enum SymbolType {
         NotExported, Module, Type, Function,
     }
+    struct SymbolData {
+        SymbolType st;
+        bool isStatic;
+    }
     alias Objs = Obj[tsstring];
 static:
 
-    SymbolType symbolType(alias Sym)() {
-        static if (__traits(isStaticFunction, Sym)) {
-            return hasUDA!(Sym, tsexport) ? SymbolType.Function : SymbolType.NotExported;
+    SymbolData symbolData(alias Sym, bool insideModule)() {
+        enum isStatic = hasUDA!(Sym, tsstatic) || insideModule;
+        SymbolType st() pure {
+            static if (__traits(isStaticFunction, Sym)) {
+                return hasUDA!(Sym, tsexport) ? SymbolType.Function : SymbolType.NotExported;
+            }
+            else static if (isType!Sym) {
+                return hasUDA!(Sym, tsexport) ?
+                    (hasUDA!(Sym, tsmodule) ?
+                     SymbolType.Module :
+                     SymbolType.Type) :
+                    SymbolType.NotExported;
+            }
+            else return SymbolType.NotExported;
         }
-        else static if (isType!Sym) {
-            return hasUDA!(Sym, tsexport) ?
-                (hasUDA!(Sym, tsmodule) ?
-                    SymbolType.Module :
-                    SymbolType.Type) :
-                SymbolType.NotExported;
-        }
-        else return SymbolType.NotExported;
+        return SymbolData(st(), isStatic);
     }
-    FuncData funcData(alias T, string fun, bool insideModule)() {
+    FuncData funcData(alias T, string fun)() {
         mixin(format!"alias x = T.%s;"(fun));
         static if (hasUDA!(x, tsget))
             enum ft = FuncType.Getter;
@@ -125,10 +136,9 @@ static:
             enum ft = FuncType.Setter;
         else
             enum ft = FuncType.Default;
-        enum isStatic = hasUDA!(x, tsstatic) || insideModule;
         enum isTrace = hasUDA!(x, tstrace);
 
-        return FuncData(ft, isStatic, isTrace);
+        return FuncData(ft, isTrace);
     }
     /*
     static SymbolType symbolType(T)() {
@@ -148,25 +158,27 @@ static:
         else return new Obj(t);
         //dfmt on
     }
-
-    void addSymbol(SymbolType st, alias T, string name, bool insideModule)(ref Objs objs) {
+    void addSymbol(SymbolData sd, alias T, string name)(ref Objs statics) {
+        Objs _;
+        addSymbol!(sd, T, name)(statics, _);
+    }
+    void addSymbol(SymbolData sd, alias T, string name)(ref Objs statics, ref Objs instance) {
         enum tsName = (name.back() == '_' ? name[0..$-1] : name).to!tsstring;
-        static if (st == SymbolType.Type) {
+        static if (sd.st == SymbolType.Type) {
             static if (name!="UserDefined")
-                addType!(tsName, mixin("T."~name))(objs);
+                addType!(tsName, mixin("T."~name))(statics);
         }
-        else static if (st == SymbolType.Module) {
-            addModule!(tsName, mixin("T."~name))(objs);
+        else static if (sd.st == SymbolType.Module) {
+            addModule!(tsName, mixin("T."~name))(statics);
         }
-        else static if (st == SymbolType.Function) {
-            enum fd = funcData!(T, name, insideModule);
-            static if (fd.isStatic) {
-                auto fun = getFunction!(T, name, fd);
-                assignFuncType!(fd.ft)(objs, tsName, fun);
+        else static if (sd.st == SymbolType.Function) {
+            enum fd = funcData!(T, name);
+            auto fun = getFunction!(T, name, fd, sd.isStatic);
+            static if (sd.isStatic) {
+                assignFuncType!(fd.ft)(statics, tsName, fun);
             }
             else {
-                auto fun = getFunction!(T, name, fd);
-                assignMemberFuncType!(fd.ft)(objs, tsName, fun);
+                assignMemberFuncType!(fd.ft)(instance, tsName, fun);
             }
         }
     }
@@ -177,8 +189,8 @@ static:
                 M.init();
             }
             else {{
-                enum st = symbolType!(mixin("M."~ member));
-                addSymbol!(st, M, member, true)(res.members);
+                enum sd = symbolData!(mixin("M."~ member), true);
+                addSymbol!(sd, M, member)(res.members);
             }}
         }
         objs[name] = new Obj(res);
@@ -188,20 +200,20 @@ static:
         //pragma(msg, format!"\t<type %s>"(name));
         static foreach (member; __traits(derivedMembers, T)) {{
             static if (member == "ctor") {
-                enum st = symbolType!(mixin("T."~ member));
-                static if (st == SymbolType.Function) {
-                    enum fd = funcData!(T, "ctor", false);
+                enum sd = symbolData!(mixin("T."~ member), false);
+                static if (sd.st == SymbolType.Function) {
+                    enum fd = funcData!(T, "ctor");
                     //static assert(st == SymbolType.Function);
-                    static assert(!fd.isStatic);
-                    type.ctor = obj!BIMethodMaker(getFunction!(T, "ctor", fd));
+                    static assert(!sd.isStatic);
+                    type.ctor = obj!MethodMaker(getFunction!(T, "ctor", fd, sd.isStatic));
                 }
             }
             else static if (member == "init") {
                 T.init();
             }
             else static if (member != "type") {
-                enum st = symbolType!(mixin("T."~ member));
-                addSymbol!(st, T, member, false)(type.members);
+                enum sd = symbolData!(mixin("T."~ member), false);
+                addSymbol!(sd, T, member)(type.statics, type.instance);
             }
             /+
         else static if (member != "type")/*m != "typeMeta" && m != "__ctor")*/ {
@@ -223,10 +235,10 @@ static:
                 static if (__traits(compiles, __traits(getProtection, __traits(getMember, Mod, mem)))) {
                     static if (__traits(getProtection, __traits(getMember, Mod, mem)) == "public") {
                         mixin(format!"alias X = Mod.%s;"(mem));
-                        enum st = symbolType!X;
+                        enum sd = symbolData!(X, true);
                         /*static if (st == SymbolType.Type)
                           data.types ~= mem;*/
-                        addSymbol!(st, Mod, mem, true)(objs);
+                        addSymbol!(sd, Mod, mem)(objs);
                     }
                 }
             }
@@ -235,7 +247,7 @@ static:
     }
     alias Fun = Obj function(Pos, Env, Obj[]);
     //alias Method = Fun delegate(Obj);
-    auto getFunction(alias T, string fun, FuncData fd)() {
+    auto getFunction(alias T, string fun, FuncData fd, bool isStatic)() {
         Fun[int] val;
         static foreach (o; __traits(getOverloads, T, fun)) {{
             immutable f = getFunImpl!(o, fd.isTrace);
@@ -245,7 +257,7 @@ static:
             val[f.i] = f.val;
         }}
         assert(val.length != 0, format!"no valid overloads found for %s.%s"(fullyQualifiedName!T, fun));
-        static if (fd.isStatic) {
+        static if (isStatic) {
             return obj!BIOverloads(val);
         }
         else {
@@ -335,7 +347,7 @@ static:
     void _tsModuleInit() {
         import com.log;
         import stdd.traits;
-        tslog("()init: "~fullyQualifiedName!Mod);
+        //tslog("()init: "~fullyQualifiedName!Mod);
         stdlib.append(_TsModuleHelper!Mod.get());
     }
 }
@@ -353,9 +365,13 @@ import ts.ir.lib;
 
 @property Lib stdlib() { return _stdlib; }
 static this() {
-    _nil = new Obj(Nil());
+    import com.log;
+    tslog("<Imported init()>");
     _stdlib = new Lib(null);
     static foreach (m; modules) {
         mixin(m~"._tsModuleInit();");
     }
+    _nil = new Obj(Nil());
+    tslog("</Imported init()>");
+
 }

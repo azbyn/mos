@@ -16,8 +16,7 @@ mixin TSModule!(ts.objects.module_);
     }
 
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "__module__";
+    mixin TSType!"__module__";
     @tsexport {
         tsstring toString(Module t) {
             return tsformat!"__module@%s__"(t.name);

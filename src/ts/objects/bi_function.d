@@ -14,20 +14,25 @@ mixin TSModule!(ts.objects.bi_function);
 
     Obj opCall(Pos pos, Env env, Obj[] a) { return val(pos, env, a); }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "function_bi";
+    mixin TSType!"function_bi";
 }
 
-@tsexport struct BIMethodMaker {
+@tsexport struct MethodMaker {
     Obj delegate(Obj) val;
     this(Obj delegate(Obj) val) {
         this.val = val;
     }
-    Obj callThis(Obj this_) { return val(this_); }
+    static mk(Obj function(Obj) val) {
+        import stdd.functional;
+        return obj!MethodMaker(val.toDelegate);
+    }
+
+    Obj callThis(Obj this_) {
+        return val(this_);
+    }
 
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "method_maker";
+    mixin TSType!"method_maker";
 }
 @tsexport struct BIClosure {
     Obj delegate(Pos, Env, Obj[]) val;
@@ -37,8 +42,7 @@ static:
 
     Obj opCall(Pos pos, Env env, Obj[] a) { return val(pos, env, a); }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "closure_bi";
+    mixin TSType!"closure_bi";
 }
 @tsexport struct BIMethodOverloads {
     Obj this_;
@@ -60,6 +64,5 @@ static:
         throw new RuntimeException(pos, format!"no overload takes %s args (only %s)"(a.length, s), file, line);
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "function_mol";
+    mixin TSType!"function_mol";
 }

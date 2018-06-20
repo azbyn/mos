@@ -15,8 +15,7 @@ mixin TSModule!(ts.objects.tuple);
         this.val = val;
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "tuple";
+    mixin TSType!"tuple";
     @tsexport {
         void ctor(Tuple* v) { v.val = []; }
         void ctor(Tuple* v, Tuple o) {
@@ -65,8 +64,7 @@ static:
                 end = beg + l.val.length;
             }
         static:
-            __gshared TypeMeta typeMeta;
-            enum tsstring type = "tuple_iterator";
+            mixin TSType!"tuple_iterator";
             @tsexport {
                 @tsget auto  Iter(Iterator v) { return v; }
                 @tsget Obj   Val(Iterator v) { return *v.ptr; }

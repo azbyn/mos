@@ -81,7 +81,7 @@ syn keyword tsRepeat	for while
 syn keyword tsOperator	in
 "syn keyword tsException	except finally raise try
 "syn keyword tsAsync		async await
-syn keyword tsDeclaration fun prop struct module import
+syn keyword tsDeclaration fun prop struct module import this
 
 hi def link     tsDeclaration       Keyword
 
@@ -101,6 +101,8 @@ syn match   tsFunction
 
 syn match   tsComment	"#.*$" contains=tsTodo,@Spell
 syn keyword tsTodo		FIXME NOTE NOTES TODO XXX contained
+
+syn region tsComment	matchgroup=cCommentStart start="<<<" end=">>>" contains=tsTodo,@Spell extend
 
 " Triple-quoted strings can contain doctests.
 syn region  tsString matchgroup=tsQuotes

@@ -28,8 +28,7 @@ import com.log;
         }
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "dict";
+    mixin TSType!"dict";
     @tsexport {
         void ctor(Dict v) { v.val = []; }
         tsstring toString(Pos p, Env e, Dict v) {
@@ -88,8 +87,7 @@ static:
                 end = beg + m.val.length;
             }
         static:
-            __gshared TypeMeta typeMeta;
-            enum tsstring type = "dict_iterator";
+            mixin TSType!"dict_iterator";
             @tsexport {
                 @tsget auto Iter(Iterator v) { return v; }
                 @tsget Obj  Val(Iterator v) { return v.ptr.val; }

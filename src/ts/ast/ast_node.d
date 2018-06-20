@@ -1,27 +1,29 @@
 module ts.ast.ast_node;
 
 import stdd.format;
-import ts.misc: FuncType;
+import ts.misc : FuncType;
 import ts.ast.token;
 
 private enum types = [
     "Comma", "ReverseComma", "String", "Int", "Float", "Bool", "Nil", "Variable",
     "FuncCall", "Binary", "Lambda", "Assign", "Subscript", "Member", "And", "Or",
     "If", "While", "For", "Body", "Cmp", "Return", "List", "CtrlFlow", "Dict",
-    "Tuple", "SetterDef", "GetterDef", "PropDef", "Module", "Cat"
-    ];
+    "Tuple", "SetterDef", "GetterDef", "Property", "Module", "Cat", "Struct", "This"
+];
 
 class AstNode {
     import stdd.variant;
 
     struct Nil {
     }
+    struct This {}
 
-    struct Comma {// evaluate a and b, return b
+    struct Comma { // evaluate a and b, return b
         AstNode a;
         AstNode b;
     }
-    struct ReverseComma {// evaluate a and b, return a
+
+    struct ReverseComma { // evaluate a and b, return a
         AstNode a;
         AstNode b;
     }
@@ -39,6 +41,7 @@ class AstNode {
         AstNode a;
         AstNode b;
     }
+
     struct Binary {
         tsstring name;
         AstNode a;
@@ -53,12 +56,6 @@ class AstNode {
         AstNode func;
         AstNode[] args;
     }
-    /*
-    struct MemberCall {
-        AstNode obj;
-        tsstring name;
-        AstNode[] args;
-        }*/
 
     struct Cat {
         AstNode a;
@@ -76,6 +73,7 @@ class AstNode {
             this.body_ = body_;
             this.isVariadic = isVariadic;
         }
+
         this(tsstring[] captures, tsstring[] params, AstNode body_, bool isVariadic = false) {
             this.params = params;
             this.captures = captures;
@@ -88,19 +86,23 @@ class AstNode {
         AstNode rvalue;
         AstNode lvalue;
     }
+
     struct SetterDef {
         tsstring name;
         AstNode val;
     }
+
     struct GetterDef {
         tsstring name;
         AstNode val;
     }
-    struct PropDef {
-        tsstring name;
-        AstNode.Lambda get;
-        AstNode.Lambda set;
+
+    struct Property /*Def*/ {
+        //tsstring name;
+        AstNode get;
+        AstNode set;
     }
+
     struct Subscript {
         AstNode val;
         AstNode index;
@@ -126,10 +128,12 @@ class AstNode {
         AstNode body_;
         AstNode else_;
     }
+
     struct While {
         AstNode cond;
         AstNode body_;
     }
+
     struct For {
         tsstring index;
         tsstring val;
@@ -144,6 +148,7 @@ class AstNode {
     struct Return {
         AstNode val;
     }
+
     struct CtrlFlow {
         TT type;
     }
@@ -151,20 +156,27 @@ class AstNode {
     struct List {
         AstNode[] val;
     }
+
     struct Tuple {
         AstNode[] val;
     }
+
     struct Dict {
         AstNode[] val;
     }
+
     struct Module {
-        bool isType;
         tsstring name;
         tsstring[] captures;
         AstNode[tsstring] members;
-        Lambda[tsstring] methods;
-        Lambda[tsstring] getters;
-        Lambda[tsstring] setters;
+    }
+
+    struct Struct {
+        tsstring name;
+        tsstring[] captures;
+        AstNode ctor;
+        AstNode[tsstring] statics;
+        AstNode[tsstring] instance;
     }
 
     private static string genVal() {
@@ -176,8 +188,9 @@ class AstNode {
 
     mixin(genVal());
     Pos pos;
-    T* peek(T)() { return val.peek!T; }
-
+    T* peek(T)() {
+        return val.peek!T;
+    }
 
     this(T)(Pos pos, T val) {
         this.val = val;
@@ -193,23 +206,20 @@ class AstNode {
 
         void add(tsstring v) {
             import ts.misc;
-            if (res.contains(v) || bound.contains(v)) return;
+
+            if (res.contains(v) || bound.contains(v))
+                return;
             res ~= v;
         }
-        void fv_(AstNode[tsstring] members, Lambda[tsstring][] nodes...) {
-            foreach (name, m; members) {
+
+        void fv_(AstNode[tsstring] nodes) {
+            foreach (name, m; nodes) {
                 add(name);
                 m.freeVarsTail(res, bound);
             }
-
-            foreach (n; nodes) {
-                foreach (name, m; n) {
-                    add(name);
-                    res ~= m.body_.freeVars(bound ~ m.params);
-                }
-            }
         }
 
+        //dfmt off
         val.visit!(
             (Cmp v) { fv(v.a, v.b); },
             (Comma v) {fv(v.a, v.b); },
@@ -219,9 +229,9 @@ class AstNode {
             (Int v) {},
             (Bool v) {},
             (Nil v) {},
+            (This v) {},
             (Variable v) { add(v.name); },
             (FuncCall v) { fv(v.func); fv(v.args); },
-            //(MemberCall v) { fv(v.obj); fv(v.args); },
             (Binary v) { fv(v.a, v.b); },
             (Lambda v) { res ~= v.body_.freeVars(bound ~ v.params); },
             (Assign v) { fv(v.rvalue, v.lvalue); },
@@ -229,7 +239,8 @@ class AstNode {
             (GetterDef v) { fv(v.val); },
             (Subscript v) { fv(v.val, v.index); },
             (Member v) { fv(v.val); },
-            (Module v) { add(v.name); fv_(v.members, v.methods, v.setters, v.getters); },
+            (Module v) { add(v.name); fv_(v.members); },
+            (Struct v) { add(v.name); fv_(v.statics); fv_(v.instance); },
             (And v) { fv(v.a, v.b); },
             (Or v) { fv(v.a, v.b); },
             (If v) { fv(v.cond, v.body_, v.else_); },
@@ -242,10 +253,9 @@ class AstNode {
             (Return v) { fv(v.val); },
             (CtrlFlow v) {},
             (Cat v) { fv(v.a, v.b); },
-            (PropDef v) { res ~= v.set.body_.freeVars(bound ~ v.set.params);
-                          res ~= v.get.body_.freeVars(bound ~ v.get.params);},
+            (Property v) { fv(v.get, v.set); },
         )();
-
+        //dfmt on
     }
 
     tsstring[] freeVars(tsstring[] bound = []) {
@@ -256,9 +266,10 @@ class AstNode {
 
     override string toString() {
         import stdd.conv : to;
-        return toString(0).to!string;
+
+        return toString(0);
     }
-    //string toStr() {return toString(); }
+
     string toString(int level) {
         import stdd.conv : to;
         import stdd.algorithm.iteration;
@@ -285,6 +296,15 @@ class AstNode {
             }
             return r;
         }
+
+        string str_(string name, AstNode[tsstring] args) {
+            string r = format!"%s  =%s:\n"(indent, name);
+            foreach (name, a; args) {
+                r ~= format!"\n %s:%s"(name, a is null ? "null" : a.toString(level + 1));
+            }
+            return r;
+        }
+
         //dfmt off
         return indent ~ "-" ~ val.visit!(
             (Cat v) => format!"cat:%s"(str(v.a, v.b)),
@@ -296,15 +316,16 @@ class AstNode {
             (Int v) => format!"int %d"(v),
             (Bool v) => format!"bool %s"(v),
             (Nil v) => "nil",
+            (This v) => "this",
             (Variable v) => format!"variable '%s'"(v.name),
-            //(MemberCall v) => format!"memberCall '%s':%s%s"(v.name, str(v.obj), str(v.args)),
             (FuncCall v) => format!"funcCall:%s%s"(str(v.func), str(v.args)),
             (Binary v) => format!"binary '%s':%s"(v.name, str(v.a, v.b)),
-            (Lambda v) => format!"lambda (%s%s) [%s]:%s"(v.params.joiner(","), v.isVariadic?"...":"", v.captures.joiner(","), str(v.body_)),
+            (Lambda v) => format!"lambda (%s%s) [%s]:%s"(v.params.joiner(","),
+                                                         v.isVariadic?"...":"", v.captures.joiner(","), str(v.body_)),
             (Assign v) => format!"assign:%s"(str(v.rvalue, v.lvalue)),
             (SetterDef v) => format!"setterDef %s:%s"(v.name, str(v.val)),
             (GetterDef v) => format!"getterDef %s:%s"(v.name, str(v.val)),
-            (PropDef v) => format!"propAlias %s: %s"(v.name, v.get.body_),
+            (Property v) => format!"property: %s"(str(v.get, v.set)),
             (Subscript v) => format!"subscript:%s"(str(v.val, v.index)),
             (Member v) => format!"member '%s':%s"(v.member, str(v.val)),
             (And v) => format!"and:%s"(str(v.a, v.b)),
@@ -318,30 +339,9 @@ class AstNode {
             (Dict v) => "dict:" ~ str(v.val),
             (Return v) => format!"return:%s"(str(v.val)),
             (CtrlFlow v) => v.type.symbolicStr,
-            (Module v) {
-                void foo(ref string res, AstNode[tsstring] arr) {
-                    foreach (n, a; arr) {
-                        res ~= "\n" ~indent ~ format!"  [%s]: "(n) ~ (a is null ? "null" : a.toString(0/*level+1*/));
-                    }
-                }
-                void fool(ref string res, Lambda[tsstring] arr) {
-                    foreach (n, l; arr) {
-                        res ~= "\n" ~ indent ~ format!"  [%s]: lambda (%s) [%s]:%s"(
-                            n, l.params.joiner(", "), l.captures.joiner(", "), str(l.body_));
-                    }
-                }
-                ++level;
-                auto res = format!"module(isType:%s) %s [%s]:"(v.isType, v.name, v.captures.joiner(","));
-                res ~= "\n"~indent ~ "| > members:";
-                foo(res, v.members);
-                res ~= "\n"~indent ~ "| > methods:";
-                fool(res, v.methods);
-                res ~= "\n"~indent ~ "| > getters:";
-                fool(res, v.getters);
-                res ~= "\n"~indent ~ "| > setters:";
-                fool(res, v.setters);
-                return res;
-            },
+            (Struct v) => format!"struct %s: %s%s%s"(v.name, str(v.ctor),
+                                                     str_("statics", v.statics), str_("instance", v.instance)),
+            (Module v) => format!"module %s: %s"(v.name, str_("members", v.members)),
         )();
         //dfmt on
     }

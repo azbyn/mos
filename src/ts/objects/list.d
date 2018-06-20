@@ -14,8 +14,7 @@ mixin TSModule!(ts.objects.list);
         this.val = val;
     }
 static:
-    __gshared TypeMeta typeMeta;
-    enum tsstring type = "list";
+    mixin TSType!"list";
     @tsexport {
         void ctor(List v) { v.val = []; }
         tsstring toString(Pos p, Env e, List v) {
@@ -64,8 +63,7 @@ static:
                 end = beg + l.val.length;
             }
         static:
-            __gshared TypeMeta typeMeta;
-            enum tsstring type = "list_iterator";
+            mixin TSType!"list_iterator";
             @tsexport {
                 @tsget auto Iter(Iterator v) { return v; }
                 @tsget Obj Val(Iterator v) { return *v.ptr; }
