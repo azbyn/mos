@@ -34,7 +34,7 @@ void init() {
         return a.typestr;
     }
     TypeMeta type(Obj a) {
-        return *a.typeMeta;
+        return a.typeMeta;
     }
 
     @tstrace Obj invalidType(Pos p, tsstring expected, tsstring got, string file = __FILE__, size_t line = __LINE__) {

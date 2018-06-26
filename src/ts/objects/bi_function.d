@@ -16,24 +16,6 @@ mixin TSModule!(ts.objects.bi_function);
 static:
     mixin TSType!"function_bi";
 }
-
-@tsexport struct MethodMaker {
-    Obj delegate(Obj) val;
-    this(Obj delegate(Obj) val) {
-        this.val = val;
-    }
-    static mk(Obj function(Obj) val) {
-        import stdd.functional;
-        return obj!MethodMaker(val.toDelegate);
-    }
-
-    Obj callThis(Obj this_) {
-        return val(this_);
-    }
-
-static:
-    mixin TSType!"method_maker";
-}
 @tsexport struct BIClosure {
     Obj delegate(Pos, Env, Obj[]) val;
     this(Obj delegate(Pos, Env, Obj[]) val) {
@@ -65,4 +47,25 @@ static:
     }
 static:
     mixin TSType!"function_mol";
+}
+Obj methodMaker(T)(T t) {
+    return obj!(MethodMaker_!T)(t);
+}
+@tsexport struct BIMethodMaker {
+    Obj delegate(Obj) val;
+    this(Obj delegate(Obj) val) {
+        this.val = val;
+    }
+
+    static mk(Obj function(Obj) val) {
+        import stdd.functional;
+        return obj!BIMethodMaker(val.toDelegate);
+    }
+
+    Obj callThis(Obj this_) {
+        return val(this_);
+    }
+
+static:
+    mixin TSType!"bi_method_maker";
 }

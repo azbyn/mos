@@ -12,7 +12,7 @@ enum tsmodule; // module declaration, must be abstract class
 enum tstrace; // for functions with __FILE__ __LINE__
 
 /*
-  TODO Rewrite htis
+  TODO Rewrite this
   * Last trailing underscore (ie fun_) gets removed,
   usefull for things like assert
 
@@ -40,28 +40,6 @@ ts.objects.d:
     enum types = ts.objects.types ~ ... ~ ts.foo.types;
     enum modules = ... ~ ts.foo.modules;
  */
-/*
-static import ts.objects.nil;
-static import ts.objects.function_;
-static import ts.objects.closure;
-static import ts.objects.bi_function;
-static import ts.objects.bi_overloads;
-static import ts.objects.float_;
-static import ts.objects.int_;
-static import ts.objects.bool_;
-static import ts.objects.string_;
-static import ts.objects.list;
-static import ts.objects.tuple;
-static import ts.objects.dict;
-static import ts.objects.property;
-static import ts.objects.range;
-static import ts.objects.type_meta;
-static import ts.objects.module_;
-static import ts.objects.user_defined;
-static import ts.stdlib.io;
-static import ts.stdlib.misc;
-static import ts.stdlib.math;
-*/
 
 //because of cyclic dependencies we must add all modules that use TSModule here
 enum modules = ts.objects.modules ~ ts.stdlib.modules;
@@ -205,7 +183,7 @@ static:
                     enum fd = funcData!(T, "ctor");
                     //static assert(st == SymbolType.Function);
                     static assert(!sd.isStatic);
-                    type.ctor = obj!MethodMaker(getFunction!(T, "ctor", fd, sd.isStatic));
+                    type.ctor = obj!BIMethodMaker(getFunction!(T, "ctor", fd, sd.isStatic));
                 }
             }
             else static if (member == "init") {
@@ -250,7 +228,7 @@ static:
     auto getFunction(alias T, string fun, FuncData fd, bool isStatic)() {
         Fun[int] val;
         static foreach (o; __traits(getOverloads, T, fun)) {{
-            immutable f = getFunImpl!(o, fd.isTrace);
+            immutable f = getFunImpl!(o, fd.isTrace, fullyQualifiedName!T ~ "."~ fun);
             //pragma(msg, format!"added %s: %s"(fun, typeid(f)));
 
             assert(f.i !in val, format!"@%s please only define 1 overload per arg count"(fun));
@@ -266,7 +244,7 @@ static:
         }
     }
 
-    auto getFunImpl(alias fun, bool isTrace)() {
+    auto getFunImpl(alias fun, bool isTrace, string name)() {
         struct Res(T) {
             int i;
             T val;
@@ -297,6 +275,9 @@ static:
                 return nil;
             }
             else {
+                //import com.log;
+                //tslog!"%s: %s"(name, funCall.val);
+                //please_break();
                 return toObj(mixin(funCall.val));
             }
         });

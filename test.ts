@@ -1,5 +1,5 @@
 #!/home/azbyn/Projects/qt_ts/qt_ts
-struct X:
+struct S:
 	#this.member = 4
 	val = 5
 
@@ -10,20 +10,27 @@ struct X:
 	#fun .b(): 2
 	#fun .c(): 3
 
-	#this(x): println("arg:", x)
-	this(k): this.val = k
+	fun m3(mem2): 41
+	this(arg): this.val = arg
 	fun toString(): this.val.toString()
-	#fun .static(x): x+4
-	fun member(): this.val
-	#fun this.alsoMember(): this.val
-	#fun X.toBeImplemented(x="4"): x
+	fun .static(x): x+4
+	fun m2(mem2, z): 42
+	fun member(mem, x): this.val = x
+	fun this.alsoMember(): this.val
+	fun m5(mem2, z): 40
+	##fun X.toBeImplemented(x="4"): x
 
-#println(X.a())
 #println(X.var)
 #println(X.var2)
-x = X(747)
-#println(x)
-println(x.member())
+x = S(747)
+#println(x.val)
+#println(x.m5(5, 1))
+#println(x.toString())
+#println(x.val = 16)
+println(x.static(4))
+println(S.static(4))
+##println(x.member(1,2))
+#println(x.val)
 
 #println(X.static(0))
 <<<

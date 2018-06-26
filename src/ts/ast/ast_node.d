@@ -167,13 +167,11 @@ class AstNode {
 
     struct Module {
         tsstring name;
-        tsstring[] captures;
         AstNode[tsstring] members;
     }
 
     struct Struct {
         tsstring name;
-        tsstring[] captures;
         AstNode ctor;
         AstNode[tsstring] statics;
         AstNode[tsstring] instance;

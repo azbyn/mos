@@ -11,7 +11,7 @@ private alias Method = Obj delegate(Obj) @system;
     Method get = null;
     Method set = null;
 
-    this (Method get, Method set) {
+    this(Method get, Method set) {
         this.get = get;
         this.set = set;
     }
@@ -107,7 +107,7 @@ Obj assignMemberFuncType(FuncType ft, Index)(ref Obj[Index] arr, Index index, Me
         return assignMemberSetter(arr, index, val);
     }
     else {
-        return arr[index] = obj!MethodMaker(val);
+        return arr[index] = obj!BIMethodMaker(val);
     }
 }
 

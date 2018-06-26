@@ -2,26 +2,11 @@ module ts.ir.block_manager;
 
 import ts.objects.obj;
 import ts.ir.block;
-import ts.ir.symbol_table;
 import ts.ir.lib;
 import ts.ir.compiler;
 import ts.misc;
 import stdd.format : format;
 import stdd.string : join;
-
-struct ModuleOrStructMaker {
-    tsstring name;
-    uint[] captures;
-    tsstring[] staticNames;//use uints?
-    tsstring[] instanceNames;
-    tsstring toStr(bool isStruct)(BlockManager man) {
-        enum tsstring type = isStruct ? "structMaker" : "moduleMaker";
-        tsstring res = tsformat!"<%s '%s'>"(type, name);
-        res ~= "\nstatics:" ~ staticNames.join(", ");
-        res ~= "\ninstance:" ~ instanceNames.join(", ");
-        return res~tsformat!"\n</%s>"(type);
-    }
-}
 
 class BlockManager {
     Obj[] consts;
@@ -29,7 +14,6 @@ class BlockManager {
     //SymbolTable[] tables;
     tsstring[] strs;
     Block[] blocks;
-    ModuleOrStructMaker[] modulesAndStructs;
     size_t[] jumpTable;
 
     @property Block mainBlock() { return blocks[0]; }
@@ -66,6 +50,7 @@ class BlockManager {
     }
 
     tsstring getStr(uint t) {
+        assert(t < strs.length, format!"out of bounds %s (max %s)"(t, strs.length));
         return strs[t];
     }
     bool tryGetIndex(tsstring str, out uint res) {

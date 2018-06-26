@@ -9,18 +9,15 @@ import ts.ast.ast_node;
 import ts.ast.token;
 import ts.ir.block_manager;
 import ts.ir.block;
-import ts.ir.symbol_table;
 import ts.ir.lib;
 import ts.misc;
 import com.log;
 
 
-//TODO make case insensitive?
-
 enum OPCode {
     Nop,
     Pop,
-    DupTop,
+    //DupTop, // is evil, or at least I couldn't make it work properly
     Call,
     MemberSet,
     MemberGet,
@@ -39,8 +36,11 @@ enum OPCode {
     MakeStaticClosure,
     MakeMethodClosure,
     Property,
-    MakeModule,
-    MakeStruct,
+    AddModule,
+    AddModuleMember,
+    AddStruct,
+    AddStatic,
+    AddInstance,
     Jmp,
     Cmp,
     Cat,
@@ -57,9 +57,47 @@ struct OP {
     OPCode code;
     //ushort argc;
     uint val;
-    tsstring toString() {
-        return tsformat!"%-20s v:%d"(code, val);
-        //return tsformat!"%-20s a:%d v:%d"(code, argc, val);
+    string toString() { assert(0, "please use toStr"); }
+    tsstring toStr(Pos p, Env e, BlockManager man, tsstring label = "") {
+        tsstring res = tsformat!"%s %-20s v:%d"(label, code, val);
+        switch (code) {
+        case OPCode.MakeStaticClosure:
+        case OPCode.MakeMethodClosure:
+            return res ~ tsformat!"(%s)"(man.blocks[val].toStr(p, e));
+        case OPCode.LoadConst:
+            return res ~ tsformat!"(%s)"(man.consts[val].toStr(p, e));
+        case OPCode.Cmp:
+            return res ~ tsformat!"(%s)"(symbolicStr(cast(TT) val));
+        case OPCode.Binary:
+        case OPCode.MemberGet:
+        case OPCode.MemberSet:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.AddModuleMember:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.AddInstance:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.AddStatic:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.AddStruct:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.AddModule:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.LoadVal:
+        case OPCode.Assign:
+        case OPCode.GetterDef:
+        case OPCode.SetterDef:
+            return res ~ tsformat!"(%s)"(man.getStr(val));
+        case OPCode.LoadLib:
+            return res ~ tsformat!"(%s)"(man.lib.getName(val));
+        case OPCode.Jmp:
+        case OPCode.JmpIfFalseOrPop:
+        case OPCode.JmpIfTrueOrPop:
+        case OPCode.JmpIfFalsePop:
+        case OPCode.JmpIfTruePop:
+            return res ~ tsformat!"(L%s)"(val);
+        default:
+            return res;
+        }
     }
 }
 
@@ -317,43 +355,39 @@ public void nodeIR(bool isStatic)(AstNode n, Block bl, uint[] captures = null, l
             bl.addVal(pos, OPCode.Jmp, j);
         },
         (AstNode.Module v) {
-            uint name_ = bl.st.addStr(v.name);
-            auto captures = bl.man.getBulk(v.captures)~ name_;
-            ModuleOrStructMaker val =
-                ModuleOrStructMaker(v.name, captures,
-                                    uninitializedArray!(tsstring[])(v.members.length),
-                                    null);
-            size_t i = 0;//use --?
+            bl.addStr(pos, OPCode.AddModule, v.name);
+            //bl.addConst(pos, obj!Module(v.name));
+            bl.addAssign(pos, v.name);
+            uint[] cap = [bl.man.addStr(v.name)];
             foreach (name, mem; v.members) {
-                val.staticNames[i++] = name;
-                irStatic(mem, captures);
+                bl.addVariable(pos, v.name);
+                irStatic(mem, cap);
+                bl.addStr(pos, OPCode.AddModuleMember, name);
             }
-            bl.addModuleOrStruct(pos, OPCode.MakeModule, val);
         },
         (AstNode.Struct v) {
-            tslog!"add struct '%s'"(v.name);
-            uint name_ = bl.st.addStr(v.name);
-            auto captures = bl.man.getBulk(v.captures)~ name_;
-            ModuleOrStructMaker val =
-                ModuleOrStructMaker(v.name, captures,
-                                    uninitializedArray!(tsstring[])(v.statics.length),
-                                    uninitializedArray!(tsstring[])(v.instance.length));
-            size_t i = 0;
-            if (v.ctor is null) {
-                bl.addNil(pos);
-            } else {
-                irInstance(v.ctor, captures);
-            }
+            bl.addStr(pos, OPCode.AddStruct, v.name);
+            /*bl.addConst(pos, obj!TypeMeta(v.name));
+              bl.addAssign(pos, v.name);*/
+
+            uint[] cap = [bl.man.addStr(v.name)];
             foreach (name, mem; v.statics) {
-                val.staticNames[i++] = name;
-                irStatic(mem, captures);
+                bl.addVariable(pos, v.name);
+                irStatic(mem, cap);
+                bl.addStr(pos, OPCode.AddStatic, name);
             }
-            i = 0;
             foreach (name, mem; v.instance) {
-                val.instanceNames[i++] = name;
-                irInstance(mem, captures);
+                bl.addVariable(pos, v.name);
+                irInstance(mem, cap);
+                bl.addStr(pos, OPCode.AddInstance, name);
             }
-            bl.addModuleOrStruct(pos, OPCode.MakeStruct, val);
+            if (v.ctor !is null) {
+                bl.addVariable(pos, v.name);
+                irInstance(v.ctor, cap);
+                bl.addStr(pos, OPCode.AddInstance, "0ctor");
+            }
+            //bl.add(pos, OPCode.Pop);
+
         },
     );
     //dfmt on

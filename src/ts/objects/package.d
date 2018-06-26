@@ -2,6 +2,7 @@ module ts.objects;
 
 public import ts.objects.obj;
 public import ts.objects.nil;
+public import ts.objects.method_maker;
 public import ts.objects.function_;
 public import ts.objects.closure;
 public import ts.objects.bi_function;
@@ -21,6 +22,7 @@ public import ts.objects.user_defined;
 
 enum modules = [
     "ts.objects.nil",
+    //"ts.objects.method_maker",
     "ts.objects.function_",
     "ts.objects.closure",
     "ts.objects.bi_function",

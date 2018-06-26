@@ -36,9 +36,14 @@ else {
 
 import com.log;
 Obj obj(T, A...)(A args, string file = __FILE__, size_t line = __LINE__) {
-    return new Obj(&T.typeMeta, T(args));
+    static if (is(T==TypeMeta)) {
+        return new Obj(new T(args));
+    }
+    else {
+        return new Obj(T(args));
+    }
 }
-//enum types = 
+extern(C) void please_break() {}
 class Obj {
     /*
     private static string genVal() {
@@ -47,7 +52,7 @@ class Obj {
             r ~= t ~ ",";
         return r ~ ") val;";
         }*/
-    TypeMeta* typeMeta;
+    TypeMeta typeMeta;
     @property tsstring typestr() { return typeMeta.name; }
     VariantN!objSize val;
     //mixin(genVal());
@@ -56,14 +61,14 @@ class Obj {
         this.val = String(s);
         }*/
     import stdd.traits : isSomeString, fullyQualifiedName;
-    this(T)(T val) if (!is(T == UserDefined)/* && !isSomeString!T*/) {
-         this(&T.typeMeta, val);
+    this(T)(T val) if (!is(T == UserDefined)) {
+         this(T.typeMeta, val);
     }
     /*
     this(TypeMeta* tm, Obj[tsstring] vars) {
         this(tm, UserDefined(vars));
         }*/
-    private this(T)(TypeMeta* typeMeta, T val) {
+    this(T)(TypeMeta typeMeta, T val) {
         this.typeMeta = typeMeta;
         //assert(typeMeta);
         //tslog!"<<<NEW '%s'"(typeMeta.name);
@@ -85,7 +90,7 @@ class Obj {
         return a;
     }
 
-    T get(T)(Pos pos) {
+    T get(T)(Pos pos, string file = __FILE__, size_t line = __LINE__) {
         import stdd.traits;
         static if (is(T==Obj)) return this;
         else static if (is(T==tsint)) return get!Int(pos).val;
@@ -97,9 +102,10 @@ class Obj {
         }
         else {
             auto a = val.peek!T;
-            if (a is null)
-                throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, typestr));
-            return *a;
+            if (a !is null)
+                return *a;
+            please_break();
+            throw new RuntimeException(pos, format!"Expected type %s, got %s"(getName!T, typestr), file, line);
         }
     }
     bool isNil() {
@@ -111,14 +117,19 @@ class Obj {
     T* peek(T)() {
         return val.peek!(T);
     }
+
+    Obj callThis(Pos p, Obj this_) {
+        return this.visitO!(
+            (BIMethodMaker bimm) => bimm.callThis(this_),
+            (MethodClosureMaker mm) => mm.callThis(this_),
+            (MethodFunctionMaker mm) => mm.callThis(this_),
+            () => throwRtrn!(Obj, RuntimeException)(p, format!"can't call this on %s"(typestr))
+            );
+    }
     /*
     private T memberCallCast(T)(tsstring s, Pos p, Env e, Obj[] args...) {
         return member(p, e, s).callThis(p, this).call(p, e, args).get!T(p);
         }*/
-    private Obj callThis(Pos p, Obj this_) {
-        return get!MethodMaker(p).callThis(this_);
-    }
-
     override string toString() {
         throw new Exception("please use toStr", __FILE__, __LINE__);
     }

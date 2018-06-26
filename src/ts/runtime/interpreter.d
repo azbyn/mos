@@ -19,10 +19,10 @@ import ts.objects.module_;
 import com.log;
 
 public Obj eval(BlockManager man) {
-    return eval(man.mainBlock, null, Pos(-1), new Env(man.mainBlock.st), null, null);
+    return eval(man.mainBlock, null, Pos(-1), new Env(man), null, null);
 }
 public Obj evalDbg(BlockManager man, out Env e) {
-    e = new Env(man.mainBlock.st);
+    e = new Env(man);
     tslog(man.toStr(Pos(-1), e));
     tslog("\nOutput:");
     return eval(man.mainBlock, null, Pos(-1), e, null, null);
@@ -41,9 +41,15 @@ public Obj evalStatic(Block bl, Pos initPos, Env env, Obj[] argv, Obj*[uint] cap
 public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint] captures = null,
                 string file =__FILE__, size_t line = __LINE__) {
     if (env !is null)
-        env = new Env(env, bl.st, captures);
+        env = new Env(env, bl.man, captures);
     auto length = argv is null ? 0 : argv.length;
     Obj[] stack;
+    void stackPuke(tsstring why) {
+        tslog!"\nstackPuke: %s (len=%s)"(why, stack.length);
+        foreach (i, v; stack) {
+            tslog!"stack@%s= %s"(i, v.typestr);//toStr(initPos, env));
+        }
+    }
     //dfmt off
     Obj pop() { auto t = stack.back(); stack.popBack(); return t; }
     Obj[] popN(size_t n) {
@@ -76,7 +82,7 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
         auto msg = "";
         auto pos = op.pos;
 
-        tslog!"%d %s l=%s"(pc, op, len);
+        tslog!"%-2d %s"(pc, op.toStr(pos, env, man));
         //dfmt off
         final switch (op.code) {
         case OPCode.Nop: break;
@@ -85,14 +91,17 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             stack ~= this_;
             break;
         case OPCode.Pop:
-            if (len == 0) break;
+            if (len == 0) {
+                tslog("!dryPop");
+                break;
+            }
             //assert (len > 0, "stack underflow");
             stack.popBack();
             break;
+            /*
         case OPCode.DupTop:
-            assert(len>0);
             stack ~= stack.back();
-            break;
+            break;*/
         case OPCode.Call: {
             assert(len >= op.val + 1);
             auto args = popN(op.val);
@@ -191,7 +200,7 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             foreach (c; b.captures) {
                 caps[c] = env.getPtr(c);
             }
-            stack ~= obj!MethodMaker((Obj o) => obj!MethodClosure(o, b, caps));
+            stack ~= obj!MethodClosureMaker(b, caps);
         } break;
         case OPCode.Property: {
             assert(len >= 2);
@@ -200,7 +209,6 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             if (set.isNil()) set = null;
             if (get.isNil()) get = null;
             stack ~= obj!Property(get, set);
-
         } break;
         case OPCode.MakeList: {
             assert(len >= op.val);
@@ -221,6 +229,14 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             assert(len >= 1);
             auto a = pop();
             stack ~= env.set(pos, op.val, a);
+        } break;
+        case OPCode.AddModule: {
+            auto name = man.getStr(op.val);
+            stack ~= env.set(pos, op.val, obj!Module(name));
+        } break;
+        case OPCode.AddStruct: {
+            auto name = man.getStr(op.val);
+            stack ~= env.set(pos, op.val, obj!TypeMeta(name));
         } break;
         case OPCode.SetterDef: {
             assert(len >= 1);
@@ -264,42 +280,28 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             if (!a.toBool(pos, env))
                 jmp(pc, op.val);
         } break;
-        case OPCode.MakeModule: {
-            auto val = bl.man.modulesAndStructs[op.val];
-            assert(len >= val.staticNames.length);
-            auto members = popN(val.staticNames.length);
-
-            Module mod = Module(val.name);
-            foreach (i, m; members) {
-                mod.members[val.staticNames[i]] = m;
-            }
-            auto obj = new Obj(mod);
-            env.set(pos, mod.name, obj);
-            stack ~= obj;
+        case OPCode.AddModuleMember: {
+            assert(len >= 2);
+            auto str = man.getStr(op.val);
+            auto val = pop();
+            auto mod = pop();
+            mod.peek!Module.members[str] = val;
         } break;
-        case OPCode.MakeStruct: {
-            auto val = bl.man.modulesAndStructs[op.val];
-            assert(len >= val.staticNames.length + val.instanceNames.length + 1);
-            auto instance = popN(val.instanceNames.length);
-            auto statics = popN(val.staticNames.length);
-            auto ctor = pop();
-            TypeMeta type = TypeMeta(val.name);
-            if (!ctor.isNil()) {
-                type.ctor = ctor;
-            }
-            foreach (i, m; instance) {
-                type.instance[val.instanceNames[i]] = m;
-            }
-            foreach (i, m; statics) {
-                type.statics[val.staticNames[i]] = m;
-            }
-
-            auto obj = new Obj(type);
-            env.set(pos, type.name, obj);
-            stack ~= obj;
-
+        case OPCode.AddStatic: {
+            assert(len >= 2);
+            auto str = man.getStr(op.val);
+            auto val = pop();
+            auto tm = pop();
+            tm.peek!TypeMeta.statics[str] = val;
         } break;
-
+        case OPCode.AddInstance: {
+            assert(len >= 2);
+            stackPuke("addinstance");
+            auto str = man.getStr(op.val);
+            auto val = pop();
+            auto tm = pop();
+            tm.peek!TypeMeta.instance[str] = val;
+        } break;
         }
         //if (msg.length > 0)
         //    writefln("(%s)", msg);

@@ -46,10 +46,31 @@ static:
 static:
     mixin TSType!"mthd_closure";
     @tsexport tsstring toString(Pos p, Env e, MethodClosure v) {
-        tsstring res = "<closure>\n";
+        tsstring res = "<mthd_closure>\ncaps_vals:\n";
         foreach (k, o; v.captures)
             res ~= tsformat!"@%s:%s\n"(k, o.toStr(p, e));
-        res ~= "Code:\n"~ v.val.toStr(p, e);
-        return res ~ "\n</closure>";
+        res ~= v.val.toStr(p, e);
+        return res ~ "\n</mthd_closure>";
+    }
+}
+@tsexport struct MethodClosureMaker {
+    Block val;
+    Obj*[uint] captures;
+    this(Block val, Obj*[uint] captures) {
+        this.val = val;
+        this.captures = captures;
+    }
+    Obj callThis(Obj this_) {
+        return obj!MethodClosure(this_, val, captures);
+    }
+
+static:
+    mixin TSType!"mthd_closure_mkr";
+    @tsexport tsstring toString(Pos p, Env e, MethodClosureMaker v) {
+        tsstring res = "<mthd_closure_mkr>\ncaps_vals:\n";
+        foreach (k, o; v.captures)
+            res ~= tsformat!"@%s:%s\n"(k, o.toStr(p, e));
+        res ~= v.val.toStr(p, e);
+        return res ~ "\n</mthd_closure_mkr>";
     }
 }

@@ -2,7 +2,6 @@ module ts.ir.block;
 
 import ts.ast.token;
 import ts.ir.compiler;
-import ts.ir.symbol_table;
 import ts.ir.lib;
 import ts.ir.block_manager;
 import ts.objects.obj;
@@ -19,10 +18,6 @@ class IRException : TSException {
 
 class Block {
     OP[] ops;
-    private SymbolTable _st;
-    @property SymbolTable st() {
-        return _st;
-    }
 
     BlockManager man;
     uint[] args;
@@ -30,14 +25,11 @@ class Block {
     @property Lib lib() {
         return man.lib;
     }
-    @property uint[] captures() {
-        return _st.captures;
-    }
+    uint[] captures;
 
     this(BlockManager man) {
         this.man = man;
         //man.blocks ~= this;
-        _st = new SymbolTable(man);
     }
 
     this(BlockManager man, uint[] args, uint[] captures, bool isVariadic) {
@@ -45,7 +37,7 @@ class Block {
         //man.blocks ~= this;
         this.args = args;
         this.isVariadic = isVariadic;
-        _st = new SymbolTable(man, captures, args);
+        this.captures = captures;
     }
 
     void addVal(Pos pos, OPCode code, uint val) {
@@ -59,20 +51,15 @@ class Block {
                 addClosure(pos, OPCode.MakeStaticClosure, block);
         } else {
             if (block.captures.length == 0)
-                addConst(pos, obj!MethodMaker((Obj o) => obj!MethodFunction(o, block)));
+                addConst(pos, obj!MethodFunctionMaker(block));
             else
                 addClosure(pos, OPCode.MakeMethodClosure, block);
-
         }
     }
 
     void addClosure(Pos pos, OPCode op, Block bl) {
         man.blocks ~= bl;
         addVal(pos, op, man.blocks.length - 1);
-    }
-    void addModuleOrStruct(Pos pos, OPCode code, ModuleOrStructMaker mm) {
-        man.modulesAndStructs ~= mm;
-        addVal(pos, code, man.modulesAndStructs.length - 1);
     }
 
     void add(Pos pos, OPCode op) {
@@ -90,14 +77,15 @@ class Block {
         if (var == "_")
             throw new IRException(pos, "Invalid name '_'");
         size_t lres;
-        if (st.getName(var)) {
-            addVal(pos, OPCode.LoadVal, man.addStr(var));
+        if (man.strs.contains(var)) {
+            addVal(pos, OPCode.LoadVal, man.getIndex(var));
         }
         else if (lib.get(var, lres)) {
             addVal(pos, OPCode.LoadLib, lres);
         }
-        else
-            throw new IRException(pos, format!"'%s' not defined"(var), file, line);
+        else {
+            addVal(pos, OPCode.LoadVal, man.addStr(var));
+        }
     }
 
     void addConst(Pos pos, Obj val) {
@@ -115,17 +103,17 @@ class Block {
     void addAssign(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.Assign, st.addStr(var));
+        addVal(pos, OPCode.Assign, man.addStr(var));
     }
     void addSetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.SetterDef, st.addStr(var));
+        addVal(pos, OPCode.SetterDef, man.addStr(var));
     }
     void addGetterDef(Pos pos, tsstring var) {
         if (var == "_")
             return;
-        addVal(pos, OPCode.GetterDef, st.addStr(var));
+        addVal(pos, OPCode.GetterDef, man.addStr(var));
     }
 
     tsstring getStr(size_t i) {
@@ -171,14 +159,14 @@ class Block {
     }
     tsstring toStr(Pos p, Env e) {
         tsstring r = "";
-        if (args !is null) {
+        if (args.length) {
             r ~= "\nargs:";
             if (isVariadic) r~= "...";
             foreach (a; args) {
                 r ~= tsformat!"\n%s: %s"(a, man.getStr(a));
             }
         }
-        if (captures !is null) {
+        if (captures.length) {
             r ~= "\ncaptures: ";
             foreach (a; captures) {
                 r ~= tsformat!"\ncap:%s"(a);
@@ -193,48 +181,7 @@ class Block {
             return (res.length == 0)? "    ": res[0..$-1];
         }
         foreach (i, o; ops) {
-            r ~= tsformat!"\n%s %s "(getLabel(i), o);
-            switch (o.code) {
-            case OPCode.MakeModule:
-                r ~= tsformat!"(%s)"(man.modulesAndStructs[o.val].toStr!false(man));
-                break;
-            case OPCode.MakeStruct:
-                r ~= tsformat!"(%s)"(man.modulesAndStructs[o.val].toStr!true(man));
-                break;
-
-            case OPCode.MakeStaticClosure:
-            case OPCode.MakeMethodClosure:
-                r ~= tsformat!"(%s)"(man.blocks[o.val].toStr(p, e));
-                break;
-            case OPCode.LoadConst:
-                r ~= tsformat!"(%s)"(man.consts[o.val].toStr(p, e));
-                break;
-            case OPCode.Cmp:
-                r ~= tsformat!"(%s)"(symbolicStr(cast(TT) o.val));
-                break;
-            case OPCode.Binary:
-                //case OPCode.MethodCall:
-            case OPCode.MemberGet:
-            case OPCode.MemberSet:
-            case OPCode.LoadVal:
-            case OPCode.Assign:
-            case OPCode.GetterDef:
-            case OPCode.SetterDef:
-                r ~= tsformat!"(%s)"(man.getStr(o.val));
-                break;
-            case OPCode.LoadLib:
-                r ~= tsformat!"(%s)"(lib.getName(o.val));
-                break;
-            case OPCode.Jmp:
-            case OPCode.JmpIfFalseOrPop:
-            case OPCode.JmpIfTrueOrPop:
-            case OPCode.JmpIfFalsePop:
-            case OPCode.JmpIfTruePop:
-                r ~= tsformat!"(L%s)"(o.val);
-                break;
-            default:
-                break;
-            }
+            r ~= tsformat!"\n%s"(o.toStr(p, e, man, getLabel(i)));
         }
         return r;
     }

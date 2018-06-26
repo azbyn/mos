@@ -3,7 +3,6 @@ module ts.runtime.env;
 import ts.objects.obj;
 import ts.objects.property;
 import ts.objects.type_meta;
-import ts.ir.symbol_table;
 import ts.ir.block_manager;
 import stdd.array;
 import stdd.format : format;
@@ -33,15 +32,12 @@ class Env {
     BlockManager man;
     Obj*[uint] captures;
 
-    this(SymbolTable st) {
-        this.man = st.man;
-        foreach (n; st.symbols) {
-            objs[n] = nil;
-        }
+    this(BlockManager man) {
+        this.man = man;
         // objs = minimallyInitializedArray!(Obj[])(st.names.length);
     }
-    this(Env parent, SymbolTable st, Obj*[uint] captures) {
-        this(st);
+    this(Env parent, BlockManager man, Obj*[uint] captures) {
+        this(man);
         if (parent !is null)
             this.captures = parent.captures;
         if (captures !is null) {
@@ -56,15 +52,14 @@ class Env {
             return ptr.checkGetter(p, this);
         if (auto o = captures.get(val, null))
             return o.checkGetter(p, this);
-        assert(0, format!"get %s"(val));
+        throw new RuntimeException(p, format!"'%s' not defined"(man.getStr(val)));
     }
     Obj* getPtr(uint val) {
         if (auto ptr = val in objs)
             return ptr;
         if (auto o = captures.get(val, null))
             return o;
-        assert(0);
-
+        throw new Exception(format!"'%s' not defined"(man.getStr(val)));
     }
 
     Obj set(Pos p, tsstring val, Obj o) { return set(p, man.getIndex(val), o); }

@@ -39,16 +39,25 @@ extern (C++) int tsrun(const DToken* ptr, int len) {
         }
         return 1;
     }
-    try {
+    version (Nothrow) {
         tslog("\nIR");
         Lib lib = stdlib;
         auto man = generateIR(p.nodes, lib);
         Env e;
         auto res = man.evalDbg(e);
         tslog!"res = '%s'"(res.toStr(Pos(-1), e));
+    } else {
+        try {
+            tslog("\nIR");
+            Lib lib = stdlib;
+            auto man = generateIR(p.nodes, lib);
+            Env e;
+            auto res = man.evalDbg(e);
+            tslog!"res = '%s'"(res.toStr(Pos(-1), e));
         }
-    catch (TSException e) {
-        tsputsln(visualizeError(toks, e.pos, "Error: " ~ e.msg));
+        catch (TSException e) {
+            tsputsln(visualizeError(toks, e.pos, "Error: " ~ e.msg));
         }
+    }
     return 0;
 }

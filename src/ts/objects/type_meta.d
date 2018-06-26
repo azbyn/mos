@@ -20,46 +20,60 @@ __gshared private {
 
 private alias Creator = Obj delegate() @system;
 TypeMeta makeTypeMeta(tsstring name, Creator c)() {
-    return TypeMeta(name, c, obj!BIFunction((Pos p, Env e, Obj[] a) => obj!String(name)));
+    return new TypeMeta(name, c, obj!BIFunction((Pos p, Env e, Obj[] a) => obj!String(name)));
 }
 TypeMeta makeTypeMetaF(tsstring name, Obj function() @system c)() {
     import stdd.functional;
-    return TypeMeta(name, c.toDelegate(), obj!BIFunction((Pos p, Env e, Obj[] a) => obj!String(name)));
+    return new TypeMeta(name, c.toDelegate(), obj!BIFunction((Pos p, Env e, Obj[] a) => obj!String(name)));
 }
 
 TypeMeta makeTypeMeta(T)() {
     //tslog!"_MAKE_TYPE_META '%s'"(T.type);
-    return makeTypeMetaF!(T.type, () => new Obj(&T.typeMeta, T()));
+    return makeTypeMetaF!(T.type, () => obj!T());
 }
-@tsexport struct TypeMeta {
+//we make this a class because references of this are needed everywhere
+@tsexport class TypeMeta {
     tsstring name;
-    Obj ctor;
+    @property Obj ctor() { return instance["0ctor"]; }
+    @property Obj ctor(Obj val) { return instance["0ctor"] = val; }
     Obj[tsstring] instance;
     Obj[tsstring] statics;
     Creator creator;
     static void init() {
-        defaultToBool = MethodMaker.mk((Obj o)=>obj!BIFunction((Pos p, Env e, Obj[] a) => obj!Bool(true)));
-        defaultOpEquals = MethodMaker.mk((Obj o)=>obj!BIFunction((Pos p, Env e, Obj[] a) => obj!Bool(false)));
+        defaultToBool = BIMethodMaker.mk((Obj o)=>obj!BIFunction((Pos p, Env e, Obj[] a) => obj!Bool(true)));
+        defaultOpEquals = BIMethodMaker.mk((Obj o)=>obj!BIFunction((Pos p, Env e, Obj[] a) => obj!Bool(false)));
     }
-
+    this() {}
     private this(tsstring name, Creator c, Obj delegate(Obj) toStr) {
         this.name = name;
         this.creator = c;
-        instance["toString"] = obj!MethodMaker(toStr);
+        instance["toString"] = obj!BIMethodMaker(toStr);
         instance["toBool"] = defaultToBool;
         instance["opEquals"] = defaultOpEquals;
     }
     private this(tsstring name, Creator c, Obj toStr) {
         this.name = name;
         this.creator = c;
-        instance["toString"] = obj!MethodMaker((Obj o)=> toStr);
+        instance["toString"] = obj!BIMethodMaker((Obj o)=> toStr);
         instance["toBool"] = defaultToBool;
         instance["opEquals"] = defaultOpEquals;
     }
+    string dbgString() {
+        auto res = format!"type'%s':"(name);
+        res ~= "\ninstance:";
+        foreach (n,_;instance) {
+            res ~= format!"\n  %s"(n);
+        }
+        res ~= "\nstatic:";
+        foreach (n,_;statics) {
+            res ~= format!"\n  %s"(n);
+        }
 
+        return res~ "\n";
+    }
 
     this(tsstring name) {
-        this(name, () => new Obj(&this, UserDefined(instance)),
+        this(name, () => new Obj(this, UserDefined(this)),
              (Obj o)=> obj!BIClosure((Pos p, Env e, Obj[] a) => obj!String(o.typestr)));
     }
 
@@ -69,7 +83,7 @@ TypeMeta makeTypeMeta(T)() {
         if (ctor is null)
             throw new TypeException(p, format!"Type '%s' doesn't have a constructor"(name));
         Obj obj = creator();
-        ctor.peek!MethodMaker().callThis(obj).call(p, e, args);
+        ctor.callThis(p, obj).call(p, e, args);
         return obj;
     }
 
@@ -82,10 +96,14 @@ TypeMeta makeTypeMeta(T)() {
                           (Obj f) => f.visitO!(
                               (Property pr) => pr.callGet(p, e),
                               (PropertyMember pm) => pm.callGet(p, e, this_),
-                              (MethodMaker m) => m.callThis(this_),
+                              (MethodClosureMaker m) => m.callThis(this_),
+                              (MethodFunctionMaker m) => m.callThis(this_),
+                              (BIMethodMaker m) => m.callThis(this_),
                               () => f),
                           (Obj f) => f.visitO!(
-                              (MethodMaker m) => m.callThis(this_),
+                              (MethodClosureMaker m) => m.callThis(this_),
+                              (MethodFunctionMaker m) => m.callThis(this_),
+                              (BIMethodMaker m) => m.callThis(this_),
                               () => f).call(p, e, obj!String(mem)));
         //dfmt on
     }
@@ -104,7 +122,9 @@ TypeMeta makeTypeMeta(T)() {
                               //(BIMethodMaker m) => m.callThis(a).setMember(p, e, mem, val),
                               () => setterErr(f)),
                           (Obj f) => f.visitO!(
-                              (MethodMaker m) => m.callThis(this_),
+                              (MethodClosureMaker m) => m.callThis(this_),
+                              (MethodFunctionMaker m) => m.callThis(this_),
+                              (BIMethodMaker m) => m.callThis(this_),
                               () => f).call(p, e,  obj!String(mem), val));
     }
 
@@ -136,7 +156,7 @@ TypeMeta makeTypeMeta(T)() {
     Obj getStatic(Pos p, Env e, tsstring s) {
         Obj* x = s in statics;
         if (x is null)
-            throw new RuntimeException(p, format!"type '%s' doesn't contain '%s'"(name, s));
+            throw new RuntimeException(p, format!"type '%s' doesn't static contain '%s'"(name, s));
         Property* prop = x.val.peek!Property;
         if (prop !is null)
             return prop.callGet(p, e);
@@ -147,7 +167,7 @@ TypeMeta makeTypeMeta(T)() {
         import ts.objects.property;
         Obj* x = m in statics;
         if (x is null)
-            throw new RuntimeException(p, format!"type '%s' doesn't contain '%s'"(name, m));
+            throw new RuntimeException(p, format!"type '%s' doesn't contain static '%s'"(name, m));
         Property* prop = x.val.peek!Property;
         if (prop !is null)
             return prop.callSet(p, e, val);
@@ -157,7 +177,7 @@ TypeMeta makeTypeMeta(T)() {
 static:
     mixin TSType!"__type_meta__";
     @tsexport {
-        tsstring toString(TypeMeta t) {
+        tsstring toString(Pos p, Env e, TypeMeta t) {
             return tsformat!"__type_meta@%s__"(t.name);
         }
         /*Obj opCall(Pos p, Env e, Type_ t, Obj[] args) {

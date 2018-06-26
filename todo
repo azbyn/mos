@@ -20,6 +20,9 @@ mobile script
 instead of complicated captures use .staticMember
 remove compile time name check
 import x : *
+lambdas no assigns
+aliased captures ie. [x=somevar]():
+
 
 tuple unpacking ie. (a, b) = (1, 2)
 variadics
