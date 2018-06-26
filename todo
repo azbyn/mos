@@ -15,8 +15,6 @@ saves, loads
 dlang:
 replace cont with a lexer that ignores newlines & indent after certain tokens like +
 
-mobile script
-
 instead of complicated captures use .staticMember
 remove compile time name check
 import x : *
