@@ -2,7 +2,7 @@
 #define EDITOR_TEXT_H
 
 #include "editor_text_base.h"
-#include "ts/ast/token.h"
+#include "mos/ast/token.h"
 
 #include <vector>
 

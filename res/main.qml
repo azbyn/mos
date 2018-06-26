@@ -1,13 +1,13 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
-import ts 1.0
+import mos 1.0
 
 ApplicationWindow {
     id: app
     visible: true
     width: 404
     height: 720
-    title: qsTr("Throwaway Script")
+    title: qsTr("Mobile Script")
     //property int orgHeight
 
     property var type: PageType.Edit

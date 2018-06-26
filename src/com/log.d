@@ -1,18 +1,18 @@
 module com.str;
 
-import ts.types;
+import mos.types;
 import stdd.string;
 
-extern (C++, com) void tslog(const(char)* str);
+extern (C++, com) void moslog(const(char)* str);
 
-void tslog(string s) {
-    com.tslog(s.toStringz);
+void moslog(string s) {
+    com.moslog(s.toStringz);
 }
-void tslog(string f, A...)(A args) {
+void moslog(string f, A...)(A args) {
     import stdd.format;
-    tslog(format!f(args));
+    moslog(format!f(args));
 }
-void tslog(tsstring s) {
+void moslog(mosstring s) {
     import stdd.conv : to;
-    tslog(s.to!string);
+    moslog(s.to!string);
 }

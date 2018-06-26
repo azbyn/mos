@@ -46,33 +46,32 @@ private:
     static void setAttribute(Data&& data);
 
 public:
-    friend void tsattr();
-    friend void tsattr(uint8_t flags, uint32_t fg, uint32_t bg);
-    friend void tsputs(const ushort* sh, size_t len);
-    friend void tsputnl();
-    friend void tsclear();
+    friend void mosattr();
+    friend void mosattr(uint8_t flags, uint32_t fg, uint32_t bg);
+    friend void mosputs(const ushort* sh, size_t len);
+    friend void mosputnl();
+    friend void mosclear();
 
-    friend uint8_t tsGetFlags();
-    friend void tsSetFlags(uint8_t v);
+    friend uint8_t mosGetFlags();
+    friend void mosSetFlags(uint8_t v);
 
-    friend uint32_t tsGetBg();
-    friend void tsSetBg(uint32_t v);
+    friend uint32_t mosGetBg();
+    friend void mosSetBg(uint32_t v);
 
-    friend uint32_t tsGetFg();
-    friend void tsSetFg(uint32_t v);
+    friend uint32_t mosGetFg();
+    friend void mosSetFg(uint32_t v);
 };
-void tsattr();
-void tsattr(uint8_t flags, uint32_t fg, uint32_t bg);
-void tsputs(const ushort* sh, size_t len);
-void tsputnl();
-void tsclear();
+void mosattr();
+void mosattr(uint8_t flags, uint32_t fg, uint32_t bg);
+void mosputs(const ushort* sh, size_t len);
+void mosputnl();
+void mosclear();
 
-uint8_t tsGetFlags();
-void tsSetFlags(uint8_t v);
-uint32_t tsGetBg();
-void tsSetBg(uint32_t v);
-uint32_t tsGetFg();
-void tsSetFg(uint32_t v);
-
+uint8_t mosGetFlags();
+void mosSetFlags(uint8_t v);
+uint32_t mosGetBg();
+void mosSetBg(uint32_t v);
+uint32_t mosGetFg();
+void mosSetFg(uint32_t v);
 
 #endif

@@ -3,5 +3,5 @@
 #include <QtDebug>
 
 namespace com {
-void tslog(const char* str) { qDebug("%s", str); }
+void moslog(const char* str) { qDebug("%s", str); }
 }

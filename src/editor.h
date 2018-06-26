@@ -1,7 +1,7 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-#include "ts/ast/token.h"
+#include "mos/ast/token.h"
 #include "config.h"
 
 #include <QObject>

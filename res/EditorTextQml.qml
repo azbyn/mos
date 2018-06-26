@@ -1,6 +1,6 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.4
-import ts 1.0
+import mos 1.0
 
 Rectangle {
     id: root

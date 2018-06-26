@@ -16,11 +16,11 @@
 #define REGISTER_ENUM(_name)          \
     qmlRegisterUncreatableMetaObject( \
         _name::staticMetaObject,      \
-        "ts", 1, 0,                   \
+        "mos", 1, 0,                   \
         #_name,                       \
         "Error: only enums")
 #define REGISTER_TYPE(_name) \
-    qmlRegisterType<_name>("ts", 1, 0, #_name)
+    qmlRegisterType<_name>("mos", 1, 0, #_name)
 
 
 const char* config::file = nullptr;
@@ -35,10 +35,10 @@ int mainCpp(int argc, char *argv[]) {
     REGISTER_TYPE(Editor);
     REGISTER_TYPE(OutText);
 
-    //qmlRegisterType<EditorText>("ts", 1, 0, "EditorText");
-    //qmlRegisterType<NumberText>("ts", 1, 0, "NumberText");
-    //qmlRegisterType<OperatorsKp>("ts", 1, 0,"OperatorsKp");
-    //qmlRegisterType<Editor>("ts", 1, 0, "Editor");
+    //qmlRegisterType<EditorText>("mos", 1, 0, "EditorText");
+    //qmlRegisterType<NumberText>("mos", 1, 0, "NumberText");
+    //qmlRegisterType<OperatorsKp>("mos", 1, 0,"OperatorsKp");
+    //qmlRegisterType<Editor>("mos", 1, 0, "Editor");
     REGISTER_ENUM(KeypadType);
     REGISTER_ENUM(LibType);
     REGISTER_ENUM(PageType);
@@ -47,11 +47,11 @@ int mainCpp(int argc, char *argv[]) {
         qDebug("file : %s", config::file);
     }
     else {
-        config::file = "test.ts";
+        config::file = "test.mos";
     }
 
     qmlRegisterSingletonType<Colors_qml>(
-        "ts", 1, 0, "Colors",
+        "mos", 1, 0, "Colors",
         [](QQmlEngine*, QJSEngine*) -> QObject* {
             auto p = new Colors_qml();
             return p;
@@ -60,13 +60,6 @@ int mainCpp(int argc, char *argv[]) {
 
     config::start();
     OutText::init();
-    /*
-    qmlRegisterSingletonType<Editor>(
-        "ts", 1, 0, "Editor",
-        [](QQmlEngine*, QJSEngine*) -> QObject* {
-            auto p = new Editor();
-            return p;
-            });*/
     QQmlApplicationEngine engine;
     engine.load(QUrl(QStringLiteral("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())

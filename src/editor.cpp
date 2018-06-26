@@ -2,9 +2,9 @@
 
 #include "editor_text.h"
 #include "out_text.h"
-#include "ts/ast/lexer.h"
+#include "mos/ast/lexer.h"
 
-void tsrun(const DToken* ptr, int len);
+void mosrun(const DToken* ptr, int len);
 
 static void update() {
     EditorText::Instance->update();
@@ -106,7 +106,7 @@ void Editor::addNewLine() {
     update();
 }
 void Editor::run() {
-    tsclear();
+    mosclear();
     //QVector<DToken> toks;
     std::vector<DToken> dtoks;
     int prevLevel = 0;
@@ -181,7 +181,7 @@ void Editor::run() {
 
     //test(DToken(Token(TT::eof, "hello"));
 
-    tsrun(dtoks.data(), dtoks.size());
+    mosrun(dtoks.data(), dtoks.size());
 }
 
 QString Editor::getFontFamSans() const{ return config::fontFamSans; }

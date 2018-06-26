@@ -1,5 +1,5 @@
-qt_ts
+mos
 *.o
 .qmake.stash
-qt_ts.pro*
+mos.pro*
 build*/

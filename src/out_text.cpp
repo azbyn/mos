@@ -104,41 +104,41 @@ void OutText::paint(QPainter* p) {
     setHeight((vCursor.y() + 1) * fsd.height + fsd.ascent);
     setWidth(leftMargin + (maxX + 5) * fsd.width);
 }
-void tsattr() {
+void mosattr() {
     OutText::setAttribute(OutText::Data());
 }
-void tsattr(uint8_t flags, uint32_t fg, uint32_t bg) {
+void mosattr(uint8_t flags, uint32_t fg, uint32_t bg) {
     OutText::setAttribute(OutText::Data((Attr) flags, fg, bg));
 }
 
-void tsputnl() {
+void mosputnl() {
     OutText::vec.emplace_back(A_NEWLINE);
 }
 
-void tsputs(const ushort* sh, size_t len) {
+void mosputs(const ushort* sh, size_t len) {
     OutText::append(QString::fromUtf16(sh, len));
 }
-void tsclear() {
+void mosclear() {
     OutText::clear();
 }
-uint8_t tsGetFlags() {
+uint8_t mosGetFlags() {
     return OutText::vec.back().flags;
 }
-void tsSetFlags(uint8_t v) {
-    if (v == tsGetFlags()) return;
-    tsattr(v, tsGetFg(), tsGetBg());
+void mosSetFlags(uint8_t v) {
+    if (v == mosGetFlags()) return;
+    mosattr(v, mosGetFg(), mosGetBg());
 }
-uint32_t tsGetBg() {
+uint32_t mosGetBg() {
     return OutText::vec.back().bg;
 }
-void tsSetBg(uint32_t v) {
-    if (v == tsGetBg()) return;
-    tsattr(tsGetFlags(), tsGetFg(), v);
+void mosSetBg(uint32_t v) {
+    if (v == mosGetBg()) return;
+    mosattr(mosGetFlags(), mosGetFg(), v);
 }
-uint32_t tsGetFg() {
+uint32_t mosGetFg() {
     return OutText::vec.back().fg;
 }
-void tsSetFg(uint32_t v) {
-    if (v == tsGetFg()) return;
-    tsattr(tsGetFlags(), v, tsGetBg());
+void mosSetFg(uint32_t v) {
+    if (v == mosGetFg()) return;
+    mosattr(mosGetFlags(), v, mosGetBg());
 }

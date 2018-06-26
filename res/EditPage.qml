@@ -1,7 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.4
 //import QtQuick.Window 2.2
-import ts 1.0
+import mos 1.0
 
 Item {
     id: root
