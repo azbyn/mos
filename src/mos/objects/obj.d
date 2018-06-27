@@ -204,15 +204,14 @@ class Obj {
     }
 
     Obj getMember(Pos p, Env e, mosstring m) {
-        return member(p, e, m);
+        return typeMeta.getMember(this, p, e, m);
     }
 
     Obj setMember(Pos p, Env e, mosstring m, Obj val) {
         return typeMeta.setMember(this, p, e, m, val);
     }
     Obj member(Pos p, Env e, mosstring m) {
-        return typeMeta.getMember(this, p, e, m);
-//return e.getMember(p, this /* type*/, m);
+        return getMember(p, e, m);
     }
     Obj memberCall(Pos p, Env e, mosstring m, Obj[] args...) {
         return member(p, e, m).call(p,e, args);

@@ -23,7 +23,7 @@ import x : *
 
 lambdas no assigns allowed
 no more free vars
-no more capture struct
+remove exceptions (like using opCall instead of switching)
 
 merge memberFunction and static function
 
@@ -33,7 +33,6 @@ aliased captures ie. [x=somevar]():
 
 default args ie. fun x(a, b=5):
 tuple unpacking ie. (a, b) = (1, 2)
-variadics
 use smarter algorithm for dictionary
 spacing in dlang output error
 ?slices

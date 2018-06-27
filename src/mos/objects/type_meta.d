@@ -31,6 +31,15 @@ TypeMeta makeTypeMeta(T)() {
     //moslog!"_MAKE_TYPE_META '%s'"(T.type);
     return makeTypeMetaF!(T.type, () => obj!T());
 }
+private Obj checkProperty(Obj o, Pos p, Env e, Obj this_) {
+    return o.visitO!(
+        (Property pr) => pr.callGet(p, e).checkProperty(p, e, o),
+        (PropertyMember pm) => pm.callGet(p, e, this_).checkProperty(p, e, o),
+        (MethodClosureMaker m) => m.callThis(this_).checkProperty(p, e, o),
+        (MethodFunctionMaker m) => m.callThis(this_).checkProperty(p, e, o),
+        (BIMethodMaker m) => m.callThis(this_).checkProperty(p, e, o),
+        () => o);
+}
 //we make this a class because references of this are needed everywhere
 @mosexport class TypeMeta {
     mosstring name;
@@ -93,18 +102,18 @@ TypeMeta makeTypeMeta(T)() {
         }
         //dfmt off
         return getMember2(p, e, mem, "opFwd",
-                          (Obj f) => f.visitO!(
+                          (Obj f) => f.checkProperty(p, e, this_)/*.visitO!(
                               (Property pr) => pr.callGet(p, e),
                               (PropertyMember pm) => pm.callGet(p, e, this_),
                               (MethodClosureMaker m) => m.callThis(this_),
                               (MethodFunctionMaker m) => m.callThis(this_),
                               (BIMethodMaker m) => m.callThis(this_),
-                              () => f),
+                              () => f)*/,
                           (Obj f) => f.visitO!(
                               (MethodClosureMaker m) => m.callThis(this_),
                               (MethodFunctionMaker m) => m.callThis(this_),
                               (BIMethodMaker m) => m.callThis(this_),
-                              () => f).call(p, e, obj!String(mem)));
+                              () => f).call(p, e, obj!String(mem)).checkProperty(p, e, f));
         //dfmt on
     }
     Obj setMember(Obj this_, Pos p, Env e, mosstring mem, Obj val) {

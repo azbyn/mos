@@ -8,6 +8,7 @@ mixin MOSModule!(mos.objects.property);
 import com.log;
 private alias Method = Obj delegate(Obj) @system;
 @mosexport struct PropertyMember {
+    mixin MOSType!"property_member";
     Method get = null;
     Method set = null;
 
@@ -27,9 +28,18 @@ private alias Method = Obj delegate(Obj) @system;
         return set(this_).call(p, e, val);
     }
 static:
-    mixin MOSType!"property_member";
+    /*
+    Obj opFwd(Pos p, Env e, Property prop, mosstring name) {
+        return prop.callGet(p,e).getMember(p,e, name);
+    }
+    Obj opFwdSet(Pos p, Env e, Property prop, mosstring name, Obj val) {
+        auto obj = prop.callGet(p, e);
+        obj.setMember(p, e, name, val);
+        return prop.callSet(p, e, obj);
+        }*/
 }
 @mosexport struct Property {
+    mixin MOSType!"property";
     Obj get = null;
     Obj set = null;
     this(Obj get, Obj set) {
@@ -47,9 +57,16 @@ static:
 
         return set.call(p, e, val);
     }
-
 static:
-    mixin MOSType!"property";
+    /*
+    Obj opFwd(Pos p, Env e, Property prop, mosstring name) {
+        return prop.callGet(p,e).getMember(p,e, name);
+    }
+    Obj opFwdSet(Pos p, Env e, Property prop, mosstring name, Obj val) {
+        auto obj = prop.callGet(p, e);
+        obj.setMember(p, e, name, val);
+        return prop.callSet(p, e, obj);
+        }*/
 }
 
 Obj assignSetter(Index)(ref Obj[Index] arr, Index index, Obj val) {

@@ -114,8 +114,11 @@ void Editor::run() {
     /*for (auto l : levels) {
         qDebug("lvl: %d", l);
         }*/
-    for (auto& line : data) {
-        int level = levels[i];
+    bool skipIndentation = false;
+    int level;
+    qDebug("BEGIN");
+    for (auto line = data.begin(), endLine = data.end(); line!=endLine; ++line) {
+        level = levels[i];
         //qDebug("[%ld] = %d", i, level);
         //qDebug("prev: %d, lvl: %d ", prevLevel, level);
         //toks.reserve(toks.size() + line.size());
@@ -134,52 +137,102 @@ void Editor::run() {
                 //qDebug("++%d", level);
             }
         }
-        for (auto it = line.begin(), end = line.end(); it != end; ++it) {
+    continuation:
+        for (auto it = line->begin(), end = line->end(); it != end; ++it) {
+            if (skipIndentation) {
+                skipIndentation = false;
+                while (it->type == TT::Indent || it->type == TT::Dedent)
+                    ++it;
+            }
 #define ADD_EQ(_nrml, _eq)               \
     case TT::_nrml:                      \
+        isContinuable = true;                                \
         if (it + 1 != end && (it+1)->type == TT::Assign) {   \
-            qDebug("asgn " #_eq);        \
             dtoks.emplace_back(TT::_eq); \
             ++it;                        \
             continue;                    \
         }                                \
         break;
-
+            // if the newline after this gets ignored so that this:
+            // var = 1 +
+            //       2
+            // becomes this:
+            // var = 1 + 2
+            bool isContinuable = false;
             switch (it->type) {
-                ADD_EQ(Plus, PlusEq);
-                ADD_EQ(Minus, MinusEq);
-                ADD_EQ(Mply, MplyEq);
-                ADD_EQ(Tilde, CatEq);
-                ADD_EQ(Div, DivEq);
-                ADD_EQ(IntDiv, IntDivEq);
-                ADD_EQ(Mod, ModEq);
-                ADD_EQ(Pow, PowEq);
-                ADD_EQ(Lsh, LshEq);
-                ADD_EQ(Rsh, RshEq);
-                ADD_EQ(And, AndEq);
-                ADD_EQ(Xor, XorEq);
-                ADD_EQ(Or, OrEq);
+            case TT::Comma:
+            case TT::In:
+            case TT::Variadic:
+            case TT::Lambda:
+            case TT::Arrow:
+            case TT::LParen:
+            case TT::LSquare:
+            case TT::LCurly:
+            case TT::Dot:
+            case TT::Eq:
+            case TT::Ne:
+            case TT::Lt:
+            case TT::Gt:
+            case TT::Le:
+            case TT::Ge:
+            case TT::Not:
+            case TT::BAnd:
+            case TT::BOr:
+            case TT::Assign:
+            case TT::CatEq:
+            case TT::PlusEq:
+            case TT::MinusEq:
+            case TT::MplyEq:
+            case TT::DivEq:
+            case TT::IntDivEq:
+            case TT::ModEq:
+            case TT::PowEq:
+            case TT::LshEq:
+            case TT::RshEq:
+            case TT::AndEq:
+            case TT::XorEq:
+            case TT::OrEq:
+                isContinuable = true;
+                break;
+            ADD_EQ(Plus, PlusEq);
+            ADD_EQ(Minus, MinusEq);
+            ADD_EQ(Mply, MplyEq);
+            ADD_EQ(Tilde, CatEq);
+            ADD_EQ(Div, DivEq);
+            ADD_EQ(IntDiv, IntDivEq);
+            ADD_EQ(Mod, ModEq);
+            ADD_EQ(Pow, PowEq);
+            ADD_EQ(Lsh, LshEq);
+            ADD_EQ(Rsh, RshEq);
+            ADD_EQ(And, AndEq);
+            ADD_EQ(Xor, XorEq);
+            ADD_EQ(Or, OrEq);
             default: break;
             }
 #undef ADD_EQ
             dtoks.emplace_back(*it);
+            if (isContinuable && it == end -1) {
+                qDebug("SKIP");
+                ++i;
+                ++line;
+                skipIndentation = true;
+                goto continuation;
+            }
         }
         dtoks.emplace_back(TT::NewLine);
         ++i;
         prevLevel = level;
         //toks.insert(toks.end(), line.begin(), line.end());
     }
-    auto level = levels.back();
-    qDebug("last == %d", level);
+    level = levels.back();
     while (level > 0) {
         dtoks.emplace_back(TT::Dedent);
         --level;
 
-        qDebug("--prev %d", level);
     }
-    qDebug("ja");
 
     //test(DToken(Token(TT::eof, "hello"));
+    qDebug("END");
 
     mosrun(dtoks.data(), dtoks.size());
 }

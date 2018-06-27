@@ -35,24 +35,6 @@ private:
             return format!"@%d: %s"(pos, msg);
         }
     }
-    bool[] _contStack;
-    void contStackPush(bool b) {
-        _contStack ~= b;
-        moslog!"{ %s"(b);
-    }
-    bool contStackPop() {
-        import stdd.range.primitives;
-        assert(!contStackIsEmpty);
-        auto res = _contStack.back();
-        moslog!"} %s"(res);
-        _contStack.popBack();
-        return res;
-    }
-    bool contStackPeek() {
-        import stdd.range.primitives;
-        return _contStack.back();
-    }
-    bool contStackIsEmpty() { return _contStack.length == 0; }
 
     public Error[] errors;
     public AstNode[] nodes;
@@ -74,7 +56,6 @@ private:
         end = begin + tokens.length;
         errors = [];
         nodes = [];
-        _contStack = [];
         main();
         return errors.length == 0;
     }
@@ -201,10 +182,8 @@ private:
             args ~= expression!useThis();
             if (!consume(separator))
                 break;
-            cont();
         }
 
-        cont();
         require(terminator);
         return fun(args);
     }
@@ -213,7 +192,6 @@ private:
         const(Token)* t;
         for (;;) {
             if (consume(t, args)) {
-                cont();
                 a = binary(t, a, Next!useThis(&this));
             }
             else {
@@ -243,12 +221,12 @@ private:
         try {
             if (import_(nodes)) return;
             nodes ~= stmt!useThis();
-            while(!contStackIsEmpty) {
+            /*while(!contStackIsEmpty) {
                 if (consume(TT.NewLine)) continue;
                 if (contStackPeek())
                     require(TT.Dedent);
                 contStackPop();
-            }
+            }*/
         }
         catch (ParserException e) {
             errors ~= Error(e.pos, e.msg);
@@ -257,20 +235,6 @@ private:
     }
 
 
-    //["\n" Indent] {"\n"}
-    bool cont() {
-        if (!consume(TT.NewLine)) return false;
-        if (consume(TT.Indent)) {
-            contStackPush(true);
-        }
-        else {
-            contStackPush(false);
-        }
-        while(!isEof()) {
-            if (!consume(TT.NewLine)) break;
-        }
-        return true;
-    }
     // body_: statement | NewLine Indent { stmt } Dedent
     AstNode body_(bool useThis)() {
         Pos p;
@@ -360,25 +324,22 @@ private:
         return true;
     }
 
-    // params: Identifier [ "," cont [funParams]] terminator
+    // params: Identifier [ "," [funParams]] terminator
     void params(TT terminator, ref mosstring[] args) {
         const(Token)* p;
         while (!is_(TT.Eof, terminator)) {
-            cont();
             require(p, TT.Identifier);
             args ~= p.mosstr;
             if (!consume(TT.Comma))
                 break;
         }
-        cont();
         require(terminator);
     }
-    // params: Identifier [ "," cont [funParams]] [terminator2] terminator
+    // params: Identifier [ "," [funParams]] [terminator2] terminator
     bool params2(TT terminator, TT terminator2, ref mosstring[] args) {
         const(Token)* p;
         bool res = false;
         while (!is_(TT.Eof, terminator)) {
-            cont();
             require(p, TT.Identifier);
             args ~= p.mosstr;
             if (!consume(TT.Comma)) {
@@ -387,7 +348,6 @@ private:
                 break;
             }
         }
-        cont();
         require(terminator);
         return res;
     }
@@ -404,7 +364,6 @@ private:
     // funcImpl: captures "(" params ["..."] ")" ":" body_
     AstNode.Lambda funcImpl(bool useThis)(Pos p) {
         mosstring[] caps = captures();
-        cont();
 
         require(TT.LParen);
         mosstring[] params;
@@ -416,23 +375,20 @@ private:
         require(TT.Colon);
         return AstNode.Lambda(caps, params, body_!useThis(), isVariadic);
     }
-    // propImpl: captures [ "(" cont ")" ] ":" body
+    // propImpl: captures [ "(" ")" ] ":" body
     //         | "=" captures "(" Identifier ")" ":" body
     AstNode.Lambda propImpl(bool useThis)(out FuncType ft) {
         ft = consume(TT.Assign) ? FuncType.Setter : FuncType.Getter;
         mosstring[] caps = captures();
-        cont();
         mosstring[] params;
         const(Token)* p;
         if (ft == FuncType.Getter) {
             if (consume(TT.LParen)) {
-                cont();
                 require(TT.RParen);
             }
         }
         else {
             require(TT.LParen);
-            cont();
             require(p, TT.Identifier);
             params ~= p.mosstr;
             require(TT.RParen);
@@ -511,7 +467,7 @@ private:
         res = astWhile(p, cond, b);
         return true;
     }
-    // for_: "for" identifier ["," cont identifier] "in" cont expression ":" body_
+    // for_: "for" identifier ["," identifier] "in" expression ":" body_
     bool for_(bool useThis)(out AstNode res) {
         Pos p;
         if (!consume(p, TT.For))
@@ -520,12 +476,10 @@ private:
         const(Token)* b = null;
         require(a, TT.Identifier);
         if (consume(TT.Comma)) {
-            cont();
             require(b, TT.Identifier);
         }
         require(TT.In);
 
-        cont();
         auto col = expression!useThis();
         require(TT.Colon);
         auto body_ = body_!useThis();
@@ -719,52 +673,43 @@ private:
         return assign!useThis();
     }
 
-    // assign:  ternary | identifier assignOp cont assign
+    // assign:  ternary | identifier assignOp assign
     // assignOp: "=" | "+=" | "-=" | "/=" | "//=" | "*=" | "%=" |
     //           "**=" | "<<=" | ">>=" | "&=" | "^=" | "|=" | "~="
     AstNode assign(bool useThis)() {
         auto a = ternary!useThis();
         const(Token)* sgn;
         if (consume(sgn, TT.Assign)) {
-            cont();
             a = astAssign(getPos(sgn), a, assign!useThis());
         }
         else if (consume(sgn, TT.PlusEq, TT.MinusEq, TT.DivEq, TT.IntDivEq,
                 TT.MplyEq, TT.ModEq, TT.PowEq, TT.LshEq, TT.RshEq, TT.AndEq,
                 TT.OrEq, TT.XorEq, TT.CatEq)) {
-            cont();
             a = astAssign(getPos(sgn), a, binary(sgn, a, assign!useThis()));
         }
         return a;
     }
-    // ternary: boolOp [ "?" cont expression ":" cont ternary ]
+    // ternary: boolOp [ "?" expression ":" ternary ]
     AstNode ternary(bool useThis)() {
         auto cond = boolOp!useThis();
         Pos p;
         if (!consume(p, TT.Question))
             return cond;
-        AstNode a;
-        {
-            cont();
-            a = expression!useThis();
-        }
+        AstNode a = expression!useThis();
         require(TT.Colon);
 
-        cont();
         return astIf(p, cond, a, ternary!useThis());
     }
 
-    // boolOp: [boolOp ("&&" | "||") cont] equals
+    // boolOp: [boolOp ("&&" | "||")] equals
     AstNode boolOp(bool useThis)() {
         auto a = equals!useThis(&this);
         Pos p;
         for (;;) {
             if (consume(p, TT.And)) {
-                cont();
                 a = astAnd(p, a, equals!useThis(&this));
             }
             else if (consume(p, TT.Or)) {
-                cont();
                 a = astOr(p, a, equals!useThis(&this));
             }
             else {
@@ -773,40 +718,35 @@ private:
         }
     }
 
-    // equals: [equals ("==" | "!=") cont] compare
+    // equals: [equals ("==" | "!=")] compare
     mixin(genLeftRecursive("equals", "compare", "==", "!="));
 
-    // compare: [bOr ("<"|">"|"<="|">=") cont] bOr
+    // compare: [bOr ("<"|">"|"<="|">=")] bOr
     mixin(genLeftRecursive("compare", "bOr", "<", ">", "<=", ">="));
 
-    // bOr: [bOr ("|" | "^") cont] bAnd
+    // bOr: [bOr ("|" | "^")] bAnd
     mixin(genLeftRecursive("bOr", "bAnd", "|", "^"));
 
-    // bAnd: [bAnd "&" cont] bShift
+    // bAnd: [bAnd "&"] bShift
     mixin(genLeftRecursive("bAnd", "bShift", "&"));
 
-    // bShift: [bShift ("<<" | ">>") cont] add
+    // bShift: [bShift ("<<" | ">>")] add
     mixin(genLeftRecursive("bShift", "add", "<<", ">>"));
 
-    // add: [add ("+" | "-" | "~") cont] multi
+    // add: [add ("+" | "-" | "~")] multi
     mixin(genLeftRecursive("add", "multi", "+", "-", "~"));
 
-    // multi: [multi ("*" | "/" | "//" | "%") cont] power
+    // multi: [multi ("*" | "/" | "//" | "%")] power
     mixin(genLeftRecursive("multi", "power", "*", "/", "//", "%"));
 
-    // power: prefix ["**" cont power]
+    // power: prefix ["**" power]
     static AstNode power(bool useThis)(Parser* p) {
         auto a = p.prefix!useThis();
         const(Token)* t;
         if (!p.consume(t, TT.Pow))
             return a;
 
-        p.cont();
-        //auto c = p.contstart();
-
-        auto res = p.binary(t, a, power!useThis(p));
-        //p.contend(c);
-        return res;
+        return p.binary(t, a, power!useThis(p));
     }
 
     // prefix: ["++" | "--" | "+" | "-" | "~" | "!"] postfix
@@ -823,10 +763,10 @@ private:
         return postfix!useThis();
     }
     // postfix: lambda {("++" | "--") | member | subscript | funcCall}
-    // member: "." cont Identifier
-    // method: "." cont Identifier funcCall
-    // subscript: "[" cont expression "]"
-    // funcCall: "(" cont (")" | expression {"," cont expression} cont ")")
+    // member: "." Identifier
+    // method: "." Identifier funcCall
+    // subscript: "[" expression "]"
+    // funcCall: "(" (")" | expression {"," expression} ")")
     AstNode postfix(bool useThis)() {
         auto a = lambda!useThis();
         for (;;) {
@@ -836,7 +776,6 @@ private:
                 a = astReverseComma(getPos(t), a, astAssign(pos, a, unary(t, a)));
             }
             else if (consume(t, TT.Dot)) {
-                cont();
                 const(Token)* id;
                 require(id, TT.Identifier);
                 if (consume(TT.LParen)) {
@@ -849,12 +788,10 @@ private:
                 }
             }
             else if (consume(t, TT.LSquare)) {
-                cont();
                 a = astSubscript(a.pos, a, expression!useThis());
                 require(TT.RSquare);
             }
             else if (consume(TT.LParen)) {
-                cont();
                 expressionSeq!useThis(TT.RParen, (AstNode[] args) => a = astFuncCall(a.pos, a, args));
             }
             else {
@@ -863,7 +800,7 @@ private:
         }
         return a;
     }
-    // lambda: "λ" { Identifier cont } ["..."] "->" cont expression
+    // lambda: "λ" { Identifier } ["..."] "->" expression
     //       | term
     AstNode lambda(bool useThis)() {
         const(Token)* t;
@@ -876,7 +813,6 @@ private:
         const(Token)* id;
         while (!is_(TT.Arrow, TT.Eof)) {
             require(id, TT.Identifier);
-            cont();
             params ~= id.mosstr;
         }
         bool isVariadic = consume(TT.Variadic);
@@ -885,45 +821,37 @@ private:
         }
 
         require(TT.Arrow);
-        cont();
 
         return astLambda(p, params, expression!useThis(), isVariadic);
     }
-    // pair: expression ":" cont expressionNoComma
-    // term: "(" cont expression cont {"," cont expression} ")"
-    //     | "[" cont ("]" | expression {"," cont expression} cont "]"
-    //     | "{" cont ("}" | pair {"," cont pair} cont  "}"
+    // pair: expression ":" expressionNoComma
+    // term: "(" expression {"," expression} ")"
+    //     | "[" ("]" | expression {"," expression} "]"
+    //     | "{" ("}" | pair {"," pair} "}"
     //     | Number | Mosstring | Identifier | "nil" | "true" | "false" | "this"
     AstNode term(bool useThis)() {
         Pos p;
         if (consume(p, TT.LParen)) {
-            cont();
             AstNode e = expression!useThis();
 
-            cont();
             if (consume(TT.Comma)) {
-                cont();
                 return expressionSeq!useThis(TT.RParen, (AstNode[] args) => astTuple(p, e ~ args));
             }
             require(TT.RParen);
             return e;
         }
         if (consume(p, TT.LSquare)) {
-            cont();
             return expressionSeq!useThis(TT.RSquare, (AstNode[] args) => astList(p, args));
         }
         if (consume(p, TT.LCurly)) {
-            cont();
             enum terminator = TT.RCurly;
             AstNode[] args;
             while (!is_(TT.Eof, terminator)) {
                 args ~= expression!useThis();
                 require(TT.Colon);
-                cont();
                 args ~= expression!useThis();
                 if (!consume(TT.Comma))
                     break;
-                cont();
             }
             require(terminator);
             return astDict(p, args);

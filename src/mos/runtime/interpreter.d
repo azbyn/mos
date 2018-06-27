@@ -161,7 +161,9 @@ public Obj eval(Block bl, Obj this_, Pos initPos, Env env, Obj[] argv, Obj*[uint
             assert(len >= 1);
             auto a = pop();
             auto val = bl.getStr(op.val);
-            stack ~= a.member(pos, env, val);
+            auto res = a.member(pos, env, val);
+            stack ~= res;
+            //moslog!"memberget on %s res = %s"(a.typestr, res.typestr);
         } break;
         case OPCode.SubscriptGet: {
             assert(len >= 2);

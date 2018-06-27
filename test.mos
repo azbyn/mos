@@ -1,16 +1,16 @@
 #!/home/azbyn/Projects/mos/mos
-capture = 1
-module M:
+#capture = 1
+#module M:
 	#a = 7
 	#c = capture
 	##fun f(): .a #wip
 	#fun f(): M.a
-	prop p(): 1
+#	prop p(): 1
 
 #capture = 2
 #println(M.f())
 #println(M.c)
-println(M.p)
+println(Math.Pi + 2)
 
 
 <<<struct S:

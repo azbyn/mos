@@ -23,10 +23,10 @@ import stdd.conv : to;
 
 extern (C++) int mosrun(const DToken* ptr, int len) {
     auto toks = ptr[0 .. len];
-    /*moslog("\nToks");
+    moslog("\nToks");
     foreach (ref t; toks) {
         moslog(t.toStr());
-        }*/
+        }
     Parser p;
     auto r = p.parse(toks);
     moslog("\nNodes:");
